@@ -1,6 +1,6 @@
 #include <string.h>
 #ifdef _VSI_RUNTIME_
-#include <vsi_runtime.hh>
+#include <vsi/vsi_runtime.hh>
 
 int main() {
 	get_vsi_rt()->startup();
