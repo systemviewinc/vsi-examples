@@ -191,7 +191,7 @@ extern int  sta;                 	/* status of lastpat */
 
 extern CHAR bittab[BITBLK];		/* bit table for CCL */
 /* pre-set bits...   */
-extern CHAR bitarr[];
+static CHAR bitarr[] = {1,2,4,8,16,32,64,128};
 
 
 #ifdef DEBUG

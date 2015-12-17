@@ -1,8 +1,12 @@
 #include "regex.h"
 int  sta = NOP;               	/* status of lastpat */
+int  tagstk[MAXTAG];             /* subpat tag stack..*/
+CHAR bittab[BITBLK];		/* bit table for CCL */
+CHAR nfa[MAXNFA];		/* automaton..       */
 
-char * re_comp(char pat[256], char c_pat[1024])
+char * re_comp(char pat[256], unsigned int o_pat[256])
 {
+        CHAR *c_pat = (CHAR*) &o_pat[0];
 	register char *p;               /* pattern pointer   */
 	register CHAR *mp=c_pat;          /* nfa pointer       */
 	register CHAR *lp;              /* saved pointer..   */
@@ -14,7 +18,6 @@ char * re_comp(char pat[256], char c_pat[1024])
 	register int n;
 	register CHAR mask;		/* xor mask -CCL/NCL */
 	int c1, c2;
-		
 	if (!pat || !*pat)
 		if (sta)
 			return 0;

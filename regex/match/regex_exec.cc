@@ -1,22 +1,18 @@
 #include "regex.h"
-
-int  tagstk[MAXTAG];             /* subpat tag stack..*/
-CHAR nfa[MAXNFA];		/* automaton..       */
-
-CHAR bittab[BITBLK];		/* bit table for CCL */
-/* pre-set bits...   */
-CHAR bitarr[] = {1,2,4,8,16,32,64,128};
+#include <string.h>
 
 
 static int pmatch_nr(char *, CHAR *, int &, int &,  int *, int *,int);
 int re_exec(char lp[2048] , CHAR nfa[1024]);
 
 #define NUM_MATCHES 1
-void re_exec_par(char lp[2048], CHAR nfa[NUM_MATCHES*1024], int out_match[NUM_MATCHES])
+void re_exec_par(char lp[2048], unsigned int nfa[NUM_MATCHES*256], int out_match[NUM_MATCHES])
 {
 	re_exec_par_label2:for (int i = 0 ; i < NUM_MATCHES; i++) {
-
-		out_match[i] = re_exec(lp,&nfa[i*1024]);
+		CHAR nfa_c[1024];
+		CHAR *nfa_f = (CHAR*)&nfa[i*256];
+		for (int j = 0 ; j < 1024; j++) nfa_c[i] = nfa_f[i];
+		out_match[i] = re_exec(lp,nfa_c);
 	}
 }
 
@@ -74,8 +70,8 @@ int re_exec(char lp[2048] , CHAR nfa[1024]) {
 		break;
 
 	case CHR:			/* ordinary char: locate it fast */
-		c = *(ap+1);
-		while (*lp && *lp != c)
+		c = ap[api+1];
+		while (lp[lpi] && lp[lpi] != c)
 			lpi++;
 		if (!lp[lpi])		/* if EOS, fail, else fall thru. */
 			return 0;
