@@ -1,11 +1,4 @@
 #include <string.h>
-#ifdef _VSI_RUNTIME_
-#include <vsi/vsi_runtime.hh>
-
-int main() {
-	get_vsi_rt()->startup();
-}
-#endif
 
 char s[16] = "Echo Server... ";
 char junk[16];
