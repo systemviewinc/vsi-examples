@@ -179,31 +179,27 @@
 
 #define ASCIIB	0177
 
-#ifdef NO_UCHAR
-typedef char CHAR;
-#else
-typedef unsigned char CHAR;
-#endif
+typedef unsigned int NFA_t;
 
 extern int  tagstk[MAXTAG];             /* subpat tag stack..*/
-extern CHAR nfa[MAXNFA];		/* automaton..       */
+extern NFA_t nfa[MAXNFA];		/* automaton..       */
 extern int  sta;                 	/* status of lastpat */
 
-extern CHAR bittab[BITBLK];		/* bit table for CCL */
+extern NFA_t bittab[BITBLK];		/* bit table for CCL */
 /* pre-set bits...   */
-static CHAR bitarr[] = {1,2,4,8,16,32,64,128};
+static NFA_t bitarr[] = {1,2,4,8,16,32,64,128};
 
 
 #ifdef DEBUG
-static nfadump(CHAR *);
+static nfadump(NFA_t *);
 static symbolic(char *);
 #endif
 
 
 static void
-chset(CHAR c)
+chset(NFA_t c)
 {
-	bittab[(CHAR) ((c) & BLKIND) >> 3] |= bitarr[(c) & BITIND];
+	bittab[(NFA_t) ((c) & BLKIND) >> 3] |= bitarr[(c) & BITIND];
 }
 
 #define badpat(x)	(*nfa = END, (char*)x)
@@ -218,7 +214,7 @@ chset(CHAR c)
  *
  *	TRUE for 0-9 A-Z a-z _
  */
-static CHAR chrtyp[MAXCHR] = {
+static NFA_t chrtyp[MAXCHR] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 

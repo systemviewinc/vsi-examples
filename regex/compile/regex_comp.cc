@@ -1,22 +1,22 @@
 #include "regex.h"
 int  sta = NOP;               	/* status of lastpat */
 int  tagstk[MAXTAG];             /* subpat tag stack..*/
-CHAR bittab[BITBLK];		/* bit table for CCL */
-CHAR nfa[MAXNFA];		/* automaton..       */
+NFA_t bittab[BITBLK];		/* bit table for CCL */
+NFA_t nfa[MAXNFA];		/* automaton..       */
 
-char * re_comp(char pat[256], unsigned int o_pat[256])
+char * re_comp(char pat[512], NFA_t o_pat[1024])
 {
-        CHAR *c_pat = (CHAR*) &o_pat[0];
+        NFA_t *c_pat = (NFA_t*) &o_pat[0];
 	register char *p;               /* pattern pointer   */
-	register CHAR *mp=c_pat;          /* nfa pointer       */
-	register CHAR *lp;              /* saved pointer..   */
-	register CHAR *sp=c_pat;          /* another one..     */
+	register NFA_t *mp=c_pat;          /* nfa pointer       */
+	register NFA_t *lp;              /* saved pointer..   */
+	register NFA_t *sp=c_pat;          /* another one..     */
 
 	register int tagi = 0;          /* tag stack index   */
 	register int tagc = 1;          /* actual tag count  */
 
 	register int n;
-	register CHAR mask;		/* xor mask -CCL/NCL */
+	register NFA_t mask;		/* xor mask -CCL/NCL */
 	int c1, c2;
 	if (!pat || !*pat)
 		if (sta)
@@ -71,7 +71,7 @@ char * re_comp(char pat[256], unsigned int o_pat[256])
 					c1 = *(p-2) + 1;
 					c2 = *p++;
 					while (c1 <= c2)
-						chset((CHAR)c1++);
+						chset((NFA_t)c1++);
 				}
 #ifdef EXTEND
 				else if (*p == '\\' && *(p+1)) {

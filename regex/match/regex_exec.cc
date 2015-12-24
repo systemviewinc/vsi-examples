@@ -2,17 +2,14 @@
 #include <string.h>
 
 
-static int pmatch_nr(char *, CHAR *, int &, int &,  int *, int *,int);
-int re_exec(char lp[2048] , CHAR nfa[1024]);
+static int pmatch_nr(char *, NFA_t *, int &, int &,  int *, int *,int);
+int re_exec(char lp[2048] , NFA_t nfa[1024]);
 
 #define NUM_MATCHES 1
-void re_exec_par(char lp[2048], unsigned int nfa[NUM_MATCHES*256], int out_match[NUM_MATCHES])
+void re_exec_par(char lp[2048], NFA_t nfa_i[NUM_MATCHES*1024], long long out_match[NUM_MATCHES])
 {
 	re_exec_par_label2:for (int i = 0 ; i < NUM_MATCHES; i++) {
-		CHAR nfa_c[1024];
-		CHAR *nfa_f = (CHAR*)&nfa[i*256];
-		for (int j = 0 ; j < 1024; j++) nfa_c[i] = nfa_f[i];
-		out_match[i] = re_exec(lp,nfa_c);
+		out_match[i] = re_exec(lp,&nfa_i[i*1024]);
 	}
 }
 
@@ -38,7 +35,7 @@ void re_exec_par(char lp[2048], unsigned int nfa[NUM_MATCHES*256], int out_match
  *
  */
 
-int re_exec(char lp[2048] , CHAR nfa[1024]) {
+int re_exec(char lp[2048] , NFA_t nfa[1024]) {
 
 	//#pragma HLS INTERFACE bram port=lp  depth=2048
 	//#pragma HLS INTERFACE bram port=nfa depth=1024
@@ -46,9 +43,9 @@ int re_exec(char lp[2048] , CHAR nfa[1024]) {
 	int bopat[MAXTAG];
 	int eopat[MAXTAG];
 	int bol;
-	register CHAR c;
+	register NFA_t c;
 	register int ep = 0;
-	register CHAR *ap = nfa;
+	register NFA_t *ap = nfa;
 	int lpi = 0, api = 0;
 	bol = lpi;
 
@@ -122,12 +119,12 @@ int re_exec(char lp[2048] , CHAR nfa[1024]) {
  */
 #define re_fail(...)
 #ifndef re_fail
-extern void re_fail(char *, CHAR);
+extern void re_fail(char *, NFA_t);
 #endif
 
 
 /* non-recursive version of the above routine */
-static int  re_match_basic(char *lp, CHAR *ap, int & lpi, int api, int *bopat, int *eopat, int bol)
+static int  re_match_basic(char *lp, NFA_t *ap, int & lpi, int api, int *bopat, int *eopat, int bol)
 {
 	register int op, c, n;
 	register int bp;		/* beginning of subpat.. */
@@ -198,7 +195,7 @@ static int  re_match_basic(char *lp, CHAR *ap, int & lpi, int api, int *bopat, i
 	return api - sapi;
 }
 
-static int pmatch_nr(char *lp, CHAR *ap, int & lpi, int &api, int *bopat, int *eopat, int bol)
+static int pmatch_nr(char *lp, NFA_t *ap, int & lpi, int &api, int *bopat, int *eopat, int bol)
 {
 	register int op, c, n;
 	register char *e;		/* extra pointer for CLO */
@@ -252,3 +249,83 @@ static int pmatch_nr(char *lp, CHAR *ap, int & lpi, int &api, int *bopat, int *e
 	}
 	return lpi;
 }
+//#define DUMP
+#ifdef DUMP
+/*
+ * symbolic - produce a symbolic dump of the nfa
+ */
+static symbolic(char *s) 
+{
+	printf("pattern: %s\n", s);
+	printf("nfacode:\n");
+	nfadump(nfa);
+}
+
+static nfadump(NFA_t *ap)
+{
+	register int n;
+
+	while (*ap != END)
+		switch(*ap++) {
+		case CLO:
+			printf("CLOSURE");
+			nfadump(ap);
+			switch(*ap) {
+			case CHR:
+				n = CHRSKIP;
+				break;
+			case ANY:
+				n = ANYSKIP;
+				break;
+			case CCL:
+				n = CCLSKIP;
+				break;
+			}
+			ap += n;
+			break;
+		case CHR:
+			printf("\tCHR %c\n",*ap++);
+			break;
+		case ANY:
+			printf("\tANY .\n");
+			break;
+		case BOL:
+			printf("\tBOL -\n");
+			break;
+		case EOL:
+			printf("\tEOL -\n");
+			break;
+		case BOT:
+			printf("BOT: %d\n",*ap++);
+			break;
+		case EOT:
+			printf("EOT: %d\n",*ap++);
+			break;
+		case BOW:
+			printf("BOW\n");
+			break;
+		case EOW:
+			printf("EOW\n");
+			break;
+		case REF:
+			printf("REF: %d\n",*ap++);
+			break;
+		case CCL:
+			printf("\tCCL [");
+			for (n = 0; n < MAXCHR; n++)
+				if (isinset(ap,(NFA_t)n)) {
+					if (n < ' ')
+						printf("^%c", n ^ 0x040);
+					else
+						printf("%c", n);
+				}
+			printf("]\n");
+			ap += BITBLK;
+			break;
+		default:
+			printf("bad nfa. opcode %o\n", ap[-1]);
+			return;
+			break;
+		}
+}
+#endif
