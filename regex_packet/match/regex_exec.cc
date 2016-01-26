@@ -18,7 +18,7 @@ void re_match_packet(char lp[2048], NFA_t nfa_i[1024], char op[2048])
 	if (re_exec(lp,nfa_i)) {
 		int len = get_packet_len(lp) ;
 		for (int i = 0 ; i < len; i++) op[i] = lp[i];
-	}
+	} 
 }
 
 /*
@@ -280,7 +280,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_SMA:
 			api++;
 			for (i = 0 ; i < 6 ; i++) {
-				if ((eth->src_addr[i] & ap[api]) != eth->src_addr[i]) 
+				if (ap[api] != 0xffffffff && ap[api] != eth->src_addr[i]) 
 					return 0;
 				api++;
 			}
@@ -288,7 +288,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_DMA:
 			api++;
 			for (i = 0 ; i < 6 ; i++) {
-				if ((eth->dst_addr[i] & ap[api]) != eth->src_addr[i]) 
+				if (ap[api] != 0xffffffff && ap[api] != eth->src_addr[i]) 
 					return 0;
 				api++;
 			}
@@ -302,7 +302,8 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_SA:
 			api++;
 			for (i = 0 ; i < 4; i++) {
-				if ((iph->ip_src.addr[i] & ap[api]) != iph->ip_src.addr[i])
+				// -1 then allow all
+				if (ap[api] != 0xffffffff && ap[api] != iph->ip_src.addr[i])
 					return 0;
 				api++;
 			}
@@ -310,7 +311,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_DA:
 			api++;
 			for (i = 0 ; i < 4; i++) {
-				if ((iph->ip_dst.addr[i] & ap[api]) != iph->ip_dst.addr[i])
+				if (ap[api] != 0xffffffff && ap[api] != iph->ip_dst.addr[i])
 					return 0;
 				api++;
 			}
