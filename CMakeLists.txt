@@ -6,7 +6,6 @@ set(TARGET_EXAMPLE_DIR ${STAGING_DIR}/target/common/hls_examples)
 
 install(FILES
 	sort/sort.cc
-	led_blinker/blink.cc
 	DESTINATION ${TARGET_EXAMPLE_DIR}/sort)
 
 install(FILES
