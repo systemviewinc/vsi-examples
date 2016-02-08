@@ -11,3 +11,7 @@ install(FILES
 install(FILES
 	led_blinker/blink.cc
 	DESTINATION ${TARGET_EXAMPLE_DIR}/led_blinker)
+
+install(FILES
+	memory/memory.cc
+	DESTINATION ${TARGET_EXAMPLE_DIR}/memory)
