@@ -8,6 +8,7 @@ void vsi_memory(int in_arr[1024], int *out_mem, int out_arr[1024])
 	memcpy(i_buff,out_mem,sizeof(i_buff)); 
 	// perform operation
 	for (i = 0 ; i < 1024; i++) {
+#pragma HLS PIPELINE II=1
 		i_buff [i] += in_arr[i];
 		out_arr[i] = i_buff[i];
 	}
