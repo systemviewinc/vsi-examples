@@ -45,6 +45,16 @@ NFA_t get_token(char **p)
 		*p = sp;
 		return IP_DP;
 	}
+	if (strncmp(sp,"IF",2) == 0) {
+		sp += 2;
+		*p = sp;
+		return IP_FLAG;
+	}
+	if (strncmp(sp,"PROTO",5) == 0) {
+		sp += 5;
+		*p = sp;
+		return IP_PROTO;
+	}
 	return 0;
 }
 
@@ -58,7 +68,7 @@ char * re_comp(char pat[512], NFA_t o_pat[1024])
 
 	register int tagi = 0;          /* tag stack index   */
 	register int tagc = 1;          /* actual tag count  */
-
+	unsigned int skip_n;
 	register int n;
 	register NFA_t mask;		/* xor mask -CCL/NCL */
 	int c1, c2;
@@ -122,6 +132,16 @@ char * re_comp(char pat[512], NFA_t o_pat[1024])
 							store(ip_t & 0xff);
 							store((ip_t>>8) & 0xff);
 							break;
+						case IP_FLAG:
+							store(tok);
+							ip_t = strtoul(p,&p,0);
+							store(ip_t & 0xff);
+							break;
+						case IP_PROTO:
+							store(tok);
+							ip_t = strtoul(p,&p,0);
+							store(ip_t & 0xff);
+							break; 
 						default:
 							break;
 						}
@@ -251,6 +271,13 @@ char * re_comp(char pat[512], NFA_t o_pat[1024])
 				if (*sp == BOW)
 					return badpat("Null pattern inside \\<\\>");
 				store(EOW);
+				break;
+			case '#':
+				store(SKIP);
+				p++;
+				skip_n = strtoul(p,&p,0);
+				store(skip_n);
+				p--;
 				break;
 			case '1':
 			case '2':

@@ -153,26 +153,29 @@
 #define OKP     1
 #define NOP     0
 
-#define CHR     1
-#define ANY     2
-#define CCL     3
-#define BOL     4
-#define EOL     5
-#define BOT     6
-#define EOT     7
-#define BOW	8
-#define EOW	9
-#define REF     10
-#define CLO     11
-#define IP_SMA  12
-#define IP_DMA  13
-#define IP_TYPE 14
-#define IP_SA	15
-#define IP_DA	16
-#define IP_SP   17
-#define IP_DP	18
-#define IP_HDR  19
-#define END     0
+#define CHR       1
+#define ANY       2
+#define CCL       3
+#define BOL       4
+#define EOL       5
+#define BOT       6
+#define EOT       7
+#define BOW	  8
+#define EOW	  9
+#define REF      10
+#define CLO      11
+#define IP_SMA   12
+#define IP_DMA   13
+#define IP_TYPE  14
+#define IP_SA	 15
+#define IP_DA	 16
+#define IP_SP    17
+#define IP_DP	 18
+#define IP_HDR   19
+#define IP_FLAG  20
+#define IP_PROTO 21
+#define SKIP	 22
+#define END       0
 
 /*
  * The following defines are not meant to be changeable.
@@ -258,10 +261,12 @@ struct ip_header {
 	unsigned char  ip_length:4;
 	unsigned char  ip_tos;
 	unsigned char  ip_len[2];
-	unsigned short ip_id;
-	unsigned short ip_off;
+	unsigned char  ip_id[2];
+	unsigned char  ip_flags:3;
+	unsigned char  ip_off_1:5;
+	unsigned char  ip_off_2;
 	unsigned char  ip_ttl;
-	unsigned char  ip_p;
+	unsigned char  ip_proto;
 	unsigned short ip_csum;
 	struct ip_addr ip_src;
 	struct ip_addr ip_dst;
@@ -278,4 +283,15 @@ struct eth_header {
 	unsigned char ip_type [2];	
 };
 
+struct tcp_header {
+	unsigned char tcp_seq[4];
+	unsigned char tcp_ack[4];
+	unsigned char tcp_data_off:4;
+	unsigned char :6;
+	unsigned char tcp_flags:6;
+	unsigned char tcp_wind[2];
+	unsigned char tcp_csum[2];
+	unsigned char tcp_urgp[2];
+	unsigned char tcp_optn[4];
+};
 #endif

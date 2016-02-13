@@ -1,5 +1,5 @@
 #include "regex.h"
-#include <string.h>
+//#include <string.h>
 
 
 static int pmatch_nr    (char *, NFA_t *, int &, int &,  int *, int *,int);
@@ -17,7 +17,10 @@ void re_match_packet(char lp[2048], NFA_t nfa_i[1024], char op[2048])
 {
 	if (re_exec(lp,nfa_i)) {
 		int len = get_packet_len(lp) ;
-		for (int i = 0 ; i < len; i++) op[i] = lp[i];
+		for (int i = 0 ; i < len; i++) {
+#pragma HLS PIPELINE II=1			
+			op[i] = lp[i];
+		}
 	} 
 }
 
@@ -44,9 +47,6 @@ void re_match_packet(char lp[2048], NFA_t nfa_i[1024], char op[2048])
  */
 
 int re_exec(char lp[2048] , NFA_t nfa[1024]) {
-
-	//#pragma HLS INTERFACE bram port=lp  depth=2048
-	//#pragma HLS INTERFACE bram port=nfa depth=1024
 
 	int bopat[MAXTAG];
 	int eopat[MAXTAG];
@@ -84,8 +84,7 @@ int re_exec(char lp[2048] , NFA_t nfa[1024]) {
 		api++;
 		if (!pmatch_ip_hdr(lp, ap, lpi, api)) return 0;
 		if (ap[api] == END) return 1; // header match only
-		else ep = lpi;		      
-		break;
+		else ep = lpi; // fall thru
 	default:			/* regular matching all the way. */
 		if ((ep = pmatch_nr(lp,nfa, lpi, api, bopat,eopat,bol)))
 			break;
@@ -202,6 +201,9 @@ static int  re_match_basic(char *lp, NFA_t *ap, int & lpi, int api, int *bopat, 
 					return -1;
 				}
 			break;
+		case SKIP:
+			lpi += ap[api++];
+			break;
 		}
 		op = ap[api++];
 	}
@@ -269,7 +271,8 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 	struct eth_header *eth;
 	struct ip_header  *iph;
 	struct ports      *prt;
-	
+	int olpi          = lpi;
+
 	eth = (struct eth_header *)lp;
 	iph = (struct ip_header *)(lp + sizeof(struct eth_header));
 	prt = (struct ports *)(lp + sizeof(eth_header) + sizeof(ip_header));
@@ -280,7 +283,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_SMA:
 			api++;
 			for (i = 0 ; i < 6 ; i++) {
-				if (ap[api] != 0xffffffff && ap[api] != eth->src_addr[i]) 
+				if (ap[api] != 255 && ap[api] != eth->src_addr[i]) 
 					return 0;
 				api++;
 			}
@@ -288,7 +291,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_DMA:
 			api++;
 			for (i = 0 ; i < 6 ; i++) {
-				if (ap[api] != 0xffffffff && ap[api] != eth->src_addr[i]) 
+				if (ap[api] != 255 && ap[api] != eth->src_addr[i]) 
 					return 0;
 				api++;
 			}
@@ -303,7 +306,7 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 			api++;
 			for (i = 0 ; i < 4; i++) {
 				// -1 then allow all
-				if (ap[api] != 0xffffffff && ap[api] != iph->ip_src.addr[i])
+				if (ap[api] != 255 && ap[api] != iph->ip_src.addr[i])
 					return 0;
 				api++;
 			}
@@ -311,24 +314,51 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 		case IP_DA:
 			api++;
 			for (i = 0 ; i < 4; i++) {
-				if (ap[api] != 0xffffffff && ap[api] != iph->ip_dst.addr[i])
+				if (ap[api] != 255 && ap[api] != iph->ip_dst.addr[i])
 					return 0;
 				api++;
 			}
 			break;
 		case IP_DP:
 			api++;
-			if (prt->d_port[0] != ap[api] ||
-			    prt->d_port[1] != ap[api+1]) return 0;
+			if (prt->d_port[1] != ap[api] ||
+			    prt->d_port[0] != ap[api+1]) return 0;
 			api += 2;
 			break;
 		case IP_SP:
 			api++;
-			if (prt->s_port[0] != ap[api] ||
-			    prt->s_port[1] != ap[api+1]) return 0;
+			if (prt->s_port[1] != ap[api] ||
+			    prt->s_port[0] != ap[api+1]) return 0;
 			api += 2;
 			break;
+		case IP_FLAG:
+			api++;
+			if ((iph->ip_flags & ap[api]) == 0) return 0;
+			api++;
+			break;
+		case IP_PROTO:
+			api++;
+			if (iph->ip_proto != ap[api]) return 0;
+			api++;
+			break;
 		default:
+			// increment depending on the packet type
+			// so we can compare the data : we understand only a few
+			// of the protocols
+			switch (iph->ip_proto) {
+			case 1: // ICMP
+				lpi = olpi + sizeof(struct eth_header) + sizeof(struct ip_header) + 4;
+				break;
+			case 6: 
+				lpi = olpi +
+					sizeof(struct eth_header) + 
+					sizeof(struct ip_header)  +
+					sizeof(struct ports)      +
+					sizeof(struct tcp_header);
+				break;
+			default:
+				break;
+			}
 			return 1; // matched the header
 		}
 	}
