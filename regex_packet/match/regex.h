@@ -286,9 +286,7 @@ struct eth_header {
 struct tcp_header {
 	unsigned char tcp_seq[4];
 	unsigned char tcp_ack[4];
-	unsigned char tcp_data_off:4;
-	unsigned char :6;
-	unsigned char tcp_flags:6;
+	unsigned char tcp_data_off_flags[2];
 	unsigned char tcp_wind[2];
 	unsigned char tcp_csum[2];
 	unsigned char tcp_urgp[2];

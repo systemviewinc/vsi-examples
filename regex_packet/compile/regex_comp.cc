@@ -129,8 +129,8 @@ char * re_comp(char pat[512], NFA_t o_pat[1024])
 						case IP_DP:
 							store(tok);
 							ip_t = strtoul(p,&p,0);
-							store(ip_t & 0xff);
 							store((ip_t>>8) & 0xff);
+							store(ip_t & 0xff);
 							break;
 						case IP_FLAG:
 							store(tok);

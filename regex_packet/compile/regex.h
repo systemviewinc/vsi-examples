@@ -257,13 +257,11 @@ struct ip_addr {
 };
 
 struct ip_header {
-	unsigned char  ip_version:4;
-	unsigned char  ip_length:4;
+	unsigned char  ip_ver_len;;
 	unsigned char  ip_tos;
 	unsigned char  ip_len[2];
 	unsigned char  ip_id[2];
-	unsigned char  ip_flags:3;
-	unsigned char  ip_off_1:5;
+	unsigned char  ip_flags_off;
 	unsigned char  ip_off_2;
 	unsigned char  ip_ttl;
 	unsigned char  ip_proto;
@@ -286,9 +284,7 @@ struct eth_header {
 struct tcp_header {
 	unsigned char tcp_seq[4];
 	unsigned char tcp_ack[4];
-	unsigned char tcp_data_off:4;
-	unsigned char :6;
-	unsigned char tcp_flags:6;
+	unsigned char tcp_data_off_flags[2];
 	unsigned char tcp_wind[2];
 	unsigned char tcp_csum[2];
 	unsigned char tcp_urgp[2];

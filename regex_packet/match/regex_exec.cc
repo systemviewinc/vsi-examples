@@ -321,15 +321,19 @@ static int pmatch_ip_hdr(char *lp, NFA_t *ap, int &lpi, int &api)
 			break;
 		case IP_DP:
 			api++;
-			if (prt->d_port[1] != ap[api] ||
-			    prt->d_port[0] != ap[api+1]) return 0;
-			api += 2;
+			if (prt->d_port[0] == ap[api] &&
+			    prt->d_port[1] == ap[api+1]) 
+				api += 2;
+			else
+				return 0;
 			break;
 		case IP_SP:
 			api++;
-			if (prt->s_port[1] != ap[api] ||
-			    prt->s_port[0] != ap[api+1]) return 0;
-			api += 2;
+			if (prt->s_port[0] == ap[api] &&
+			    prt->s_port[1] == ap[api+1]) 
+				api += 2;
+			else
+				return 0;
 			break;
 		case IP_FLAG:
 			api++;
