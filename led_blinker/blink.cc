@@ -6,35 +6,35 @@ void blink_led(char command[128]) {
 
 	switch (led) {
 	case 0:
-		strcpy(command,"LED_0");
+		strcpy(command,"LED 1");
 		led++;
 		break;
 	case 1:
-		strcpy(command,"LED_1");
+		strcpy(command,"LED 2");
 		led++;
 		break;
 	case 2:
-		strcpy(command,"LED_2");
+		strcpy(command,"LED 4");
 		led++;
-		break;	
+		break;
 	case 3:
-		strcpy(command,"LED_3");
+		strcpy(command,"LED 8");
 		led++;
 		break;
 	case 4:
-		strcpy(command,"LED_4");
+		strcpy(command,"LED 16");
 		led++;
 		break;
 	case 5:
-		strcpy(command,"LED_5");
+		strcpy(command,"LED 32");
 		led++;
 		break;
 	case 6:
-		strcpy(command,"LED_6");
+		strcpy(command,"LED 64");
 		led++;
 		break;
 	case 7:
-		strcpy(command,"LED_7");
+		strcpy(command,"LED 128");
 		led = 0;
 		break;
 	}
