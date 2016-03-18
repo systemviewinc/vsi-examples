@@ -58,7 +58,7 @@ NFA_t get_token(char **p)
 	return 0;
 }
 
-char * re_comp(char pat[512], NFA_t o_pat[1024])
+void re_comp(char pat[512], NFA_t o_pat[1024])
 {
         NFA_t *c_pat = (NFA_t*) &o_pat[0];
 	register char *p;               /* pattern pointer   */
