@@ -1,6 +1,5 @@
 #include "stream_mux.h"
 
-#define DATA_WIDTH 32
 //#define ARB_ON_LAST
 
 ap_axis_dkt<DATA_WIDTH> wout(hls::stream<ap_axis_dk<DATA_WIDTH> > &inp, ap_uint<1> tid) 
@@ -39,4 +38,25 @@ void stream_mux (hls::stream<ap_axis_dk<DATA_WIDTH> > &in1,
 		out.id   = tid;
 		if (set) outp.write(out);
 	} 
+}
+
+void create_stream(hls::stream<ap_uint<DATA_WIDTH> >   &ind,
+		   hls::stream<ap_axis_dk<DATA_WIDTH> >&outs) 
+{
+	// packets of 16 ap_uint<DATA_WIDTH>
+	for (int i = 0 ; i < 8 ; i++) {
+		ap_axis_dk<DATA_WIDTH> out;
+		out.data = ind.read();
+		out.keep = (i == 7) ? 3 : -1;
+		out.last = (i == 7);
+		outs.write(out);
+	}
+}
+
+void strip_stream(hls::stream<ap_axis_dk<DATA_WIDTH> > &ins,
+		  hls::stream<ap_uint<DATA_WIDTH> >   &outd)
+{
+	while (!ins.empty()) {
+		outd.write(ins.read().data);
+	}
 }
