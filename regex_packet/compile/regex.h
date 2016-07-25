@@ -257,11 +257,13 @@ struct ip_addr {
 };
 
 struct ip_header {
-	unsigned char  ip_ver_len;;
+	unsigned char  ip_version:4;
+	unsigned char  ip_length:4;
 	unsigned char  ip_tos;
 	unsigned char  ip_len[2];
 	unsigned char  ip_id[2];
-	unsigned char  ip_flags_off;
+	unsigned char  ip_flags:3;
+	unsigned char  ip_off_1:5;
 	unsigned char  ip_off_2;
 	unsigned char  ip_ttl;
 	unsigned char  ip_proto;
