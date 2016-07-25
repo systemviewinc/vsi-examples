@@ -18,6 +18,12 @@ struct ap_axis_dk {
 	ap_uint<1> last;
 	ap_uint<D/8> keep;
 };
+
+template<int D>
+struct ap_axis_d {
+	ap_uint<D> data;
+	ap_uint<1> last;
+};
 template<int D>
 struct ap_axis_dkt {
 	ap_uint<D> data;
