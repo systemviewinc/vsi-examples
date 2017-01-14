@@ -172,3 +172,14 @@ void pass_thru(int in_arr[1024], int out_arr[1024])
 	printf("%s done\n",__FUNCTION__);
 }
 
+/** 
+ * @brief converts an array into memory
+ * 
+ * @param in_arr 
+ * @param out_mem 
+ */
+void array_to_mem(int in_arr[1024], int *out_mem)
+{
+	for (int i =0 ; i < 1024; i++) 
+		out_mem[i] = in_arr[i];
+}
