@@ -47,3 +47,12 @@ install(FILES
 install(FILES
  	blocking_read/blocking_read.h	
 	DESTINATION ${TARGET_EXAMPLE_DIR}/blocking_read)
+
+install(FILES
+ 	device/dev_read_write.h
+	DESTINATION ${TARGET_EXAMPLE_DIR}/device)
+
+install(FILES
+ 	device/dev_read_write.cxx
+	DESTINATION ${TARGET_EXAMPLE_DIR}/device)
+      
