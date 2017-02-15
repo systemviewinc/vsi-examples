@@ -1,9 +1,10 @@
-
+#include <iostream>
 #include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
 #include <vsi_device.h>
 #include <chrono>
+#include <map>
 #include <ap_utils.h>
 #include "ap_axi_sdata.h"
 #include "dev_read_write.h"
@@ -120,13 +121,10 @@ static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_a
 template<int min_pw,int max_pw,int pc,int max_deg, int init_pw, int ia, bool rev,bool m_debug>
 void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 {
-	int c_angle;
+	int c_angle, m_c_angle;
 	float c_p_a;
 	bool replay_mode = false;
-	servo_command cmd_mem[2048];
-	int cmd_mem_idx = 0, cmd_mem_idx_r = 0;
 	int max_tlr, min_tlr;
-	bool memorize = false;
 	
 	c_p_a   = initialize_servo(min_pw, max_pw, pc, max_deg, init_pw, max_tlr, min_tlr, atm);
 	c_angle = ia; // initialized angle
@@ -138,54 +136,21 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 		bool done = false;
 		servo_command sc ;
 
-		// if in replay mode then pop from replay stack		
-		if (replay_mode) {
-			if (cmd_mem_idx_r < cmd_mem_idx) {
-				sc = cmd_mem[cmd_mem_idx_r++];
-			} else {
-				replay_mode = false; // done
-				cmd_mem_idx_r = 0;
-				printf("Replay mode done\n");
-				continue;
-			}
-		} else {
-			sc = s_cmd.read(); // check the stream
-			if (sc.replay) {
-				replay_mode = true;
-				printf("Replay mode started %d %d\n", cmd_mem_idx, cmd_mem_idx_r);
-				continue;
-			}
-		}
-		
-		if (sc.rela) {
+		sc = s_cmd.read(); // check the stream
+		if (sc.mode == RELATIVE) {
 			if (sc.angle == 0) continue;
 			if (rev)
 				sc.angle = (-sc.angle) + c_angle; // relative
 			else
 				sc.angle = (sc.angle) + c_angle; // relative
-		}
-		
-		// memorize
-		if (sc.memorize) {
-			if (cmd_mem_idx < ARRAY_SIZE(cmd_mem)) {
-				printf("Memorizing %d %d\n",cmd_mem_idx,sc.angle);
-				// record current location we fast path there
-				if (cmd_mem_idx == 0) {
-					memset(&cmd_mem[0],sizeof(cmd_mem[0]),0);
-					cmd_mem[0].angle = c_angle;
-					cmd_mem[0].incr  = 1;
-					cmd_mem[0].delay = 10000;
-					cmd_mem_idx++;
-				}
-				// record as absolute
-				cmd_mem[cmd_mem_idx] = sc;
-				cmd_mem[cmd_mem_idx].memorize = false;
-				cmd_mem[cmd_mem_idx].rela     = false;
-				cmd_mem[cmd_mem_idx].replay   = false;				
-				cmd_mem_idx++;
-			} else {
-				printf("memory Exceed\n");
-			}
+		} else if (sc.mode == MEM_POS) { // memorize current location
+			m_c_angle = c_angle;
+			continue;
+		} else if (sc.mode == POS_MEM) { // reposition to memorized angle
+			sc.angle = m_c_angle;
+			sc.mode  = NORMAL;
+			sc.incr  = 1;
+			sc.delay = 10000;
 		}
 		unsigned int c_tlr, tlr_diff = sc.incr * c_p_a;		
 
@@ -233,7 +198,7 @@ void servo_SHOULDER(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 
 void servo_ELBOW(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 {
- 	servo_motor<1000,2000,20000,120,1500,60,true,true>(s_cmd,mot);
+ 	servo_motor<1000,2000,20000,120,1500,60,true,false>(s_cmd,mot);
 }
 
 void servo_WRIST(hls::stream<servo_command> &s_cmd, vsi::device &mot)
@@ -290,7 +255,7 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 		// if only button pressed then send only changes
 		if (js.Btn_Led & 0x6) {
 			if ( js.Btn_Led != jsp.Btn_Led) {			
-				printf("Btn_Led 0x%x 0x%x \n",js.Btn_Led,jsp.Btn_Led);
+				//printf("Btn_Led 0x%x 0x%x \n",js.Btn_Led,jsp.Btn_Led);
 				jsd.write(js);
 			}
 		} else jsd.write(js);
@@ -344,6 +309,8 @@ static float get_ainc(short val, int a_size, struct a_table *angle_table)
 	return 0.0;
 }
 
+std::map<int,servo_command[3]> memory;
+
 void trajectory_generator(hls::stream<js_data>       &jsd,
 			  hls::stream<servo_command> &base,
 			  hls::stream<servo_command> &shoulder,
@@ -355,8 +322,10 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 	servo_command elbow_sc;
 	servo_command wrist_sc;
 	js_data js;
+	int mem_idx = 0;
 	bool memorize = false;
 	bool replay   = false;
+	bool replay_reverse = false;
 	sleep(1);
 	printf("%s : started .. \n",__FUNCTION__);
 
@@ -367,14 +336,34 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 		
 		// base controlled by joy stick
 		while (!jsd.empty()) {			
-			bool base_w = false, shoulder_w = false, elbow_w = false, wrist_w = false;
 			js = jsd.read();
 			// memorize mode
 			if (js.Btn_Led & 0x4) {
 				if (memorize) {
 					memorize = false;
-					printf("memorize off\n");
+					base_sc.mode = POS_MEM;
+					base_sc.angle = 0;
+					shoulder.write(base_sc);
+					elbow.write(base_sc);
+					base.write(base_sc);
+					printf("%s :memorize off\n",__FUNCTION__);
 				} else {
+					// if memorize being turned on then clear
+					if (!memorize) {
+						memory.clear();
+						mem_idx = 0;
+						base_sc.mode = MEM_POS;
+						base_sc.angle = 0;
+						shoulder.write(base_sc);
+						elbow.write(base_sc);
+						base.write(base_sc);						
+						base_sc.mode = POS_MEM; // reposition 
+						base_sc.angle = 0;
+						memory[mem_idx][0] = base_sc;
+						memory[mem_idx][1] = base_sc;
+						memory[mem_idx][2] = base_sc;
+						mem_idx++;
+					}
 					memorize = true;
 					printf("memorize on\n");
 				}
@@ -386,81 +375,60 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 				} else {
 					replay = true;
 				}
-				
 				printf("%s replay %d\n",__FUNCTION__,replay);
-				if (replay) {
-					printf("%s replay start\n",__FUNCTION__);
-					// send replay command to motor controllers
-					base_sc.memorize  = false;
-					base_sc.replay    = replay;
-					base_sc.rela 	  = false;
-					base_sc.reverse   = !replay;
-					base_sc.angle 	  = 0;
-					base_sc.incr  	  = 0;
-					base_sc.delay 	  = 0;
-					base.write(base_sc);				
-					elbow.write(base_sc);
-					shoulder.write(base_sc);
-					base_w = true;
-					elbow_w = true;
-					shoulder_w = true;
-					printf("%s replay end\n",__FUNCTION__);
-					// wait for commands to finish
-					while ((elbow_w && !elbow.empty()) ||
-					       (base_w  && !base.empty())  ||
-					       (shoulder_w && !shoulder.empty())) {
-						printf("here %d %d %d\n",
-						       (elbow_w && !elbow.empty()) ,
-						       (base_w  && !base.empty())  ,
-						       (shoulder_w && !shoulder.empty()));
-						// ignore joy stick while being processed
-						if (!jsd.empty()) js = jsd.read();
-						usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
+			}
+			
+			if (replay) {
+				for (auto &mem : memory) {
+					//printf("%s : replayed %d\n",__FUNCTION__,mem.first);
+					base.write(mem.second[0]);
+					shoulder.write(mem.second[1]);
+					elbow.write(mem.second[2]);
+				}
+				replay = false;
+			} else {
+				bool shoulder_m = false, elbow_m = false;
+				// follow joy stick
+				base_sc.mode 	 = RELATIVE;
+				base_sc.angle 	 = get_ainc(js.X,ARRAY_SIZE(angle_table_x),angle_table_x);
+				base_sc.incr  	 = 1;
+				base_sc.delay 	 = 10000;
+				base.write(base_sc);
+				if (js.Btn_Led & 1) {
+					shoulder_sc.mode     = RELATIVE;
+					shoulder_sc.angle    = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
+					shoulder_sc.incr     = 1;
+					shoulder_sc.delay    = 10000;
+					shoulder.write(shoulder_sc);
+					shoulder_m = true;
+				} else {
+					elbow_sc.mode 	  = RELATIVE;
+					elbow_sc.angle 	  = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
+					elbow_sc.incr  	  = 1;
+					elbow_sc.delay 	  = 10000;
+					elbow.write(elbow_sc);
+					elbow_m = true;
+				}
+				if (memorize) {
+					if (base_sc.angle ||
+					    (shoulder_m && shoulder_sc.angle) ||
+					    (elbow_m    && elbow_sc.angle)) {
+						// printf("%s : memorized %d %d %d %d\n",__FUNCTION__, mem_idx,
+						//        base_sc.angle, shoulder_sc.angle, elbow_sc.angle);
+						if (!shoulder_m) shoulder_sc.angle = 0;
+						if (!elbow_m)    elbow_sc.angle    = 0;
+						memory[mem_idx][0] = base_sc;
+						memory[mem_idx][1] = shoulder_sc;
+						memory[mem_idx][2] = elbow_sc;
+						mem_idx++;
 					}
-					continue;
 				}
 			}
-			if (replay) {
-				usleep(10);
-				continue;
-			}
-
-			// follow joy stick
-			base_sc.memorize = memorize;
-			base_sc.replay   = false;
-			base_sc.rela 	 = true;
-			base_sc.reverse  = false;
-			base_sc.angle 	 = get_ainc(js.X,ARRAY_SIZE(angle_table_x),angle_table_x);
-			base_sc.incr  	 = 1;
-			base_sc.delay 	 = 10000;
-			base.write(base_sc);
-			base_w = true;
-			if (js.Btn_Led & 1) {
-				shoulder_sc.memorize = memorize;
-				shoulder_sc.replay   = false;
-				shoulder_sc.rela     = true;
-				shoulder_sc.reverse  = false;
-				shoulder_sc.angle    = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
-				shoulder_sc.incr     = 1;
-				shoulder_sc.delay    = 10000;
-				shoulder.write(shoulder_sc);
-				shoulder_w = true;
-			} else {
-				elbow_sc.memorize = memorize;
-				elbow_sc.replay   = false;
-				elbow_sc.rela 	  = true;
-				elbow_sc.reverse  = false;
-				elbow_sc.angle 	  = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
-				elbow_sc.incr  	  = 1;
-				elbow_sc.delay 	  = 10000;
-				elbow.write(elbow_sc);
-				elbow_w = true;
-			}
 			// wait for commands to finish
-			while ((elbow_w && !elbow.empty()) ||
-			       (base_w  && !base.empty())  ||
-			       (shoulder_w && !shoulder.empty()) ||
-			       (wrist_w && !wrist.empty())) {
+			while (!elbow.empty() ||
+			       !base.empty()  ||
+			       !shoulder.empty() ||
+			       !wrist.empty()) {
 				// printf("here x %d %d %d %d\n",
 				//         (elbow_w && !elbow.empty()) ,
 				//         (base_w  && !base.empty())  ,

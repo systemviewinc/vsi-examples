@@ -6,11 +6,15 @@
 #define ABS(x) 	      (x < 0 ? -x : x)
 #define MAX(x,y)      (x > y ?  x : y)
 
+enum modes {
+	NORMAL   = 0,
+	RELATIVE = 1,
+	MEM_POS  = 2,
+	POS_MEM  = 3	
+};
+
 typedef struct servo_command {
-	bool 	rela;  	   // command contains relative changes to the angle
-	bool	memorize;  // memorize
-	bool 	replay;    // play back from memory
-	bool    reverse;   // replay in reverse
+	int 	mode;  	   // command contains relative changes to the angle
 	int 	angle;     // destination angle
 	int 	incr;      // angle increment
 	int 	delay;     // delay uS between each	
