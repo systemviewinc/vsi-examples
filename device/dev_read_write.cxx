@@ -162,43 +162,46 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 		sc.angle = sc.angle < 0 ? 0 : sc.angle;
 		bool inc = (c_angle < sc.angle);
 		if (m_debug)
-		 	printf("%s : got command ca %d, sc.angle %d, sc.incr %d, sc.delay %d dtlr %d \n",
-		 	       __FUNCTION__, c_angle, sc.angle, sc.incr, sc.delay, tlr_diff );
-		
+		 	printf("%s : got command ca %d, sc.angle %d, sc.incr %d, sc.delay %d dtlr %d inc %d\n",
+		 	       __FUNCTION__, c_angle, sc.angle, sc.incr, sc.delay, tlr_diff , inc);
+		if (inc)
+			done = (c_angle >= sc.angle) || (c_tlr > max_tlr) || c_angle >= max_deg;
+		else
+			done = (c_angle <= sc.angle) || (c_tlr < min_tlr) || c_angle <= 0;
 		// execute the command
-		do {
+		while (!done) {
 			if (inc) {
 				c_tlr += (tlr_diff);
 				c_angle += sc.incr;
 				c_angle  = c_angle > max_deg ? max_deg : c_angle;
-				done = (c_angle >= sc.angle) || (c_tlr > max_tlr);
+				done = (c_angle >= sc.angle) || (c_tlr > max_tlr) || c_angle >= max_deg;
 			} else {
 				c_tlr -= (tlr_diff);
 				c_angle -= sc.incr;
 				c_angle  = c_angle < 0 ? 0 : c_angle;
-				done = (c_angle <= sc.angle) || (c_tlr < min_tlr);
+				done = (c_angle <= sc.angle) || (c_tlr < min_tlr) || c_angle <= 0;
 			}
 			unsigned int w_c_tlr = (unsigned int) 0xffffffff - c_tlr;
 			atm.pwrite(&w_c_tlr,sizeof(w_c_tlr),0x14);
 			usleep(sc.delay);
-		} while (!done);
+		} ;
 		if (m_debug) printf("%s : c_tlr %d, c_angle %d\n",__FUNCTION__, c_tlr, c_angle);
 	}
 }
 
 void servo_BASE(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 {
- 	servo_motor<700,2300,20000,180,1500,90,false,false>(s_cmd,mot);
+ 	servo_motor<500,2500,20000,180,1500,90,false,false>(s_cmd,mot);
 }
 
 void servo_SHOULDER(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 {
- 	servo_motor<1000,2000,20000,120,1500,60,true,false>(s_cmd,mot);
+ 	servo_motor<500,2500,20000,180,1500,90,true,false>(s_cmd,mot);
 }
 
 void servo_ELBOW(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 {
- 	servo_motor<1000,2000,20000,120,1500,60,true,false>(s_cmd,mot);
+ 	servo_motor<500,2500,20000,110,1500,110,true,false>(s_cmd,mot);
 }
 
 void servo_WRIST(hls::stream<servo_command> &s_cmd, vsi::device &mot)
@@ -268,7 +271,7 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 static struct a_table {
 	short min, max;
 	float i_angle;
-} angle_table_x[100],  angle_table_y[100];
+} angle_table_x[25],  angle_table_y[100];
 
 #define ANGLE_INC_MAX 8
 
@@ -286,22 +289,22 @@ static void gen_aic(short j_min, short j_max, int a_size, struct a_table *angle_
 		c_min = c_max;
 		c_max += incr;
 		c_angle -= (2*(float)ANGLE_INC_MAX)/n_entries;
-		printf(" [%d] : min 0x%x max 0x%x angle %d\n",i,
-		       angle_table[i].min,
-		       angle_table[i].max,
-		       angle_table[i].i_angle);
+		// printf(" [%d] : min 0x%x max 0x%x angle %f\n",i,
+		//        angle_table[i].min,
+		//        angle_table[i].max,
+		//        angle_table[i].i_angle);
 	}
 	
 }
 
 // get the angle increment from joystick value
-static float get_ainc(short val, int a_size, struct a_table *angle_table)
+static float get_ainc(short val, int a_size, int sens, struct a_table *angle_table)
 {
 	for (int i = 0 ; i < a_size; i++) {		
 		if (val >= angle_table[i].min && val <= angle_table[i].max) {
 			// de-sensitize the center of the joy stick
-			if (i >= a_size - 2 &&
-			    i <= a_size + 2) return 0.0;
+			if (i >= (a_size/2) - sens &&
+			    i <= (a_size/2) + sens) return 0.0;
 			return angle_table[i].i_angle;
 		}
 	}
@@ -365,7 +368,7 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 						mem_idx++;
 					}
 					memorize = true;
-					printf("memorize on\n");
+					printf("%s : memorize on\n",__FUNCTION__);
 				}
 				continue;
 			}
@@ -384,26 +387,41 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 					base.write(mem.second[0]);
 					shoulder.write(mem.second[1]);
 					elbow.write(mem.second[2]);
+					// wait for commands to finish
+					while (!elbow.empty() ||
+					       !base.empty()  ||
+					       !shoulder.empty() ||
+					       !wrist.empty()) {
+						// printf("here x %d %d %d %d\n",
+						//         !elbow.empty() ,
+						//         !base.empty()  ,
+						//         !shoulder.empty() ,
+						//         !wrist.empty());
+						// ignore joy stick while being processed
+						if (!jsd.empty()) js = jsd.read();
+						usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
+					}
+					//usleep(10000);
 				}
 				replay = false;
 			} else {
 				bool shoulder_m = false, elbow_m = false;
 				// follow joy stick
 				base_sc.mode 	 = RELATIVE;
-				base_sc.angle 	 = get_ainc(js.X,ARRAY_SIZE(angle_table_x),angle_table_x);
+				base_sc.angle 	 = get_ainc(js.X,ARRAY_SIZE(angle_table_x),4,angle_table_x);
 				base_sc.incr  	 = 1;
-				base_sc.delay 	 = 10000;
+				base_sc.delay 	 = 2500;
 				base.write(base_sc);
 				if (js.Btn_Led & 1) {
 					shoulder_sc.mode     = RELATIVE;
-					shoulder_sc.angle    = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
+					shoulder_sc.angle    = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),2,angle_table_y);
 					shoulder_sc.incr     = 1;
 					shoulder_sc.delay    = 10000;
 					shoulder.write(shoulder_sc);
 					shoulder_m = true;
 				} else {
 					elbow_sc.mode 	  = RELATIVE;
-					elbow_sc.angle 	  = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),angle_table_y);
+					elbow_sc.angle 	  = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),2,angle_table_y);
 					elbow_sc.incr  	  = 1;
 					elbow_sc.delay 	  = 10000;
 					elbow.write(elbow_sc);
