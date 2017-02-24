@@ -392,11 +392,6 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 					       !base.empty()  ||
 					       !shoulder.empty() ||
 					       !wrist.empty()) {
-						// printf("here x %d %d %d %d\n",
-						//         !elbow.empty() ,
-						//         !base.empty()  ,
-						//         !shoulder.empty() ,
-						//         !wrist.empty());
 						// ignore joy stick while being processed
 						if (!jsd.empty()) js = jsd.read();
 						usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
@@ -431,8 +426,6 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 					if (base_sc.angle ||
 					    (shoulder_m && shoulder_sc.angle) ||
 					    (elbow_m    && elbow_sc.angle)) {
-						// printf("%s : memorized %d %d %d %d\n",__FUNCTION__, mem_idx,
-						//        base_sc.angle, shoulder_sc.angle, elbow_sc.angle);
 						if (!shoulder_m) shoulder_sc.angle = 0;
 						if (!elbow_m)    elbow_sc.angle    = 0;
 						memory[mem_idx][0] = base_sc;
@@ -447,11 +440,6 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 			       !base.empty()  ||
 			       !shoulder.empty() ||
 			       !wrist.empty()) {
-				// printf("here x %d %d %d %d\n",
-				//         (elbow_w && !elbow.empty()) ,
-				//         (base_w  && !base.empty())  ,
-				//         (shoulder_w && !shoulder.empty()) ,
-				//         (wrist_w && !wrist.empty()));
 				// ignore joy stick while being processed
 				if (!jsd.empty()) js = jsd.read();
 				usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
