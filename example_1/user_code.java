@@ -2,7 +2,7 @@ import java.nio.*;
 import java.util.Arrays;
 import com.systemviewinc.runtime.*;
 
-class Main {
+class Main {	
 	public static void process(ByteBuffer in, ByteBuffer out) {
 		out.rewind();
 		out.putChar('E');
