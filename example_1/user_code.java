@@ -15,7 +15,9 @@ class Main {
 	}
 
 	public static void process_stream(StreamBuffer sbIn, StreamBuffer sbOut) {
-		ByteBuffer in = (ByteBuffer)sbIn.readByteBuffer();
+		ByteBuffer in = Utils.makeDirectByteBuffer(256);
+		// ByteBuffer in = (ByteBuffer)sbIn.readByteBuffer();
+		sbIn.copyByteBuffer(in);
 		Utils.printByteBuffer(in);
 		ByteBuffer out = Utils.makeDirectByteBuffer(256);
 		process(in, out);
