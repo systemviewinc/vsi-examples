@@ -2,15 +2,15 @@ import java.nio.*;
 import java.util.Arrays;
 import com.systemviewinc.runtime.*;
 
-class Main {	
+class Main {
 	public static void process(ByteBuffer in, ByteBuffer out) {
 		out.rewind();
-		out.putChar('E');
-		out.putChar('C');
-		out.putChar('H');
-		out.putChar('O');
-		out.putChar('!');
-		out.putChar('.');
+		out.put((byte)0x45);
+		out.put((byte)0x43);
+		out.put((byte)0x48);
+		out.put((byte)0x4f);
+		out.put((byte)0x21);
+		out.put((byte)0x2e);
 		Utils.transfer(out, in);
 	}
 
