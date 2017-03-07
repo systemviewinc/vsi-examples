@@ -1,6 +1,6 @@
 import java.io.*;
-import java.nio.*;
 import java.util.Arrays;
+import com.systemviewinc.runtime.*;
 
 
 // Must match the C side definition
@@ -36,21 +36,21 @@ public class servo_command {
 	public  servo_command (servo_command sc) {
 		this (sc.mode, sc.angle, sc.incr, sc.delay);
 	}
-	public ByteBuffer toByteBuffer() {
-		ByteBuffer nat_bb = Utils.makeDirectByteBuffer(16);
+	public Buffer toBuffer() {
+		Buffer nat_bb = new Buffer(16);
 		switch(mode) {
-		case NORMAL:	Utils.toBytes(0,nat_bb); break;
-		case RELATIVE:	Utils.toBytes(1,nat_bb); break;
-		case MEM_POS:	Utils.toBytes(2,nat_bb); break;
-		case POS_MEM:	Utils.toBytes(3,nat_bb); break;
+		case NORMAL:	nat_bb.putInt(0); break;
+		case RELATIVE:	nat_bb.putInt(1); break;
+		case MEM_POS:	nat_bb.putInt(2); break;
+		case POS_MEM:	nat_bb.putInt(3); break;
 		}
 
-		Utils.toBytes(angle,nat_bb);
-		Utils.toBytes(incr,nat_bb);
-		Utils.toBytes(delay,nat_bb);
+		nat_bb.putInt(angle);
+		nat_bb.putInt(incr);
+		nat_bb.putInt(delay);
 		nat_bb.rewind();
 		return nat_bb;
-		
+
 	}
 	public String toStr () {
 		return " mode:" + mode_toString() +
@@ -58,16 +58,16 @@ public class servo_command {
 			"incr:"  + Integer.toString(incr) +
 			"delay:" + Integer.toString(delay);
 	}
-	public void fromByteBuffer(ByteBuffer inbb) {
+	public void fromBuffer(Buffer inbb) {
 		inbb.rewind();
-		switch(Utils.makeInt(inbb)) {
+		switch(inbb.getInt()) {
 		case 0: mode = modes.NORMAL; break;
 		case 1: mode = modes.RELATIVE; break;
 		case 2: mode = modes.MEM_POS; break;
 		case 3: mode = modes.POS_MEM; break;
 		}
-		angle = Utils.makeInt(inbb);
-		incr  = Utils.makeInt(inbb);
-		delay = Utils.makeInt(inbb);
+		angle = inbb.getInt();
+		incr  = inbb.getInt();
+		delay = inbb.getInt();
 	}
 }

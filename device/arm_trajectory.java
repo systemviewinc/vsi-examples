@@ -1,12 +1,11 @@
 import java.io.*;
-import java.nio.*;
 import java.util.*;
 import java.util.concurrent.*;
 import com.systemviewinc.runtime.*;
 
 class Main {
 	static servo_command sc = new servo_command() ;
-	static ByteBuffer sc_recv_b = Utils.makeDirectByteBuffer(32);
+	static Buffer sc_recv_b = new Buffer(32);
 	static void usleep(int usecs) {
 		try {
 			TimeUnit.MICROSECONDS.sleep(usecs);
@@ -20,7 +19,7 @@ class Main {
 				sc.angle = 99;
 				sc.incr  = 99;
 				sc.delay = 99;
-				out_sc.writeByteBuffer(sc.toByteBuffer());
+				out_sc.write(sc.toBuffer());
 				usleep(100);
 			}
 		} catch (Exception e) {
@@ -29,9 +28,9 @@ class Main {
 	}
 	static angle_table angle_table_x = new angle_table((short)190,(short)900,25);
 	static angle_table angle_table_y = new angle_table((short)160,(short)900,100);
-	
+
 	static joy_stick  js  = new joy_stick();
-	static ByteBuffer js_recv_b = Utils.makeDirectByteBuffer(16);
+	static Buffer js_recv_b = new Buffer(16);
 	static servo_command base_sc = new servo_command();
 	static servo_command shoulder_sc = new servo_command();
 	static servo_command elbow_sc = new servo_command();
@@ -52,11 +51,10 @@ class Main {
 			while (true) {
 				// joy stick in control
 				while (!jsd.empty()) {
-					jsd.copyByteBuffer(js_recv_b);
-					js.fromByteBuffer(js_recv_b);
+					js.fromBuffer(jsd.read());
 					//System.out.println("Joy stack data "
 					//		   + " " + js.X
-					//		   + " " + js.Y 
+					//		   + " " + js.Y
 					//		   + " " + Integer.toHexString((int)js.Btn_Led));
 					// memorize button pressed
 					if ( ((int)js.Btn_Led & (int)0x04) != 0) {
@@ -66,22 +64,22 @@ class Main {
 							// memorize position end
 							base_sc.mode = servo_command.modes.POS_MEM;
 							base_sc.angle = 0;
-							shoulder.writeByteBuffer(base_sc.toByteBuffer());
-							elbow.writeByteBuffer(base_sc.toByteBuffer());
-							base.writeByteBuffer(base_sc.toByteBuffer());
-							wrist.writeByteBuffer(base_sc.toByteBuffer());
+							shoulder.write(base_sc.toBuffer());
+							elbow.write(base_sc.toBuffer());
+							base.write(base_sc.toBuffer());
+							wrist.write(base_sc.toBuffer());
 							System.out.println("memorize off");
-						} else {						
+						} else {
 							memory.clear(); // clear memory
 							base_sc.mode = servo_command.modes.MEM_POS; // memorize current location
 							base_sc.angle = 0;
-							shoulder.writeByteBuffer(base_sc.toByteBuffer());
-							elbow.writeByteBuffer(base_sc.toByteBuffer());
-							base.writeByteBuffer(base_sc.toByteBuffer());
-							wrist.writeByteBuffer(base_sc.toByteBuffer());
+							shoulder.write(base_sc.toBuffer());
+							elbow.write(base_sc.toBuffer());
+							base.write(base_sc.toBuffer());
+							wrist.write(base_sc.toBuffer());
 							System.out.println("memorize on");
 							memorize = true;
-							
+
 							mem_idx = 0;
 							// begin memory by positioning to location
 							base_sc.mode = servo_command.modes.POS_MEM;
@@ -104,19 +102,19 @@ class Main {
 					if (replay) {
 						int i = 0;
 						Set set = memory.entrySet();
-						Iterator mi = set.iterator();						
-						while(mi.hasNext()) {							
+						Iterator mi = set.iterator();
+						while(mi.hasNext()) {
 							Map.Entry me = (Map.Entry)mi.next();
 							sc_ar = memory.get(me.getKey());
-							base.writeByteBuffer(sc_ar[0].toByteBuffer());
-							shoulder.writeByteBuffer(sc_ar[1].toByteBuffer());
-							elbow.writeByteBuffer(sc_ar[2].toByteBuffer());
-							wrist.writeByteBuffer(sc_ar[3].toByteBuffer());
+							base.write(sc_ar[0].toBuffer());
+							shoulder.write(sc_ar[1].toBuffer());
+							elbow.write(sc_ar[2].toBuffer());
+							wrist.write(sc_ar[3].toBuffer());
 							// System.out.println("replaying " + i++
 							// 		   + " [0] " + sc_ar[0].toStr()
 							// 		   + " [1] " + sc_ar[1].toStr()
 							// 		   + " [2] " + sc_ar[2].toStr()
-							// 		   + " [3] " + sc_ar[3].toStr()	
+							// 		   + " [3] " + sc_ar[3].toStr()
 							// 	   );
 							// while (!base.ready() ||
 							//        !shoulder.ready() ||
@@ -146,20 +144,20 @@ class Main {
 							wrist_sc.angle    = (int)angle_table_x.get_ainc(js.X,4);
 							wrist_sc.incr     = 1;
 							wrist_sc.delay    = 2500;
-							shoulder.writeByteBuffer(shoulder_sc.toByteBuffer());
-							wrist.writeByteBuffer(wrist_sc.toByteBuffer());
+							shoulder.write(shoulder_sc.toBuffer());
+							wrist.write(wrist_sc.toBuffer());
 							button = false;
 						} else {
 							elbow_sc.mode 	  = servo_command.modes.RELATIVE;
 							elbow_sc.angle 	  = (int)angle_table_y.get_ainc(js.Y,2);
 							elbow_sc.incr  	  = 1;
 							elbow_sc.delay 	  = 10000;
-							elbow.writeByteBuffer(elbow_sc.toByteBuffer());
+							elbow.write(elbow_sc.toBuffer());
 							base_sc.mode 	  = servo_command.modes.RELATIVE;
 							base_sc.angle 	  = (int)angle_table_x.get_ainc(js.X,4);
 							base_sc.incr  	  = 1;
 							base_sc.delay 	  = 2500;
-							base.writeByteBuffer(base_sc.toByteBuffer());
+							base.write(base_sc.toBuffer());
 							button = false;
 						}
 						if (memorize) {
@@ -202,4 +200,4 @@ class Main {
 			System.out.println("Exception " + e);
 		}
 	}
-}	
+}
