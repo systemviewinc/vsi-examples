@@ -137,7 +137,10 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 		bool done = false;
 		servo_command sc ;
 
-		sc = s_cmd.read(); // check the stream
+		sc = s_cmd.read(); // wait for command
+		if (m_debug)
+		 	printf("%s : got command ca %d, sc.mode %d, sc.angle %d, sc.incr %d, sc.delay %d \n",
+		 	       __FUNCTION__, c_angle, sc.mode, sc.angle, sc.incr, sc.delay);
 		if (sc.mode == RELATIVE) {
 			if (sc.angle == 0) continue;
 			if (rev)
@@ -153,6 +156,9 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 			sc.incr  = 1;
 			sc.delay = 10000;
 		}
+		if (m_debug)
+		 	printf("%s : executing command ca %d, sc.angle %d, sc.incr %d, sc.delay %d \n",
+		 	       __FUNCTION__, c_angle, sc.angle, sc.incr, sc.delay);
 		unsigned int c_tlr, tlr_diff = sc.incr * c_p_a;		
 
 		// offset 0x14 : TLR1
@@ -162,9 +168,6 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 		sc.angle = sc.angle > max_deg ? max_deg : sc.angle;
 		sc.angle = sc.angle < 0 ? 0 : sc.angle;
 		bool inc = (c_angle < sc.angle);
-		if (m_debug)
-		 	printf("%s : got command ca %d, sc.angle %d, sc.incr %d, sc.delay %d dtlr %d inc %d\n",
-		 	       __FUNCTION__, c_angle, sc.angle, sc.incr, sc.delay, tlr_diff , inc);
 		if (inc)
 			done = (c_angle >= sc.angle) || (c_tlr > max_tlr) || c_angle >= max_deg;
 		else
@@ -207,7 +210,7 @@ void servo_ELBOW(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 
 void servo_WRIST(hls::stream<servo_command> &s_cmd, vsi::device &mot)
 {
- 	servo_motor<800,2270,20000,160,800,0,false,false>(s_cmd,mot);
+ 	servo_motor<500,2500,20000,180,1500,90,false,false>(s_cmd,mot);
 }
 
 static void spi_send_recv_bytes(char *s_bytes, char *r_bytes, int num, vsi::device &spi)
@@ -268,58 +271,36 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 	}
 }
 
-// joystick entry to angle increment table
-static struct a_table {
-	short min, max;
-	float i_angle;
-} angle_table_x[25],  angle_table_y[100];
-
-#define ANGLE_INC_MAX 8
-
-// generate the angle increment table
-static void gen_aic(short j_min, short j_max, int a_size, struct a_table *angle_table) {
-	int n_entries = a_size;
-	float c_angle = ANGLE_INC_MAX;
-	short incr    = (j_max - j_min)/n_entries;
-	short c_min   = j_min;
-	short c_max   = j_min + incr;
-	for (int i = 0 ; i < n_entries; i++) {
-		angle_table[i].min = c_min;
-		angle_table[i].max = c_max;
-		angle_table[i].i_angle = c_angle;
-		c_min = c_max;
-		c_max += incr;
-		c_angle -= (2*(float)ANGLE_INC_MAX)/n_entries;
-		// printf(" [%d] : min 0x%x max 0x%x angle %f\n",i,
-		//        angle_table[i].min,
-		//        angle_table[i].max,
-		//        angle_table[i].i_angle);
-	}
-	
-}
-
-// get the angle increment from joystick value
-static float get_ainc(short val, int a_size, int sens, struct a_table *angle_table)
+void pump_control(hls::stream<int> &pump_c,vsi::device &pump)
 {
-	for (int i = 0 ; i < a_size; i++) {		
-		if (val >= angle_table[i].min && val <= angle_table[i].max) {
-			// de-sensitize the center of the joy stick
-			if (i >= (a_size/2) - sens &&
-			    i <= (a_size/2) + sens) return 0.0;
-			return angle_table[i].i_angle;
-		}
+	unsigned int PVAL = 0;
+
+	pump.pread (&PVAL,sizeof(PVAL),0);
+	PVAL &= ~1;
+	pump.pwrite(&PVAL,sizeof(PVAL),0);
+	
+	while(1) {
+		int p_state = pump_c.read(); // wait for command
+		pump.pread(&PVAL,sizeof(PVAL),0);
+		PVAL &= ~1;
+		PVAL |= p_state;             // send command
+		pump.pwrite(&PVAL,sizeof(PVAL),0);		
 	}
-	// out of range
-	return 0.0;
 }
 
-std::map<int,servo_command[3]> memory;
+
+std::map<int,std::pair<int, servo_command[4]> > memory;
+
+// generate angle increment tables
+angle_table *angle_table_x = new angle_table(150,870,25,8);
+angle_table *angle_table_y = new angle_table(160,870,100,8);
 
 void trajectory_generator(hls::stream<js_data>       &jsd,
 			  hls::stream<servo_command> &base,
 			  hls::stream<servo_command> &shoulder,
 			  hls::stream<servo_command> &elbow,
-			  hls::stream<servo_command> &wrist)
+			  hls::stream<servo_command> &wrist,
+			  hls::stream<int> 	     &pump)
 {
 	servo_command base_sc;
 	servo_command shoulder_sc;
@@ -327,72 +308,81 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 	servo_command wrist_sc;
 	js_data js;
 	int mem_idx = 0;
+	int pump_state = 0;
 	bool memorize = false;
 	bool replay   = false;
 	bool replay_reverse = false;
 	sleep(1);
 	printf("%s : started .. \n",__FUNCTION__);
 
-	// generate angle increment table
-	gen_aic(190,900, ARRAY_SIZE(angle_table_x), angle_table_x);
-	gen_aic(160,900, ARRAY_SIZE(angle_table_y), angle_table_y);
 	while(1) {
 		
-		// base controlled by joy stick
+		// controlled by joy stick
 		while (!jsd.empty()) {			
+			bool ps_change = false;
 			js = jsd.read();
-			// memorize mode
+			// memorize button pressed
 			if (js.Btn_Led & 0x4) {
 				if (memorize) {
 					memorize = false;
+					// reposition arm to memory begin
 					base_sc.mode = POS_MEM;
 					base_sc.angle = 0;
 					shoulder.write(base_sc);
 					elbow.write(base_sc);
 					base.write(base_sc);
+					wrist.write(base_sc);
 					printf("%s :memorize off\n",__FUNCTION__);
 				} else {
-					// if memorize being turned on then clear
-					if (!memorize) {
-						memory.clear();
-						mem_idx = 0;
-						base_sc.mode = MEM_POS;
-						base_sc.angle = 0;
-						shoulder.write(base_sc);
-						elbow.write(base_sc);
-						base.write(base_sc);						
-						base_sc.mode = POS_MEM; // reposition 
-						base_sc.angle = 0;
-						memory[mem_idx][0] = base_sc;
-						memory[mem_idx][1] = base_sc;
-						memory[mem_idx][2] = base_sc;
-						mem_idx++;
-					}
+					//memorize being turned on then clear memory
+					memory.clear();
+					mem_idx = 0;
+					base_sc.mode = MEM_POS; // memorize current position
+					base_sc.angle = 0;
+					shoulder.write(base_sc);
+					elbow.write(base_sc);
+					base.write(base_sc);
+					wrist.write(base_sc);
+					// begin memory by repositioning to memorize location
+					base_sc.mode = POS_MEM; // reposition 
+					base_sc.angle = 0;
+					memory[mem_idx].first     = pump_state;
+					memory[mem_idx].second[0] = base_sc;
+					memory[mem_idx].second[1] = base_sc;
+					memory[mem_idx].second[2] = base_sc;
+					memory[mem_idx].second[3] = base_sc;
+					mem_idx++;
 					memorize = true;
 					printf("%s : memorize on\n",__FUNCTION__);
 				}
 				continue;
 			}
 			if (js.Btn_Led & 0x2) {
-				if (replay) {
+				if (memorize) {
+					pump_state ^= 1; // flip state
+					ps_change = true;
+					pump.write(pump_state);
+				} else if (replay) {
 					replay = false;
 				} else {
 					replay = true;
 				}
-				printf("%s replay %d\n",__FUNCTION__,replay);
 			}
 			
 			if (replay) {
 				for (auto &mem : memory) {
 					//printf("%s : replayed %d\n",__FUNCTION__,mem.first);
-					base.write(mem.second[0]);
-					shoulder.write(mem.second[1]);
-					elbow.write(mem.second[2]);
+					base.write(mem.second.second[0]);
+					shoulder.write(mem.second.second[1]);
+					elbow.write(mem.second.second[2]);
+					wrist.write(mem.second.second[3]);
+					pump.write(mem.second.first);
+					//printf("%s : replayed pump_state %d\n",__FUNCTION__,mem.second.first);
 					// wait for commands to finish
-					while (!elbow.empty() ||
-					       !base.empty()  ||
-					       !shoulder.empty() ||
-					       !wrist.empty()) {
+					while (!elbow.ready() ||
+					       !base.ready()  ||
+					       !wrist.ready() ||
+					       !shoulder.ready()) {
 						// ignore joy stick while being processed
 						if (!jsd.empty()) js = jsd.read();
 						usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
@@ -401,46 +391,61 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 				}
 				replay = false;
 			} else {
-				bool shoulder_m = false, elbow_m = false;
+				bool button = false;
 				// follow joy stick
-				base_sc.mode 	 = RELATIVE;
-				base_sc.angle 	 = get_ainc(js.X,ARRAY_SIZE(angle_table_x),4,angle_table_x);
-				base_sc.incr  	 = 1;
-				base_sc.delay 	 = 2500;
-				base.write(base_sc);
 				if (js.Btn_Led & 1) {
 					shoulder_sc.mode     = RELATIVE;
-					shoulder_sc.angle    = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),2,angle_table_y);
+					shoulder_sc.angle    = angle_table_y->get_ainc(js.Y,2);
 					shoulder_sc.incr     = 1;
 					shoulder_sc.delay    = 10000;
 					shoulder.write(shoulder_sc);
-					shoulder_m = true;
+					wrist_sc.mode        = RELATIVE;
+					wrist_sc.angle 	     = angle_table_x->get_ainc(js.X,4);
+					wrist_sc.incr  	     = 1;
+					wrist_sc.delay 	     = 2500;
+					wrist.write(wrist_sc);
+					button = true;
 				} else {
 					elbow_sc.mode 	  = RELATIVE;
-					elbow_sc.angle 	  = get_ainc(js.Y,ARRAY_SIZE(angle_table_y),2,angle_table_y);
+					elbow_sc.angle 	  = angle_table_y->get_ainc(js.Y,2);
 					elbow_sc.incr  	  = 1;
 					elbow_sc.delay 	  = 10000;
 					elbow.write(elbow_sc);
-					elbow_m = true;
+					base_sc.mode 	 = RELATIVE;
+					base_sc.angle 	 = angle_table_x->get_ainc(js.X,4);
+					base_sc.incr  	 = 1;
+					base_sc.delay 	 = 2500;
+					base.write(base_sc);
+					button = false;
 				}
 				if (memorize) {
-					if (base_sc.angle ||
-					    (shoulder_m && shoulder_sc.angle) ||
-					    (elbow_m    && elbow_sc.angle)) {
-						if (!shoulder_m) shoulder_sc.angle = 0;
-						if (!elbow_m)    elbow_sc.angle    = 0;
-						memory[mem_idx][0] = base_sc;
-						memory[mem_idx][1] = shoulder_sc;
-						memory[mem_idx][2] = elbow_sc;
+					if ((!button && base_sc.angle) ||
+					    (button  && shoulder_sc.angle) ||
+					    (button  && wrist_sc.angle) ||
+					    (!button && elbow_sc.angle) ||
+					    ps_change) {
+						if (!button) {
+							shoulder_sc.angle = 0 ;
+							wrist_sc.angle = 0;
+						} else {
+							elbow_sc.angle    = 0;
+							base_sc.angle = 0;
+						}
+						memory[mem_idx].first     = pump_state;
+						memory[mem_idx].second[0] = base_sc;
+						memory[mem_idx].second[1] = shoulder_sc;
+						memory[mem_idx].second[2] = elbow_sc;
+						memory[mem_idx].second[3] = wrist_sc;
 						mem_idx++;
+						//printf("%s : recorded pump state %d\n",__FUNCTION__, pump_state);
 					}
 				}
 			}
 			// wait for commands to finish
-			while (!elbow.empty() ||
-			       !base.empty()  ||
-			       !shoulder.empty() ||
-			       !wrist.empty()) {
+			while (!elbow.ready() ||
+			       !base.ready()  ||
+			       !wrist.ready() ||
+			       !shoulder.ready()) {
 				// ignore joy stick while being processed
 				if (!jsd.empty()) js = jsd.read();
 				usleep(MAX(shoulder_sc.delay,MAX(elbow_sc.delay,base_sc.delay)));
