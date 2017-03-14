@@ -1,3 +1,5 @@
+import vsi_runtime
+
 count = 0
 
 
@@ -16,10 +18,10 @@ def process(bufIn, bufOut):
 def process_stream(sbIn, sbOut):
     global count
     bufIn = sbIn.read()
-    bufOut = Buffer(256)
+    bufOut = vsi_runtime.Buffer(256)
     process(bufIn, bufOut)
     if ((count % 100000) == 0):
-        print("count is " + count)
+        print count
         print(bufIn)
         print(bufOut)
     sbOut.write(bufOut)
