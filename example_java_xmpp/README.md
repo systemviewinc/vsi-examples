@@ -14,11 +14,12 @@ A simple example to connect to the aicas demo XMPP server
 - add the jars from _./lib_ and _./build/libs/exmaple-java-xmpp-1.0-SNAPSHOT.jar_ to the classpath
 
 ### Usage example
-``` SendRobotData.sendMovement("base",   //name of the joint. So base, shoulder, elbow or wirst.
-                               "NORMAL", //name of the mode. So NORMAL or RELATIV, MEM_POS or POS_MEM.
-                               90,       //angle
-                               1,        //increment 
-                               10);      //delay
+``` 
+SendRobotData.sendMovement("base",   //name of the joint. So base, shoulder, elbow or wirst.
+                           "NORMAL", //name of the mode. So NORMAL or RELATIV, MEM_POS or POS_MEM.
+                           90,       //angle
+                           1,        //increment 
+                           10);      //delay
 ```
 - the first call to one of the static methods will establish a connection to the aicas demo XMPP server,
  all following calls will use the same connection
