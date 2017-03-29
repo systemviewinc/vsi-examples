@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <string.h>
 #include "hls_stream_passthrough.h"
 
 
