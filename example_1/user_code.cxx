@@ -1,5 +1,6 @@
 #include <string.h>
 #include <hls_stream.h>
+#include <vsi_device.h>
 
 char s[] = "Echo.";
 int s_len = sizeof(s) -1;
@@ -26,4 +27,27 @@ void func2(hls::stream<int> &a, hls::stream<int> &r) {
 		_r += a.read();
 	}
 	r.write(_r);
+}
+
+int count = 0;
+
+void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
+	printf("func enter");
+	int offset = 0;
+	while(!data_in.empty()) {
+		printf("loop enter");
+		int i = data_in.read();
+		printf("data read");
+		mem.pwrite(&i, sizeof(i), offset);
+		printf("data write");
+		int out = 0;
+		mem.pread(&out, sizeof(i), offset);
+		offset+= sizeof(int);
+		if (i != out) {
+			printf("incorrect value read %x\n", out);
+		}
+		if (count % 1000)
+			printf("wrote %d times\ncurrent offset: %d\n", count, offset);
+		count ++;
+	}
 }

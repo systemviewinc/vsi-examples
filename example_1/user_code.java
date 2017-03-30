@@ -26,7 +26,13 @@ class Main {
 		sbOut.write(out);
 	}
 
-	public static void process_device(VsiDevice devIn, VsiDevice devOut) {
-
+	public static void process_device(VsiDevice dev) {
+		Buffer in = new Buffer(256);
+		in.fill("abcd0123");
+		Buffer out = new Buffer(256);
+		dev.pwrite(in, 0);
+		dev.pread(out, 0);
+		boolean is_same = in.compare(out);
+		System.out.println("buffers are same: " + is_same);
 	}
 }
