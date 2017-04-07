@@ -32,16 +32,40 @@ void func2(hls::stream<int> &a, hls::stream<int> &r) {
 int count = 0;
 
 void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
-	printf("func enter");
 	int offset = 0;
+	printf("entered func\n");
+	data_in.wait_if_empty();
 	while(!data_in.empty()) {
-		printf("loop enter");
+		printf("loop enter\n");
 		int i = data_in.read();
-		printf("data read");
+		printf("data read %s\n", &i);
 		mem.pwrite(&i, sizeof(i), offset);
-		printf("data write");
+		printf("data write\n");
 		int out = 0;
 		mem.pread(&out, sizeof(i), offset);
+		offset+= sizeof(int);
+		if (i != out) {
+			printf("incorrect value read %x\n", out);
+		}
+		if (count % 1000)
+			printf("wrote %d times\ncurrent offset: %d\n", count, offset);
+		count ++;
+	}
+}
+
+void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::device &mem) {
+	int offset = 0;
+	printf("entered func\n");
+	data_in.wait_if_empty();
+	while(!data_in.empty()) {
+		printf("loop enter\n");
+		int i = data_in.read();
+		printf("data read %s\n", &i);
+		mem.pwrite(&i, sizeof(i), offset);
+		printf("data write\n");
+		int out = 0;
+		mem.pread(&out, sizeof(i), offset);
+		data_out.write(out);
 		offset+= sizeof(int);
 		if (i != out) {
 			printf("incorrect value read %x\n", out);

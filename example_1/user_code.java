@@ -35,4 +35,10 @@ class Main {
 		boolean is_same = in.compare(out);
 		System.out.println("buffers are same: " + is_same);
 	}
+
+	public static void write_stream(StreamBuffer sb) {
+		Buffer in = new Buffer(4);
+		in.fill("abcd");
+		sb.write(in);
+	}
 }
