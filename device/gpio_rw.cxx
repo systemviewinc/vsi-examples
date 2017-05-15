@@ -15,7 +15,7 @@ void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
 	unsigned int rval, wval = 0xdeadbeef;
 	while (1) {
 		gpio_out.pwrite(&wval,sizeof(wval),0);
-		gpio_in.pread(&rval,sizeof(rval),0);
+		gpio_out.pread(&rval,sizeof(rval),0);
 		if (rval != wval) {
 			cout << "ERROR expected " << wval << " got "
 			     << rval << std::endl;
