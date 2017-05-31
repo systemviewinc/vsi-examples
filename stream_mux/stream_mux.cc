@@ -2,7 +2,7 @@
 
 //#define ARB_ON_LAST
 
-ap_axis_dkt<DATA_WIDTH> wout(hls::stream<ap_axis_dk<DATA_WIDTH> > &inp, ap_uint<1> tid) 
+ap_axis_dkt<DATA_WIDTH> wout(hls::stream<ap_axis_dk<DATA_WIDTH> > &inp, ap_uint<1> tid)
 {
 	ap_axis_dk<DATA_WIDTH> in = inp.read();
 	ap_axis_dkt<DATA_WIDTH> out;
@@ -37,11 +37,11 @@ void stream_mux (hls::stream<ap_axis_dkt<DATA_WIDTH> > &in1,
 		out.last = in.last;
 		out.id   = tid;
 		if (set) outp.write(out);
-	} 
+	}
 }
 
 void create_stream(hls::stream<ap_uint<DATA_WIDTH> >   &ind,
-		   hls::stream<ap_axis_dkt<DATA_WIDTH> >&outs) 
+		   hls::stream<ap_axis_dkt<DATA_WIDTH> >&outs)
 {
 	static int id = 0;
 	id++;
@@ -64,11 +64,11 @@ void strip_stream(hls::stream<ap_axis_dkt<DATA_WIDTH> > &ins,
 	}
 }
 
-/** 
+/**
  * @brief send data out in bursts
- * 
- * @param in_stream 
- * @param out_mem 
+ *
+ * @param in_stream
+ * @param out_mem
  */
 void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
 {
@@ -86,61 +86,54 @@ void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
 
 }
 
-/** 
+/**
  * @brief receive data from "world" copy to memory and start next
- * 
+ *
  * @param in_arr 	- input data
  * @param out_mem 	- pointer to external memory
  * @param start 	- start to next
  * @param resp 		- receive response
  */
-void vsi_memory_ctl(int in_arr[1024], 
-		    hls::stream<ap_axis_d<32> > &out_stream, 
-		    hls::stream<ap_axis_d<32> > &start, 
+void vsi_memory_ctl(int in_arr[1024],
+		    vsi::device &out_mem,
+		    hls::stream<ap_axis_d<32> > &start,
 		    hls::stream<ap_axis_d<32> > &resp)
 {
 	static int count = 0 ;
-	ap_axis_d<32> e;
 	int i;
 	printf("%s started %d\n",__FUNCTION__,count);
 	// perform operation
-	for (i = 0 ; i < 1024; i++) {
-		
-#pragma HLS PIPELINE II=1
-		e.data = in_arr[i];
-		e.last = (i == 1023);
-		out_stream.write(e);
-		if (e.last) printf("%s last detected %d\n",__FUNCTION__,i);
-	}
+
+   out_mem.pwrite(in_arr, sizeof(int)*1024, 0);
 
 	ap_axis_d<32> w ;
 	w.data = 1;
 	w.last = 1;
 	// tell next process something in memory
-	start.write(w); 
+	start.write(w);
 	printf("%s sent start waiting for response\n",__FUNCTION__);
 
 	// wait for response
-	ap_axis_d<32> r = resp.read(); 
+	ap_axis_d<32> r = resp.read();
 	printf("%s done %d\n",__FUNCTION__,count++);
 }
 
 
-/** 
+/**
  * @brief wait for data process data in the memory & say done
- * 
- * @param start 
- * @param mem 
- * @param sdone 
+ *
+ * @param start
+ * @param mem
+ * @param sdone
  */
 void vsi_process_data(hls::stream<ap_axis_d<32> > &start,
 		      hls::stream<ap_axis_d<32> > &sdone,
 		      int *mem,
 		      int out_arr[1024])
-{	
+{
 	printf("%s started\n",__FUNCTION__);
 	ap_axis_d<32> s = start.read(); // wait for data
-	int local_arr [1024];	
+	int local_arr [1024];
 	if (s.data != 0) {
 	        //memcpy(local_arr,mem,sizeof(local_arr));
 		// process the data
@@ -157,29 +150,29 @@ void vsi_process_data(hls::stream<ap_axis_d<32> > &start,
 	printf("%s done\n",__FUNCTION__);
 }
 
-/** 
+/**
  * @brief just a pass through
- * 
- * @param in_arr 
- * @param out_arr 
+ *
+ * @param in_arr
+ * @param out_arr
  */
-void pass_thru(int in_arr[1024], int out_arr[1024]) 
+void pass_thru(int in_arr[1024], int out_arr[1024])
 {
 	printf("%s started\n",__FUNCTION__);
-	for (int i =0 ; i < 1024; i++) 
+	for (int i =0 ; i < 1024; i++)
 #pragma HLS PIPELINE II=1
 		out_arr[i] = in_arr[i];
 	printf("%s done\n",__FUNCTION__);
 }
 
-/** 
+/**
  * @brief converts an array into memory
- * 
- * @param in_arr 
- * @param out_mem 
+ *
+ * @param in_arr
+ * @param out_mem
  */
 void array_to_mem(int in_arr[1024], int *out_mem)
 {
-	for (int i =0 ; i < 1024; i++) 
+	for (int i =0 ; i < 1024; i++)
 		out_mem[i] = in_arr[i];
 }

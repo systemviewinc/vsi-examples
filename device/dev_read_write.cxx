@@ -55,21 +55,21 @@ void mem_read_write(vsi::device &mem)
 static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_angle,
 			      int init_pw, int &max_tlr, int &min_tlr, vsi::device &atm)
 {
-	// calibrate 
+	// calibrate
 	// start timer in counter mode and check
 	unsigned int TCSR0, TCR0 , TLR0;
 	unsigned int TCSR1, TCR1 , TLR1, rv;
-	
+
 	TLR0 =  0; // clear the reload register
 	atm.pwrite(&TLR0,sizeof(TLR0),4); // offset 4
-	
+
 	TCSR0 =  1<<8 ; // clear interrupt
 	TCSR0 |= 1<<5 ; // load counter from TLR0
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0); // offset 0
-	
+
 	TCSR0 =  1<<7;	// start the timer
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0); // offset 0
-	
+
 	high_resolution_clock::time_point t2;
 	microseconds diff_time;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -78,24 +78,24 @@ static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_a
 		atm.pread (&TCR0,sizeof(TCR0), 8); // read counter : offset 8
 		diff_time = duration_cast<microseconds>(t2 - t1);
 	} while (diff_time.count() < 500000) ; // for .5 seconds
-	
+
 	// TCR0 has timer value for .5 seconds
 	printf("%s: timer cycles %d for %lld microseconds\n",__FUNCTION__,TCR0,diff_time.count());
-		
+
 	// initial reload values
 	// Timer 0 will generate the Pulse Cycle Frequency
 	TLR0 = ((long long)TCR0/diff_time.count())*pc;
 	TLR0 = (unsigned int)0xffffffff - TLR0;
-	
-	// Initialize pulse width to specified location       
+
+	// Initialize pulse width to specified location
 	TLR1 = ((long long)TCR0/diff_time.count())*init_pw;
 	TLR1 = (unsigned int)0xffffffff - TLR1;
-	
+
 	printf("%s : TLR0 %d , TLR1 %d\n", __FUNCTION__, TLR0, TLR1);
-	
-	atm.pwrite(&TLR0,sizeof(TLR0),4);    // offset 4	
+
+	atm.pwrite(&TLR0,sizeof(TLR0),4);    // offset 4
 	atm.pwrite(&TLR1,sizeof(TLR1),0x14); // offset 0x14 : TLR1
-	
+
 	TCSR0 =  1<<8 ; // clear interrupt
 	TCSR0 |= 1<<5 ; // load counter from TLR0
 	TCSR0 |= 1<<9 ; // PWM Mode
@@ -103,12 +103,12 @@ static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_a
 	TCSR0 |= 1<<4 ; // Auto Reload
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0);    // offset 0
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0x10); // offset 0x10 : TCSR for timer 1
-	
+
 	// clear load flags
 	TCSR0 &= ~(1<<5);
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0);    // offset 0
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0x10); // offset 0x10 : TCSR for timer 1
-	
+
 	atm.pread (&TCSR0,sizeof(TCSR0),0);    // offset 0
 	TCSR0 |= 1 << 10; // enable both
 	atm.pwrite(&TCSR0,sizeof(TCSR0),0);    // offset 0
@@ -126,7 +126,7 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 	float c_p_a;
 	bool replay_mode = false;
 	int max_tlr, min_tlr;
-	
+
 	c_p_a   = initialize_servo(min_pw, max_pw, pc, max_deg, init_pw, max_tlr, min_tlr, atm);
 	c_angle = ia; // initialized angle
 
@@ -159,12 +159,12 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 		if (m_debug)
 		 	printf("%s : executing command ca %d, sc.angle %d, sc.incr %d, sc.delay %d \n",
 		 	       __FUNCTION__, c_angle, sc.angle, sc.incr, sc.delay);
-		unsigned int c_tlr, tlr_diff = sc.incr * c_p_a;		
+		unsigned int c_tlr, tlr_diff = sc.incr * c_p_a;
 
 		// offset 0x14 : TLR1
-		atm.pread(&c_tlr,sizeof(c_tlr),0x14); 
+		atm.pread(&c_tlr,sizeof(c_tlr),0x14);
 		c_tlr = (unsigned int)0xffffffff - c_tlr;
-		
+
 		sc.angle = sc.angle > max_deg ? max_deg : sc.angle;
 		sc.angle = sc.angle < 0 ? 0 : sc.angle;
 		bool inc = (c_angle < sc.angle);
@@ -234,11 +234,11 @@ static void spi_send_recv_bytes(char *s_bytes, char *r_bytes, int num, vsi::devi
 }
 
 void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
-{	
+{
 	unsigned int wv = 0x000a;
 	unsigned int led = 0x1;
 	js_data js, jsp;
-	
+
 	printf("%s : started ..\n",__FUNCTION__);
 	spi.pwrite(&wv,sizeof(wv),0x40); 	// software reset
 	// Control Register
@@ -248,11 +248,11 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 	// Manual SS    :1
 	// Rest zeros
 	wv = 0x86 | (0x3 << 5);  // reset fifos
-	spi.pwrite(&wv,sizeof(wv),0x60);	// write control register	
+	spi.pwrite(&wv,sizeof(wv),0x60);	// write control register
 	memset(&js ,sizeof(js),0);
 	memset(&jsp,sizeof(jsp),0);
-	
-	printf("%s : config complete ..\n",__FUNCTION__);	
+
+	printf("%s : config complete ..\n",__FUNCTION__);
 	while (1) {
 		unsigned char sb[5];
 		sb[0] =  0x80 | led;
@@ -261,12 +261,12 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 		//printf(" js.X %d js.Y %d jsp.X %d jsp.Y %d\n",js.X, js.Y, jsp.X, jsp.Y);
 		// if only button pressed then send only changes
 		if (js.Btn_Led & 0x6) {
-			if ( js.Btn_Led != jsp.Btn_Led) {			
+			if ( js.Btn_Led != jsp.Btn_Led) {
 				//printf("Btn_Led 0x%x 0x%x \n",js.Btn_Led,jsp.Btn_Led);
 				jsd.write(js);
 			}
 		} else jsd.write(js);
-		jsp = js;		
+		jsp = js;
 		usleep(30000);
 	}
 }
@@ -278,13 +278,13 @@ void pump_control(hls::stream<int> &pump_c,vsi::device &pump)
 	pump.pread (&PVAL,sizeof(PVAL),0);
 	PVAL &= ~1;
 	pump.pwrite(&PVAL,sizeof(PVAL),0);
-	
+
 	while(1) {
 		int p_state = pump_c.read(); // wait for command
 		pump.pread(&PVAL,sizeof(PVAL),0);
 		PVAL &= ~1;
 		PVAL |= p_state;             // send command
-		pump.pwrite(&PVAL,sizeof(PVAL),0);		
+		pump.pwrite(&PVAL,sizeof(PVAL),0);
 	}
 }
 
@@ -316,9 +316,9 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 	printf("%s : started .. \n",__FUNCTION__);
 
 	while(1) {
-		
+
 		// controlled by joy stick
-		while (!jsd.empty()) {			
+		while (!jsd.empty()) {
 			bool ps_change = false;
 			js = jsd.read();
 			// memorize button pressed
@@ -344,7 +344,7 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 					base.write(base_sc);
 					wrist.write(base_sc);
 					// begin memory by repositioning to memorize location
-					base_sc.mode = POS_MEM; // reposition 
+					base_sc.mode = POS_MEM; // reposition
 					base_sc.angle = 0;
 					memory[mem_idx].first     = pump_state;
 					memory[mem_idx].second[0] = base_sc;
@@ -368,7 +368,7 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 					replay = true;
 				}
 			}
-			
+
 			if (replay) {
 				for (auto &mem : memory) {
 					//printf("%s : replayed %d\n",__FUNCTION__,mem.first);
@@ -455,3 +455,9 @@ void trajectory_generator(hls::stream<js_data>       &jsd,
 	}
 }
 
+void led_controller(int in_arr[1024], vsi::device &led)
+{
+   for(int i = 0; i < 1024; i++){
+      led.pwrite(&in_arr[i],sizeof(int),0);
+   }
+}

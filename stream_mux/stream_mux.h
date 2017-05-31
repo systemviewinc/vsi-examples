@@ -9,6 +9,7 @@ using namespace std;
 #include <hls_stream.h>
 #include <ap_utils.h>
 #include "ap_axi_sdata.h"
+#include <vsi_device.h>
 
 #define DATA_WIDTH 32
 
