@@ -86,6 +86,8 @@ void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
 
 }
 
+#ifndef __VSI_HLS_SYN__
+
 /**
  * @brief receive data from "world" copy to memory and start next
  *
@@ -117,7 +119,7 @@ void vsi_memory_ctl(int in_arr[1024],
 	ap_axis_d<32> r = resp.read();
 	printf("%s done %d\n",__FUNCTION__,count++);
 }
-
+#endif
 
 /**
  * @brief wait for data process data in the memory & say done
