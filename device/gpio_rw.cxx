@@ -17,14 +17,14 @@ void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
 		gpio_out.pwrite(&wval,sizeof(wval),0);
 		gpio_out.pread(&rval,sizeof(rval),0);
 		if (rval != wval) {
-			cout << "ERROR expected " << wval << " got "
+			std::cout << "ERROR expected " << wval << " got "
 			     << rval << std::endl;
 			exit(-1);
 		}
 		sleep(1); // wait a sec 
 		wval++;
 		if (wval == 0xffffffff) {
-			cout << "SUCCESS : test finished " << std::endl;
+			std::cout << "SUCCESS : test finished " << std::endl;
 		}
 	}
 }

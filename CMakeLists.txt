@@ -17,6 +17,10 @@ install(FILES
 	DESTINATION ${TARGET_EXAMPLE_DIR}/memory)
 
 install(FILES
+	memory/mem_test.h
+	DESTINATION ${TARGET_EXAMPLE_DIR}/memory)
+      
+install(FILES
 	regex_packet/compile/regex.h
 	DESTINATION ${TARGET_EXAMPLE_DIR}/regex_packet/compile)
 
