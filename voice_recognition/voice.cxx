@@ -257,7 +257,7 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 		unsigned char sb[5];
 		sb[0] =  0x80 | led;
 		led = (led == 1 ? 2 : 1);
-		// spi_send_recv_bytes((char *)sb,(char *)&js, 5, spi); // send receive 5 bytes
+		spi_send_recv_bytes((char *)sb,(char *)&js, 5, spi); // send receive 5 bytes
 		// printf(" js.X %d js.Y %d jsp.X %d jsp.Y %d\n",js.X, js.Y, jsp.X, jsp.Y);
 		// if only button pressed then send only changes
 		if (js.Btn_Led & 0x6) {
@@ -312,6 +312,8 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 	int pump_state = 0;
 	bool memorize = false;
 	bool replay   = false;
+	bool vc_memorize = false;
+	bool vc_replay = false;
 	bool replay_reverse = false;
 	sleep(1);
 	printf("%s : started .. \n",__FUNCTION__);
@@ -321,10 +323,10 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 		if(!speech.empty()) {
 			char32 buff = speech.read();
 			if(strncmp("memorize", buff.x, 8) == 0) {
-				memorize = !memorize;
+				vc_memorize = true;
 				std::cout << "memorize" << "\n";
 			} else if (strncmp("replay", buff.x, 6) == 0) {
-				replay = true;
+				vc_replay = true;
 				std::cout << "replay" << "\n";
 			} else {
 				std::cout << "not sure what to do with command \"" << buff.x << "\"\n";
@@ -336,7 +338,8 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 			bool ps_change = false;
 			js = jsd.read();
 			// memorize button pressed
-			if (js.Btn_Led & 0x4) {
+			if (js.Btn_Led & 0x4 || vc_memorize) {
+				vc_memorize = false;
 				if (memorize) {
 					memorize = false;
 					// reposition arm to memory begin
@@ -371,7 +374,8 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 				}
 				continue;
 			}
-			if (js.Btn_Led & 0x2) {
+			if (js.Btn_Led & 0x2 || vc_replay) {
+				vc_replay = false;
 				if (memorize) {
 					pump_state ^= 1; // flip state
 					ps_change = true;
