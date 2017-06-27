@@ -8,7 +8,7 @@
 #include <ap_utils.h>
 #include <hls_stream.h>
 #include "ap_axi_sdata.h"
-#include "dev_read_write.h"
+#include "voice.h"
 
 using namespace std::chrono;
 
