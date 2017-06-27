@@ -326,6 +326,8 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 			} else if (strncmp("replay", buff.x, 6) == 0) {
 				replay = true;
 				std::cout << "replay" << "\n";
+			} else {
+				std::cout << "not sure what to do with command \"" << buff.x << "\"\n";
 			}
 		}
 
