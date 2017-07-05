@@ -13,19 +13,5 @@ using namespace std;
 #include <vsi_device.h>
 #endif
 
-#define DATA_WIDTH 32
 
-template<int D>
-struct ap_axis_dk {
-	ap_uint<D> data;
-	ap_uint<1> last;
-	ap_uint<D/8> keep;
-};
-template<int D>
-struct ap_axis_dkt {
-	ap_uint<D> data;
-	ap_uint<1> last;
-	ap_uint<D/8> keep;
-	ap_uint<1> id;
-};
 #endif

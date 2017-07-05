@@ -1,95 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "mem_test.h"
-
-void vsi_memory(int in_arr[1024], int *out_mem, int out_arr[1024])
-{
-	int i_buff[1024];
-	int i;
-	// copy from memory
-	memcpy(i_buff,out_mem,sizeof(i_buff)); 
-	// perform operation
-	for (i = 0 ; i < 1024; i++) {
-#pragma HLS PIPELINE II=1
-		i_buff [i] += in_arr[i];
-		out_arr[i] = i_buff[i];
-	}
-	// copy back to external memory
-	memcpy(out_mem,i_buff,sizeof(i_buff));
-}
-
-
-/** 
- * @brief receive data from "world" copy to memory and start next
- * 
- * @param in_arr 	- input data
- * @param out_mem 	- pointer to external memory
- * @param start 	- start to next
- * @param resp 		- receive response
- */
-void vsi_memory_ctl(int in_arr[1024], 
-		    int *out_mem, 
-		    hls::stream<ap_uint<32> > &start, 
-		    hls::stream<ap_uint<32> > &resp)
-{
-	int i_buff[1024];
-	int i;
-
-	// perform operation
-	for (i = 0 ; i < 1024; i++) {
-#pragma HLS PIPELINE II=1
-		i_buff [i] = in_arr[i];
-	}
-	// copy to external memory
-	memcpy(out_mem,i_buff,sizeof(i_buff));
-
-	ap_uint<32> w = 1;
-
-	// tell next process something in memory
-	start.write(w); 
-
-	// wait for response
-	ap_uint<32> r = resp.read(); 
-}
-
-
-/** 
- * @brief wait for data process data in the memory & say done
- * 
- * @param start 
- * @param mem 
- * @param sdone 
- */
-void vsi_process_data(hls::stream<ap_uint<32> > &start,
-		      hls::stream<ap_uint<32> > &sdone,
-		      int *mem,
-		      int out_arr[1024])
-{
-	ap_uint<32> s = start.read(); // wait for data
-	
-	// process the data
-	for (int i = 0 ; i < 1024; i++) {
-#pragma HLS PIPELINE II=1
-		out_arr[i] = (mem[i] += 100);
-	}
-
-	// tell we are done
-	ap_uint<32> w= 1;
-	sdone.write(w);
-}
-
-/** 
- * @brief just a pass through
- * 
- * @param in_arr 
- * @param out_arr 
- */
-void pass_thru(int in_arr[1024], int out_arr[1024]) 
-{
-	for (int i =0 ; i < 1024; i++) 
-#pragma HLS PIPELINE II=1
-		out_arr[i] = in_arr[i];
-}
 
 /** 
  * @brief write a patter to memory and tell another process when write is
@@ -102,15 +14,22 @@ void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl
 {
 	char val[4096] ;
 	char wval = 'a';
+	int offset = 0 ;
 	while (1) {
 		printf("Writing to memory\n");
 		memset(val,wval,sizeof(val));
-		mem.pwrite(val,sizeof(val),0); // write value at offset 0
+		mem.pwrite(val,sizeof(val),offset); 	// write value at offset
 		printf("Write to memory complete\n");
-		ctl_out.write(1); // tell waiting thread write is complete
-		ctl_in.read();	  // wait for other process to continue
+		ctl_out.write(1); 			// tell waiting thread write is complete
+		//usleep(500);
+		ctl_in.read();	  			// wait for other process to continue
 		if (wval != 'z') wval++;
-		else wval = 'a';
+		else {
+			printf("Test Complete thread going to sleep\n");
+			while (1) sleep(10);
+		}
+		if (offset == (1024*1024*1024)) offset = 0;
+		else offset += 4096;
 	}
 }
 
@@ -125,9 +44,10 @@ void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_
 {
 	char val[4096] ;
 	char wval = 'a';
+	int offset = 0 ;
 	while (1) {
-		ctl_in.read(); // wait to proceed
-		mem.pread(val,sizeof(val),0); // read from offset 0
+		ctl_in.read(); 			// wait to proceed
+		mem.pread(val,sizeof(val),offset); // read from offset 
 		printf("Read Complete\n");
 		for (int i = 0; i < sizeof(val); i++) {
 			if (val[i] != wval) {
@@ -136,5 +56,23 @@ void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_
 			}
 		}
 		ctl_out.write(1); // tell waiting thread to proceed
+		if (wval != 'z') wval++;
+		else wval = 'a';
+		if (offset == (1024*1024*1024)) offset = 0;
+		else offset += 4096;
 	}
+}
+
+void mem_read_write(vsi::device &mem) {
+	char val[4096] ;
+	char wval = 'a';
+	int offset = 0 ;
+	while (1) {
+		mem.pwrite(val,sizeof(val),offset); // write to  offset
+		if (wval != 'z') wval++;
+		else wval = 'a';
+		if (offset == (1024*1024*1024)) offset = 0;
+		else offset += 4096;
+		sleep(1);
+	}	
 }
