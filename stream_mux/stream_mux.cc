@@ -185,21 +185,20 @@ void array_to_mem(int in_arr[1024], int *out_mem)
  * @param ins
  * @param outd
  */
-void pass_thru_steaming(
-	hls::stream<ap_axis_noid_dkt<DATA_WIDTH> > &ins,
-	hls::stream<ap_axis_noid_dkt<DATA_WIDTH> > &outd)
+void pass_thru_streaming(
+    hls::stream<ap_axis_dk<DATA_WIDTH> > &ins,
+    hls::stream<ap_axis_dk<DATA_WIDTH> > &outd)
 {
-	ap_axis_noid_dkt<DATA_WIDTH> in;
-	ap_axis_noid_dkt<DATA_WIDTH> out;
+    ap_axis_dk<DATA_WIDTH> in;
+    ap_axis_dk<DATA_WIDTH> out;
 
-	while (!ins.empty()) {
-		in = ins.read();
+    while (!ins.empty()) {
+        in = ins.read();
 
-		out.data = in.data;
-		out.last = in.last;
-		out.keep = in.keep;
+        out.data = in.data;
+        out.last = in.last;
+        out.keep = in.keep;
 
-		outd.write(out);
-	}
+        outd.write(out);
+    }
 }
-
