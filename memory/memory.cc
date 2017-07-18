@@ -4,7 +4,15 @@
 #include <errno.h>
 #include "mem_test.h"
 #ifndef __VSI_HLS_SYN__
-/**
+#include <iostream>
+#include <iomanip>
+#include <chrono>
+#include <ctime>
+
+#define MEM_SIZE 4096
+#define END_CHAR 'z'
+
+/** 
  * @brief write a patter to memory and tell another process when write is
  * 	  complete and wait for ack from the other process.
  * @param mem 		: memory elemnt to write to
@@ -13,20 +21,31 @@
  */
 void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
 {
-	char val[4096] ;
+	char val[MEM_SIZE] ;
 	char wval = 'a';
 	int offset = 0 ;
+	std::chrono::duration<double,std::milli> w_time = std::chrono::duration<double,std::milli>::zero();
+	unsigned long t_bytes = 0;
 	while (1) {
-		printf("Writing to memory\n");
+		std::cout << "Writing to memory\n";
 		memset(val,wval,sizeof(val));
+		// time the write
+		auto t_start = std::chrono::high_resolution_clock::now();
 		mem.pwrite(val,sizeof(val),offset); 	// write value at offset
 		printf("Write to memory complete {{{TID}}}\n");
+		auto t_end   = std::chrono::high_resolution_clock::now();
+		w_time  += (t_end - t_start);
+		t_bytes += MEM_SIZE;
+		std::cout << "Writing complete\n";
+
 		ctl_out.write(1); 			// tell waiting thread write is complete
 		//usleep(500);
 		ctl_in.read();	  			// wait for other process to continue
-		if (wval != 'z') wval++;
+		if (wval != END_CHAR) wval++;
 		else {
-			printf("Test Complete thread going to sleep\n");
+			std::cout << "Test Complete thread going to sleep "
+				  << "wrote " << t_bytes << " in "
+				  << w_time.count() << " ms\n";
 			while (1) sleep(10);
 		}
 		if (offset == (1024*1024*1024)) offset = 0;
@@ -34,22 +53,32 @@ void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl
 	}
 }
 
-/**
- * @brief read memory and check if the patter matches
- *
- * @param mem
- * @param ctl_in
- * @param ctl_out
+/** 
+ * @brief read memory and check if the pattern matches
+ * 
+ * @param mem 
+ * @param ctl_in 
+ * @param ctl_out 
  */
 void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
 {
-	char val[4096] ;
+	char val[MEM_SIZE] ;
 	char wval = 'a';
 	int offset = 0 ;
+	std::chrono::duration<double,std::milli> r_time = std::chrono::duration<double,std::milli>::zero();
+	unsigned long t_bytes = 0;
 	while (1) {
 		ctl_in.read(); 			// wait to proceed
 		mem.pread(val,sizeof(val),offset); // read from offset
 		printf("Read Complete {{{TID}}}\n");
+		// time the read
+		auto t_start = std::chrono::high_resolution_clock::now();
+		mem.pread(val,sizeof(val),offset); // read from offset 
+		auto t_end   = std::chrono::high_resolution_clock::now();
+		r_time  += (t_end - t_start);
+		t_bytes += MEM_SIZE;
+		
+		std::cout << "Read Complete\n";
 		for (int i = 0; i < sizeof(val); i++) {
 			if (val[i] != wval) {
 				printf("ERROR: mismatch expected '0x%x' got '0x%x'\n",wval,val[i]);
@@ -57,8 +86,12 @@ void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_
 			}
 		}
 		ctl_out.write(1); // tell waiting thread to proceed
-		if (wval != 'z') wval++;
-		else wval = 'a';
+		if (wval != END_CHAR) wval++;
+		else {
+			std:: cout << "Test Complete thread going to sleep "
+				   << "read " << t_bytes << " in "
+				   << r_time.count() << " ms\n";
+		}
 		if (offset == (1024*1024*1024)) offset = 0;
 		else offset += 4096;
 	}
