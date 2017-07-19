@@ -2,33 +2,43 @@
 
 import time
 import requests
-import speech_recognition as sr
+import signal
+import snowboydecoder
 
 url = 'http://zynq-robot:1999/zynq_ps::command_processor::arg_7_seq_i'
 
+interrupted = False
+
+
+def signal_handler(signal, frame):
+    global interrupted
+    interrupted = True
+
+def interrupt_callback():
+    global interrupted
+    return interrupted
+
+signal.signal(signal.SIGINT, signal_handler)
+
 # this is called from the background thread
-def callback(recognizer, audio):
-    # received audio data, now we'll recognize it using Google Speech Recognition
-    try:
-        rec_res = recognizer.recognize_google(audio)
-        robot_res = requests.post(url, data=rec_res)
-        print("you said \"" + rec_res + "\", robot said \"" + robot_res.text + "\"")
-    except sr.UnknownValueError:
-        print("could not understand audio")
-    except sr.RequestError as e:
-        print("network error; {0}".format(e))
+def send_cmd(cmd):
+    snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
+    robot_res = requests.post(url, data=cmd)
+    print("you said \"" + cmd + "\", robot responded \"" + robot_res.text + "\"")
 
 
-r = sr.Recognizer()
-m = sr.Microphone()
-with m as source:
-    r.adjust_for_ambient_noise(source)  # we only need to calibrate once, before we start listening
+models = ["memorize.pmdl", "record.pmdl", "vsi.pmdl", "replay.pmdl"]
+sensitivity = [0.5]*len(models)
 
-# start listening in the background (note that we don't have to do this inside a `with` statement)
-stop_listening = r.listen_in_background(m, callback)
-# `stop_listening` is now a function that, when called, stops background listening
+callbacks = [lambda: send_cmd("memorize"),
+             lambda: snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING),
+             lambda: snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG),
+             lambda: send_cmd("replay")]
 
-# do some other computation for 5 seconds, then stop listening and keep doing other computations
-# for _ in range(50): time.sleep(0.1)  # we're still listening even though the main thread is doing other things
-# stop_listening()  # calling this function requests that the background listener stop listening
-while True: time.sleep(0.1)
+detector = snowboydecoder.HotwordDetector(models, sensitivity=sensitivity)
+print('Yes? Listening... Press Ctrl+C to exit')
+detector.start(detected_callback=callbacks,
+               interrupt_check=interrupt_callback,
+               sleep_time=0.03)
+
+detector.terminate()
