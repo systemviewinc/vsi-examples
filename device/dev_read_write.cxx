@@ -461,3 +461,50 @@ void led_controller(int in_arr[1024], vsi::device &led)
       led.pwrite(&in_arr[i],sizeof(int),0);
    }
 }
+
+
+void axi_lite_test(int in_arr[1024], vsi::device &dev)
+{
+	std::chrono::duration<double,std::milli> r_time = std::chrono::duration<double,std::milli>::zero();
+	std::chrono::duration<double,std::milli> w_time = std::chrono::duration<double,std::milli>::zero();
+	std::chrono::duration<double,std::milli> delta_time = std::chrono::duration<double,std::milli>::zero();
+
+	int read_value;
+	unsigned long t_bytes = 0;
+
+
+   for(int i = 0; i < 1024; i++){
+		std::cout << "Writing to memory\n";
+		auto t_start = std::chrono::high_resolution_clock::now();
+		dev.pwrite(&in_arr[i],1,i);
+ 	  	auto t_end   = std::chrono::high_resolution_clock::now();
+		w_time  += (t_end - t_start);
+		delta_time = (t_end - t_start);
+		std::cout << "Write complete "
+	  	   << "wrote value:" << in_arr[i] << " in "
+			<< delta_time.count() << " ms\n";
+
+
+		std::cout << "Reading from memory\n";
+		t_start = std::chrono::high_resolution_clock::now();
+		dev.pread(&read_value,sizeof(int),i);
+		t_end   = std::chrono::high_resolution_clock::now();
+		r_time  += (t_end - t_start);
+		delta_time = (t_end - t_start);
+
+		std::cout << "Read complete "
+	  	   << "read value:" << read_value << " in "
+	  	   << delta_time.count() << " ms\n";
+
+		t_bytes += 1;
+
+   }
+
+
+	std::cout << "Test Complete thread going to sleep "
+		  << "wrote " << t_bytes << " in "
+		  << w_time.count() << " ms\n";
+  	std::cout << "Test Complete thread going to sleep "
+		 << "read " << t_bytes << " in "
+		 << r_time.count() << " ms\n";
+}
