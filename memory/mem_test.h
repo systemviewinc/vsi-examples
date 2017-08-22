@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <cstddef>
 using namespace std;
 #include <hls_stream.h>
 #include <ap_utils.h>
