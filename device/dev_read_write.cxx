@@ -2,13 +2,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
-#include <vsi_device.h>
 #include <chrono>
 #include <map>
 #include <ap_utils.h>
 #include <hls_stream.h>
 #include "ap_axi_sdata.h"
 #include "dev_read_write.h"
+#include <vsi_device.h>
+
+void set_control (vsi::device &dev) {
+	unsigned int val = 10;
+	dev.pwrite(&val,sizeof(val),0x14); // write val to register @ offset
+}
 
 using namespace std::chrono;
 

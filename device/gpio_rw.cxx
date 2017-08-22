@@ -28,3 +28,14 @@ void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
 		}
 	}
 }
+
+void led_8bit (vsi::device &led)
+{
+	unsigned int val = 1;
+	while (1) {
+		led.pwrite(&val,sizeof(val),0);
+		sleep(1);
+		if (val == 0x0080) val = 1;
+		else val << 1;
+	}
+}
