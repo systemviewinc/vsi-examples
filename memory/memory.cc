@@ -10,9 +10,10 @@
 #include <ctime>
 
 #define MEM_SIZE 4096
+#define BOARD_MEM_SIZE 4096
 #define END_CHAR 'z'
 
-/** 
+/**
  * @brief write a patter to memory and tell another process when write is
  * 	  complete and wait for ack from the other process.
  * @param mem 		: memory elemnt to write to
@@ -53,12 +54,12 @@ void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl
 	}
 }
 
-/** 
+/**
  * @brief read memory and check if the pattern matches
- * 
- * @param mem 
- * @param ctl_in 
- * @param ctl_out 
+ *
+ * @param mem
+ * @param ctl_in
+ * @param ctl_out
  */
 void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
 {
@@ -73,11 +74,11 @@ void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_
 		printf("Read Complete {{{TID}}}\n");
 		// time the read
 		auto t_start = std::chrono::high_resolution_clock::now();
-		mem.pread(val,sizeof(val),offset); // read from offset 
+		mem.pread(val,sizeof(val),offset); // read from offset
 		auto t_end   = std::chrono::high_resolution_clock::now();
 		r_time  += (t_end - t_start);
 		t_bytes += MEM_SIZE;
-		
+
 		std::cout << "Read Complete\n";
 		for (int i = 0; i < sizeof(val); i++) {
 			if (val[i] != wval) {
@@ -157,5 +158,68 @@ void process_data(hls::stream<int> & in_s, hls::stream<int> & out_s) {
 	printf(" write them to the output\n");
 	for (int i = 0 ; i < sizeof(fdata)/sizeof(fdata[0]); i++) {
 		out_s.write(fdata[i]);
+	}
+}
+
+/**
+ * @brief write a patter to memory and tell another process when write is
+ * 	  complete and wait for ack from the other process.
+ * @param mem 		: memory elemnt to write to
+ * @param ctl_in 	: control in to start testing
+ */
+void mem_write_read(vsi::device &mem, hls::stream<int> &ctl_in)
+{
+	char val[MEM_SIZE] ;
+	char wval = 'a';
+	int offset = 0;
+
+	std::chrono::duration<double,std::milli> w_time = std::chrono::duration<double,std::milli>::zero();
+	std::chrono::duration<double,std::milli> r_time = std::chrono::duration<double,std::milli>::zero();
+
+	unsigned long t_bytes = 0;
+	while(ctl_in.empty()){
+		sleep(1);
+	}
+	while(!ctl_in.empty()){
+		ctl_in.read();	  			// read out the whole input stream
+	}
+
+
+	while (1) {
+		std::cout << "Writing to memory\n";
+		memset(val,wval,sizeof(val));
+		// time the write
+		printf("Write to memory complete {{{TID}}}\n");
+		auto t_start = std::chrono::high_resolution_clock::now();
+		mem.pwrite(val,sizeof(val),offset); 	// write value at offset
+		auto t_end   = std::chrono::high_resolution_clock::now();
+		w_time  += (t_end - t_start);
+		t_bytes += MEM_SIZE;
+		std::cout << "Writing complete\n";
+
+		std::cout << "Reading from memory\n";
+		t_start = std::chrono::high_resolution_clock::now();
+		mem.pread(val,sizeof(val),offset); // read from offset
+		t_end   = std::chrono::high_resolution_clock::now();
+		printf("Read Complete {{{TID}}}\n");
+		// time the read
+
+		r_time  += (t_end - t_start);
+		t_bytes += MEM_SIZE;
+
+		std::cout << "Read Complete\n";
+
+		if (wval != END_CHAR) wval++;
+		else {
+			std::cout << "Test Complete thread going to sleep "
+				  << "wrote " << t_bytes << " in "
+				  << w_time.count() << " ms\n";
+		  std::cout << "Test Complete thread going to sleep "
+				 << "read " << t_bytes << " in "
+				 << r_time.count() << " ms\n";
+				 break;
+		}
+		offset += sizeof(val);
+		if (offset >= BOARD_MEM_SIZE) offset = 0;
 	}
 }
