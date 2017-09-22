@@ -1,3 +1,4 @@
+import os
 import vsi_runtime
 
 COUNT = 0
@@ -39,6 +40,41 @@ def process_device(dev):
     if  (COUNT % 20) == 0:
         print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
     OFFSET += 1
+
+file_name = 'data_in'
+
+
+def create_file(file_name):
+    if not os.path.exists(file_name):
+        i = 256
+        f = open(file_name, "wb")
+        try:
+            while i:
+                f.write("ABCDEFGH12345678")
+                i -= 1
+        finally:
+            f.close()
+
+
+def process_device_file(dev):
+    global COUNT, OFFSET, file_name
+    create_file(file_name)
+    buf_in = vsi_runtime.Buffer(256)
+    buf_out = vsi_runtime.Buffer(256)
+    file_size = os.stat(file_name).st_size
+    f = open(file_name, "rb")
+    try:
+        buf_in.set(f.read(256))
+        while file_size > (256 * COUNT):
+            dev.pwrite(buf_in, OFFSET)
+            dev.pread(buf_out, OFFSET)
+            # if  (COUNT % 10) == 0:
+            print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
+            OFFSET += 1
+            COUNT += 1
+            buf_in.set(f.read(256))
+    finally:
+        f.close()
 
 
 def write_stream(sbOut):
