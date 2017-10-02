@@ -1,6 +1,8 @@
+import os
 import vsi_runtime
 
 COUNT = 0
+OFFSET = 0
 
 
 def process(buf_in, buf_out):
@@ -28,15 +30,51 @@ def process_stream(sbIn, sbOut):
 
 
 def process_device(dev):
-    global COUNT
+    global COUNT, OFFSET
     COUNT += 1
     buf_in = vsi_runtime.Buffer(256)
     buf_out = vsi_runtime.Buffer(256)
     buf_in.fill("abcd0123")
-    dev.pwrite(buf_in)
-    dev.pread(buf_out)
-    if  (COUNT % 100000) == 0:
-        print buf_in.compare(buf_out)
+    dev.pwrite(buf_in, OFFSET)
+    dev.pread(buf_out, OFFSET)
+    if  (COUNT % 20) == 0:
+        print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
+    OFFSET += 1
+
+file_name = 'data_in'
+
+
+def create_file(file_name):
+    if not os.path.exists(file_name):
+        i = 256
+        f = open(file_name, "wb")
+        try:
+            while i:
+                f.write("ABCDEFGH12345678")
+                i -= 1
+        finally:
+            f.close()
+
+
+def process_device_file(dev):
+    global COUNT, OFFSET, file_name
+    create_file(file_name)
+    buf_in = vsi_runtime.Buffer(256)
+    buf_out = vsi_runtime.Buffer(256)
+    file_size = os.stat(file_name).st_size
+    f = open(file_name, "rb")
+    try:
+        buf_in.set(f.read(256))
+        while file_size > (256 * COUNT):
+            dev.pwrite(buf_in, OFFSET)
+            dev.pread(buf_out, OFFSET)
+            # if  (COUNT % 10) == 0:
+            print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
+            OFFSET += 1
+            COUNT += 1
+            buf_in.set(f.read(256))
+    finally:
+        f.close()
 
 
 def write_stream(sbOut):
@@ -56,3 +94,21 @@ def read_stream(sbIn):
     if (COUNT % 10) == 0:
         print COUNT
         print buf_in
+
+def mem_test(data_in, mem):
+    count = 0
+    offset = 0
+    data_in.wait_if_empty()
+    while not (data_in.empty()):
+        i = data_in.read()
+        print 'data read {}'.format(i)
+        mem.pwrite(i, offset)
+        print 'data write'
+        out = 0
+        mem.pread(out, offset)
+        offset+= 4
+        if (i != out):
+            print 'incorrect value read {}'.format(out)
+        if (count % 1000):
+            print 'wrote {} times\ncurrent offset: {}'.format(count, offset)
+        count += 1

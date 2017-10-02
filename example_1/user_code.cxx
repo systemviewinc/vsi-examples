@@ -79,3 +79,7 @@ void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::
 void write_test(char str[265]) {
 	strcpy(str, "TEST STRING");
 }
+
+void void_test() {
+	printf("void stuff\n");
+}
