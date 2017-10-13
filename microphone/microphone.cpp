@@ -1,0 +1,96 @@
+#include "microphone.h"
+#ifndef __VSI_HLS_SYN__
+#include "double_buffer.h"
+#include <chrono>
+#include <ctime>
+#include <math.h>
+std::chrono::duration<double,std::nano> r_time;
+float samples_p_sec = 10.0;
+
+void get_micsample(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+{
+	uint32_t wv = 0;
+	uint32_t cr = 0;
+	mic.pwrite(&wv,sizeof(wv),0x70); // enable slave
+	wv = 0x066; // reset fifos : master mode : enable core
+	mic.pwrite(&wv,sizeof(wv),0x60);
+	mic.pread(&cr,sizeof(cr),0x60);
+	while (1) {
+		r_time = std::chrono::duration<double,std::nano>::zero();
+		auto t_start = std::chrono::high_resolution_clock::now();
+		for (int i = 1 ; i <= SAMPLES; i++) {
+			fft_data_s fft_d;
+			wv = 0;	
+			mic.pwrite(&wv,sizeof(wv),0x68); // dummy write
+			do {
+				mic.pread(&wv,sizeof(wv),0x64);
+			} while (wv & 1);
+			mic.pread(&wv,sizeof(wv),0x6c); // read value
+			fft_d.data.re = (float)wv;
+			fft_d.data.im = 0.0;
+			fft_d.last = (i == SAMPLES);
+			os.write(fft_d);
+		}
+		auto t_end   = std::chrono::high_resolution_clock::now();
+		r_time = t_end - t_start;
+		samples_p_sec = SAMPLES*1e9/r_time.count();
+		cont.read() ; // wait for fft to complete
+	}
+}
+
+typedef struct { float amplitude [SAMPLES/2], frequency[SAMPLES/2]; } ampl;
+
+ProducerConsumerDoubleBuffer<ampl> ampl_db;
+void recv_fft_data (hls::stream<fft_amp> &amp_in, hls::stream<int> &cont)
+{
+	int pc = 0, i = 0;
+	bool print = false;
+	ampl *ampl_buff = ampl_db.start_writing();
+	while (1) {
+		fft_amp amp_d = amp_in.read();
+		ampl_buff->amplitude[i] = *((float *)&amp_d.data);
+		ampl_buff->frequency[i] = (i*samples_p_sec)/SAMPLES;
+		i++;
+		if (amp_d.last) {
+			ampl_db.end_writing();
+			cont.write(1); // let the send continue
+			i = 0 ;
+			if (pc++ == 100) {
+				pc = 0;
+				print = true;
+			} else print = false;
+			ampl_db.start_writing();
+		}
+		//if (print) printf("AMP [%d] = %f bucket = %f\n",i-1,amplitude[i-1],);
+	}
+}
+
+void get_mic_fft(float *amplitude, float *frequency)
+{
+	ampl *ampl_buff = ampl_db.start_reading();
+	memcpy(amplitude,ampl_buff->amplitude,sizeof(ampl_buff->amplitude));
+	memcpy(frequency,ampl_buff->frequency,sizeof(ampl_buff->frequency));
+	ampl_db.end_reading();
+}
+
+#endif
+
+void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp> &amp_out)
+{
+	float amplitude [SAMPLES/2];
+	int sc = 1 ;
+	while (1) {
+		fft_data_s data_s = fft_ds.read();
+#pragma HLS PIPELINE II=1		
+		if (sc <= SAMPLES/2) {
+			fft_amp aout;
+			
+			float d = sqrt((data_s.data.re * data_s.data.re) + (data_s.data.im * data_s.data.im));
+			aout.data = *((ap_uint<32> *)&d);
+			aout.last = (sc == SAMPLES/2);
+			amp_out.write(aout);
+		}
+		if (data_s.last) sc = 0;
+		else sc++;
+	}
+}
