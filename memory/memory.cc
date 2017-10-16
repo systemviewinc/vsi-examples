@@ -183,8 +183,6 @@ void mem_write_read(vsi::device &mem, hls::stream<int> &ctl_in)
 	while(!ctl_in.empty()){
 		ctl_in.read();	  			// read out the whole input stream
 	}
-
-
 	while (1) {
 		std::cout << "Writing to memory\n";
 		memset(val,wval,sizeof(val));

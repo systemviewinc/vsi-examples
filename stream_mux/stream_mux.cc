@@ -64,6 +64,19 @@ void strip_stream(hls::stream<ap_axis_dkt<DATA_WIDTH> > &ins,
 	}
 }
 
+void stream_split_2_16(hls::stream<ap_axis_dk<16> > &ins,
+		       hls::stream<ap_axis_dk<16> > &o1,
+		       hls::stream<ap_axis_dk<16> > &o2)
+{
+	ap_axis_dk<16> idx;
+	do {
+#pragma HLS PIPELINE II=1
+		idx = ins.read();
+		o1.write(idx);
+		o2.write(idx);
+	} while (1);
+}
+
 /**
  * @brief send data out in bursts
  *
