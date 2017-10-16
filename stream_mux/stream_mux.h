@@ -35,4 +35,33 @@ struct ap_axis_dkt {
 	ap_uint<1> id;
 };
 
+template<typename T,int packet_size=0> void stream_split(hls::stream<T> &ins,
+							 hls::stream<T> &o1,
+							 hls::stream<T> &o2)
+{
+	T idx;
+#ifndef __VSI_HLS_SYN__
+	if (packet_size != 0) {
+		do {
+			unsigned char _lbuff[packet_size];
+			int rv =0 ;
+			unsigned int szr = 0;
+			do {
+				rv = ins.read(&_lbuff[szr],packet_size - szr);
+				assert(rv >= 0);
+				szr += rv;
+			} while (szr < packet_size && rv > 0);
+			o1.write(_lbuff,packet_size);
+			o2.write(_lbuff,packet_size);
+		} while (1);
+	}
+#endif
+	do {
+#pragma HLS PIPELINE II=1
+		idx = ins.read();
+		o1.write(idx);
+		o2.write(idx);
+	} while (1);
+}
+
 #endif

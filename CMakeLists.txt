@@ -13,4 +13,8 @@ install(DIRECTORY
 	stream_mux
 	blocking_read
 	device
+	webcam
+	include
+	microphone
+	flir_sw
 DESTINATION ${TARGET_EXAMPLE_DIR})

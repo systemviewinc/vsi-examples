@@ -1,9 +1,57 @@
+// webcam.cc --- 
+// 
+// Filename: webcam.cc
+// Description: 
+// Author: Sandeep
+// Maintainer: System View Inc
+// Created: Thu Oct 12 13:55:50 2017 (-0700)
+// Version: 
+// Package-Requires: ()
+// Last-Updated: 
+//           By: 
+//     Update #: 0
+// URL: 
+// Doc URL: 
+// Keywords: 
+// Compatibility: 
+// 
+// 
+
+// Commentary: 
+//  This file contains functions for opening a media camera
+//  and reading buffers into a double buffer which can be
+//  processed by a separate thread.
+//  requires linking with -lv4l2 -lv4lconvert 
+
+// Change Log:
+// 
+// 
+// 
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or (at
+// your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+// 
+// 
+
+// Code:
+
+
 #ifndef __VSI_HLS_SYN__
 
 #include "webcam.h"
 
 
-static void xioctl(int fh, int request, void *arg)
+static void webcam::xioctl(int fh, int request, void *arg)
 {
 	int r;
 	
@@ -16,6 +64,10 @@ static void xioctl(int fh, int request, void *arg)
 		return;
 	}
 }
+// ///////////////////////////////////////////////////////////////////
+// Constructor : uses /dev/video0 : change to another video source as
+// reaeuired
+// ///////////////////////////////////////////////////////////////////
 
 webcam::webcam()
 {
@@ -27,8 +79,7 @@ webcam::webcam()
 	fd = v4l2_open(dev_name, O_RDWR | O_NONBLOCK, 0);
 	if (fd < 0) {
 		printf("Cannot open device");
-		//exit(EXIT_FAILURE);
-		return;
+		exit(EXIT_FAILURE);
 	}
 	
 	CLEAR(fmt);
@@ -55,7 +106,7 @@ webcam::webcam()
 	dst_buf = (unsigned char*)malloc(fmt.fmt.pix.sizeimage);
 	
 	CLEAR(req);
-	req.count = 3;
+	req.count = 2;
 	req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	req.memory = V4L2_MEMORY_MMAP;
 	xioctl(fd, VIDIOC_REQBUFS, &req);
@@ -93,6 +144,10 @@ webcam::webcam()
 	xioctl(fd, VIDIOC_STREAMON, &type);
 }
 
+// ///////////////////////////////////////////////////////////////////
+//  Destructor : munmap the buffers and close the video channel
+// ///////////////////////////////////////////////////////////////////
+
 webcam::~webcam()
 {
 	printf("%s : close video\n",__FUNCTION__);
@@ -104,6 +159,9 @@ webcam::~webcam()
         v4l2_close(fd);
 }
 
+// ///////////////////////////////////////////////////////////////////
+// Capture image and put it into double buffer
+// ///////////////////////////////////////////////////////////////////
 void webcam::webcam_capture_image()
 {
 	do {
@@ -147,11 +205,12 @@ void webcam::webcam_capture_image()
 	} while (1);
 }
 
-static unsigned int g_minmax_save[10][6];
-static int loc = 0;
-static unsigned int g_minmax[6];
 static webcam mywebcam;
+static unsigned int g_minmax[6];
 
+// ///////////////////////////////////////////////////////////////////
+// reads a buffers and write it into a hls::stream
+// ///////////////////////////////////////////////////////////////////
 static void convert_buff_2_hls_stream(unsigned char *buff, hls::stream<uint16_t> &outs, int size)
 {
 	static uint16_t l_buff[WC_IMGSIZE/3];
@@ -164,14 +223,32 @@ static void convert_buff_2_hls_stream(unsigned char *buff, hls::stream<uint16_t>
 	outs.write(l_buff,(WC_IMGSIZE/3)*2);
 }
 
+// ///////////////////////////////////////////////////////////////////
+// reads for a hls stream and puts into a buffer
+// ///////////////////////////////////////////////////////////////////
 static void convert_hls_stream_2_buff(hls::stream<wc_vs> &ins, unsigned char *buff, int size)
 {
 	unsigned char *bp = buff;
 	ins.read(buff,size);
 }
 
+// ///////////////////////////////////////////////////////////////////
+//  thisfunction is invoked when the xf:minMaxLoc computation is complete
+//  the hls::stream ins is expected to contain 6 integers in this order
+//   	[0] = min_value
+//   	[1] = max_value
+// 	[2] = minx loc
+//	[3] = miny loc
+//	[4] = maxx loc
+//	[5] = maxy loc
+//  the function applies average filter to reduce the high frequency noise
+//  in the min max computation.
+//  the hls::stream cont tells the producer that the compuation is complete
+// ///////////////////////////////////////////////////////////////////
 void webcam_mark_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
 {
+	static unsigned int g_minmax_save[10][6];
+	static int loc = 0;
 	unsigned int minmax[6];
 	for (int i = 0 ; i < 6 ; i++) minmax[i] = ins.read();
 	
@@ -186,10 +263,15 @@ void webcam_mark_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
 		g_minmax[i] = avg;
 	}
 	// printf("%s: got minmax(%d,%d) (%d,%d) (%d,%d)\n",__FUNCTION__,
-	//        g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
+	//          g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
 	cont.write(1); // let pipeline continue
 }
 
+// ///////////////////////////////////////////////////////////////////
+// Reads from the webcams double buffer and sends it out for further
+// processing over a hls::stream outs. Will wait for response on the
+// hls::stream cont to proceed with the next frame.
+// ///////////////////////////////////////////////////////////////////
 void webcam_process_image(hls::stream<uint16_t> &outs, hls::stream<int> &cont)
 {
 	do {
@@ -202,21 +284,17 @@ void webcam_process_image(hls::stream<uint16_t> &outs, hls::stream<int> &cont)
 	} while (1);
 }
 
-void webcam_getimage(int &cmd, unsigned char **buffp, int *len)
+// ///////////////////////////////////////////////////////////////////
+// this is an externally callable API : will allocate a buffer copy
+// image from the double buffer into it and send the pointer & length
+// into the pointers provided
+// ///////////////////////////////////////////////////////////////////
+void webcam_getimage(unsigned char *buffp)
 {
 	static bool inited = false;
 	
-	// initialize the first time.
-	if (!inited && cmd == 0) {
-		inited = true;
-		return ;
-	}
-	if (inited && cmd == 2) {
-		inited = false;
-		return;
-	}
 	char header[]="P6\n640 480 255\n";
-	unsigned char* asil=(unsigned char*)malloc(WC_IMGSIZE+strlen(header));
+	unsigned char* asil=buffp;
 	
 	// read from double buffer
 	wc_db_t *dbr = mywebcam.wc_db.start_reading();
@@ -241,17 +319,21 @@ void webcam_getimage(int &cmd, unsigned char **buffp, int *len)
 		}
 	}
 	memcpy(asil,header,strlen(header));
-	*buffp = asil;
-	*len =  WC_IMGSIZE+strlen(header);
 }
 
+// ///////////////////////////////////////////////////////////////////
+// start the webcam capture into buffer
+// ///////////////////////////////////////////////////////////////////
 void webcam_start()
 {
 	mywebcam.webcam_capture_image();
 }
 
 #endif
-// Synthesizable
+// ///////////////////////////////////////////////////////////////////
+// Synthesizable portion of the file
+// ///////////////////////////////////////////////////////////////////
+
 #include "stream_mux.h"
 #include "hls_stream.h"
 #include "ap_int.h"
@@ -259,11 +341,20 @@ void webcam_start()
 #include "common/xf_utility.h"
 #include "core/xf_min_max_loc.hpp"
 #include "webcam.h"
-void stream_split_vs (hls::stream<wc_vs> &ins, hls::stream<wc_vs> &o1, hls::stream<wc_vs> &o2)
-{
-	stream_split<wc_vs,WC_IMGSIZE>(ins,o1,o2);
-}
+
+
 //#define _USE_XF_OPENCV
+// ///////////////////////////////////////////////////////////////////
+// calls the xf::minMaxLoc opencv function to compute the minmax on
+// the image it receives on hls::stream<> ins. The output is sent
+// on hls::stream<> outs the order is 
+//   	[0] = min_value
+//   	[1] = max_value
+// 	[2] = minx loc
+//	[3] = miny loc
+//	[4] = maxx loc
+//	[5] = maxy loc
+// ///////////////////////////////////////////////////////////////////
 void webcam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 {
 #pragma HLS inline self	
@@ -271,13 +362,11 @@ void webcam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
 	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;	
 #ifdef _USE_XF_OPENCV	
- 	int idx = 0;
-	uint16_t img_data[WC_NROWS*WC_NCOLS+1];
- 	for (idx = 0 ; idx < (WC_NROWS*WC_NCOLS) ; idx++ ) {
+ 	xf::Mat<XF_16UC1,WC_NROWS,WC_NCOLS,XF_NPPC1> cam_mat(WC_NROWS,WC_NCOLS);
+ 	for (int idx = 0 ; idx < (WC_NROWS*WC_NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
-		img_data[idx] = ins.read();
+		cam.mat.data[idx] = ins.read();
 	}
- 	xf::Mat<XF_16UC1,WC_NROWS,WC_NCOLS,XF_NPPC1> cam_mat(WC_NROWS,WC_NCOLS,img_data);
 	xf::minMaxLoc<XF_16UC1,WC_NROWS,WC_NCOLS,XF_NPPC1>(cam_mat, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
 #else
 	uint16_t img_data[WC_NROWS][WC_NCOLS];
@@ -323,3 +412,5 @@ void webcam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	outs.write((int)_max_locy);
 }
 
+// 
+// webcam.cc ends here
