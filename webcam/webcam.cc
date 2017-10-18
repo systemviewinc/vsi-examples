@@ -262,7 +262,7 @@ void webcam_mark_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
 		avg /= 10;
 		g_minmax[i] = avg;
 	}
-	// printf("%s: got minmax(%d,%d) (%d,%d) (%d,%d)\n",__FUNCTION__,
+	// printf("%s: got minmax(%03d,%03d) (%03d,%03d) (%03d,%03d)\n",__FUNCTION__,
 	//          g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
 	cont.write(1); // let pipeline continue
 }
@@ -340,10 +340,13 @@ void webcam_start()
 #include "common/xf_common.h"
 #include "common/xf_utility.h"
 #include "core/xf_min_max_loc.hpp"
+#include "imgproc/xf_median_blur.hpp"
+#include "imgproc/xf_gaussian_filter.hpp"
 #include "webcam.h"
 
 
-//#define _USE_XF_OPENCV
+#define _USE_XF_OPENCV
+#define FILTER_WIDTH 3
 // ///////////////////////////////////////////////////////////////////
 // calls the xf::minMaxLoc opencv function to compute the minmax on
 // the image it receives on hls::stream<> ins. The output is sent
@@ -362,12 +365,41 @@ void webcam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
 	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;	
 #ifdef _USE_XF_OPENCV	
- 	xf::Mat<XF_16UC1,WC_NROWS,WC_NCOLS,XF_NPPC1> cam_mat(WC_NROWS,WC_NCOLS);
+ 	xf::Mat<XF_8UC1,WC_NROWS,WC_NCOLS,XF_NPPC1> cam_mat(WC_NROWS,WC_NCOLS);
+ 	xf::Mat<XF_8UC1,WC_NROWS,WC_NCOLS,XF_NPPC1> cam_mat_i(WC_NROWS,WC_NCOLS);
  	for (int idx = 0 ; idx < (WC_NROWS*WC_NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
-		cam.mat.data[idx] = ins.read();
+		uint16_t td = ins.read();
+		cam_mat.data[idx] = (uint8_t) td;
 	}
-	xf::minMaxLoc<XF_16UC1,WC_NROWS,WC_NCOLS,XF_NPPC1>(cam_mat, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
+#if FILTER_WIDTH==3
+	float sigma = 0.5f;
+#endif
+#if FILTER_WIDTH==7
+	float sigma=1.16666f;
+#endif
+#if FILTER_WIDTH==5
+	float sigma = 0.8333f;
+#endif
+	xf::GaussianBlur<FILTER_WIDTH, XF_BORDER_CONSTANT, XF_8UC1, WC_NROWS, WC_NCOLS, XF_NPPC1>(cam_mat, cam_mat_i, sigma);
+	//xf::medianBlur <FILTER_WIDTH, XF_BORDER_REPLICATE, XF_8UC1, WC_NROWS, WC_NCOLS,XF_NPPC1> (cam_mat, cam_mat_i);
+	//xf::minMaxLoc<XF_8UC1,WC_NROWS,WC_NCOLS,XF_NPPC1>(cam_mat_i, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
+	for (int idy = 0 ; idy < WC_NROWS; idy++) {
+		for (int idx = 0; idx < WC_NCOLS; idx++) {
+#pragma HLS PIPELINE II=1
+			uint8_t data = cam_mat_i.data[idy*WC_NROWS+idx];
+			if (data < _min_val) {
+				_min_val = data;
+				_min_locx = idx;
+				_min_locy = idy;
+			}
+			if (data > _max_val) {
+				_max_val = data;
+				_max_locx = idx;
+				_max_locy = idy;
+			}
+		}
+	}
 #else
 	uint16_t img_data[WC_NROWS][WC_NCOLS];
  	for (int idy = 0 ; idy < WC_NROWS ; idy++ ) {
