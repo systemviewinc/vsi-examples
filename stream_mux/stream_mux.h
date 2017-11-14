@@ -11,6 +11,7 @@ using namespace std;
 #include "ap_axi_sdata.h"
 #ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
+#include <unistd.h>
 #endif
 
 #define DATA_WIDTH 32

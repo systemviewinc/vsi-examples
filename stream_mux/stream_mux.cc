@@ -215,3 +215,24 @@ void pass_thru_streaming(
         outd.write(out);
     }
 }
+
+#ifndef __VSI_HLS_SYN__
+void bulk_write(hls::stream<uint8_t> &outs, hls::stream<int> &cont)
+{
+	static uint8_t buff[1024*1024];
+	while (1) {
+		outs.write(buff,sizeof(buff));
+		cont.read();
+	}
+}
+
+void bul_read(hls::stream<uint8_t> &ins, hls::stream<int> &cont)
+{
+	static uint8_t buff[1024*1024];
+	while (1) {
+		ins.read(buff,sizeof(buff));
+		usleep(10000);
+		cont.write(1);
+	}
+}
+#endif
