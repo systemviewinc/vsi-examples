@@ -1,4 +1,4 @@
-#ifdef _BLOCKING_READ_H_
+#ifndef _BLOCKING_READ_H_
 #define _BLOCKING_READ_H_
 #include <cstddef>
 #include <stdio.h>
