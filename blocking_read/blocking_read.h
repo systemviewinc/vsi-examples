@@ -1,3 +1,5 @@
+#ifndef _BLOCKING_READ_H_
+#define _BLOCKING_READ_H_
 #include <cstddef>
 #include <stdio.h>
 #include <fstream>
@@ -22,3 +24,4 @@ struct ap_axis_dkt {
 	ap_uint<D/8> keep;
 	ap_uint<1> id;
 };
+#endif

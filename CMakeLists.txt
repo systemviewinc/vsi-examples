@@ -16,5 +16,6 @@ install(DIRECTORY
 	webcam
 	include
 	microphone
+	memoryrwtest
 	flir_sw
 DESTINATION ${TARGET_EXAMPLE_DIR})
