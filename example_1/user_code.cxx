@@ -1,6 +1,7 @@
 #include <string.h>
 #include <hls_stream.h>
 #include <vsi_device.h>
+#include <unistd.h>
 
 char s[] = "Echo.";
 int s_len = sizeof(s) -1;
@@ -83,3 +84,26 @@ void write_test(char str[265]) {
 void void_test() {
 	printf("void stuff\n");
 }
+
+// non synthesizable
+#ifndef __VSI_HLS_SYN__
+void write_4k(int outd[1024])
+{
+	static int first = 0;
+	if (!first) {
+		first = 1;
+		printf("Sending data\n");
+	} else {
+		printf("going to sleep\n");
+		while(1) sleep(1);
+	}
+	for (int i = 0 ; i < 1024; i++) outd[i] = i;	
+}
+
+void read_4k(int ind[1024])
+{
+	printf("Got Data\n");
+	sleep(1);
+	exit(0);
+}
+#endif

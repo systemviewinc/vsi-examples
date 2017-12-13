@@ -345,7 +345,7 @@ void webcam_start()
 #include "webcam.h"
 
 
-#define _USE_XF_OPENCV
+//#define _USE_XF_OPENCV
 #define FILTER_WIDTH 3
 // ///////////////////////////////////////////////////////////////////
 // calls the xf::minMaxLoc opencv function to compute the minmax on
