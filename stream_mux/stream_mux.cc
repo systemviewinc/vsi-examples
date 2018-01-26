@@ -216,6 +216,7 @@ void pass_thru_streaming(
     }
 }
 
+
 #ifndef __VSI_HLS_SYN__
 void bulk_write(hls::stream<uint8_t> &outs, hls::stream<int> &cont)
 {
@@ -235,4 +236,5 @@ void bul_read(hls::stream<uint8_t> &ins, hls::stream<int> &cont)
 		cont.write(1);
 	}
 }
+
 #endif
