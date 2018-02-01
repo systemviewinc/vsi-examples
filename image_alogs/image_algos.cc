@@ -52,16 +52,15 @@
 // ///////////////////////////////////////////////////////////////////
 
 
+#include "stream_mux.h"
+#include "hls_stream.h"
 #include "common/xf_common.h"
 #include "common/xf_utility.h"
 #include "core/xf_min_max_loc.hpp"
 #include "imgproc/xf_median_blur.hpp"
 #include "imgproc/xf_gaussian_filter.hpp"
 #include "imgproc/xf_mean_shift.hpp"
-#ifndef _STANDALONE_TEST_
 #include "webcam.h"
-#include "stream_mux.h"
-#include "hls_stream.h"
 #include "ap_int.h"
 
 
