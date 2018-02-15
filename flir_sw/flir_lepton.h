@@ -1,6 +1,7 @@
 #ifndef FLIR_LEPTON_H_
 #define FLIR_LEPTON_H_
 
+
 #include <stdio.h>
 #include <fstream>
 #include <iostream>
@@ -12,6 +13,9 @@
 #include <limits.h>
 #ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 #endif
 #include "stream_mux.h"
 #define DATA_WIDTH 16

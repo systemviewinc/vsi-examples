@@ -214,34 +214,34 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 			bry[i] = c_y[i] + h_y[i];
 			track[i] = 0;			
 		}
-		frame_status = 1;
 		track_id = 0;
 	} else {
-		frame_status = 1;
 		// something needs to be tracked
 		if (!track_in.empty()) {
-			track[track_id] = 1;
+			int i = track_id;
 			uint16_t _tlx, _tly, _brx, _bry;
 			_tlx = track_in.read();
 			_tly = track_in.read();
 			_brx = track_in.read();
 			_bry = track_in.read();
-			tlx[track_id] = _tlx,
-			tly[track_id] = _tly;
-			bry[track_id] = _bry;
-			brx[track_id] = _brx;
-			obj_height[track_id] = _bry - tly[track_id];
-			obj_width [track_id] = _brx - tlx[track_id];
-			obj_height[track_id] &= 0xfffffffe;
-			obj_width [track_id] &= 0xfffffffe;
-			c_x[track_id] = (_tlx + (obj_width [track_id]/2));
-			c_y[track_id] = (_tly + (obj_height [track_id]/2));
-			h_x[track_id] = obj_width[track_id];
-			h_y[track_id] = obj_height[track_id];
-			printf("%s: tracking id %d tlx %d, tly %d height %d width %d %d %d\n",__FUNCTION__, track_id,       
-			       tlx[track_id], tly[track_id], obj_height[track_id], obj_width[track_id],c_x[track_id],c_y[track_id]);
+			dx[i] = 0;
+			dy[i] = 0;
+			h_x[i] = (_brx - _tlx)/2;
+			h_y[i] = (_bry - _tly)/2;
+			c_x[i] = _tlx + h_x[i];
+			c_y[i] = _tly + h_y[i];
+			
+			obj_height[i] = h_y[i]*2;
+			obj_width[i]  = h_x[i]*2;
+			
+			tlx[i] = _tlx;
+			tly[i] = _tly;
+			brx[i] = c_x[i] + h_x[i];
+			bry[i] = c_y[i] + h_y[i];
+			track[i] = 1;
 			track_id++;
 			if (track_id == XF_MAX_OBJECTS) track_id = 0;
+			frame_status = 0;
 		}
 	}
 	//
@@ -273,11 +273,12 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	
 	for (int k = 0; k < XF_MAX_OBJECTS; k++) {
 		outs.write(track[k]);
-		outs.write(tly[k]);
 		outs.write(tlx[k]);
-		outs.write(bry[k]);
+		outs.write(tly[k]);
 		outs.write(brx[k]);
+		outs.write(bry[k]);
 	}
+	frame_status = 1;
 	printf("%s: done\n",__FUNCTION__);
 }
 // 

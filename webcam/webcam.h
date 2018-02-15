@@ -108,7 +108,7 @@ class webcam {
 	~webcam();
 	void webcam_capture_image();
 	ProducerConsumerDoubleBuffer<wc_db_t> wc_db;
-	void xioctl(int fh, int request, void *arg);
+	int xioctl(int fh, int request, void *arg);
 };
 #else
 typedef unsigned short uint16_t;

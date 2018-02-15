@@ -8,6 +8,11 @@
 #include <limits.h>
 #ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/plot.hpp"
+#include <vector>
 #endif
 template<int D>
 struct ap_axis_md {
