@@ -60,7 +60,7 @@
 #include "imgproc/xf_median_blur.hpp"
 #include "imgproc/xf_gaussian_filter.hpp"
 #include "imgproc/xf_mean_shift.hpp"
-#include "webcam.h"
+//#include "webcam.h"
 #include "ap_int.h"
 
 
@@ -92,11 +92,8 @@ void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 		uint16_t td = ins.read();
 		cam_mat.data[idx] = (uint8_t) td;
 	}
-	printf("%s started\n",__FUNCTION__);
 	xf::medianBlur <FILTER_WIDTH, XF_BORDER_REPLICATE, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat, cam_mat_i);
 	xf::minMaxLoc<XF_8UC1,NROWS,NCOLS,XF_NPPC1>(cam_mat_i, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
-	printf("%s: (%d,%d) (%d,%d), (%d,%d)\n",__FUNCTION__,
-	       _min_val,_max_val,_min_locx,_min_locy,_max_locx,_max_locy);
 	outs.write((int)_min_val);
 	outs.write((int)_max_val);
 	outs.write((int)_min_locy);
@@ -138,8 +135,6 @@ void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 			}
 		}
 	}
-	printf("%s: (%d,%d) (%d,%d), (%d,%d)\n",__FUNCTION__,
-	       _min_val,_max_val,_min_locx,_min_locy,_max_locx,_max_locy);
 	outs.write((int)_min_val);
 	outs.write((int)_max_val);
 	outs.write((int)_min_locx);
@@ -155,6 +150,10 @@ void cam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	calc_min_max<480,640>(ins,outs);
 }
 
+void flir_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
+{
+	calc_min_max<60,80>(ins,outs);
+}
 
 // // MeanShift
 #define XF_HEIGHT 480
@@ -166,7 +165,7 @@ void cam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 #define XF_MAX_OBJ_WIDTH 250
 
 // maximum number of iterations for centroid convergence
-#define XF_MAX_ITERS 10
+#define XF_MAX_ITERS 4
 #define XF_MAX_OBJECTS 4
 #define DIFF_ABS(a,b) (a > b ? a - b : b -a)
 
@@ -182,10 +181,10 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	static uint16_t c_y  		[XF_MAX_OBJECTS];
 	static uint16_t h_x 		[XF_MAX_OBJECTS];
 	static uint16_t h_y 		[XF_MAX_OBJECTS];
-	static uint16_t tlx 		[XF_MAX_OBJECTS];
-	static uint16_t tly 		[XF_MAX_OBJECTS];
-	static uint16_t brx 		[XF_MAX_OBJECTS];
-	static uint16_t bry 		[XF_MAX_OBJECTS];
+	static  int16_t tlx 		[XF_MAX_OBJECTS];
+	static  int16_t tly 		[XF_MAX_OBJECTS];
+	static  int16_t brx 		[XF_MAX_OBJECTS];
+	static  int16_t bry 		[XF_MAX_OBJECTS];
         static uint16_t track		[XF_MAX_OBJECTS];
 	static uint16_t obj_height 	[XF_MAX_OBJECTS];
 	static uint16_t obj_width 	[XF_MAX_OBJECTS];
@@ -200,18 +199,18 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 		for (int i = 0 ; i < XF_MAX_OBJECTS; i++) {
 			dx[i] = 0;
 			dy[i] = 0;
-			h_x[i] = HEIGHT_MST[i]/2;
-			h_y[i] = WIDTH_MST[i]/2;
-			c_x[i] = X1[i] + h_x[i];
-			c_y[i] = Y1[i] + h_y[i];
+			h_x[i] = 0;
+			h_y[i] = 0;
+			c_x[i] = 0;
+			c_y[i] = 0;
 			
-			obj_height[i] = HEIGHT_MST[i];
-			obj_width[i] = WIDTH_MST[i];
+			obj_height[i] = 0;
+			obj_width[i] = 0;
 			
-			tlx[i] = X1[i];
-			tly[i] = Y1[i];
-			brx[i] = c_x[i] + h_x[i];
-			bry[i] = c_y[i] + h_y[i];
+			tlx[i] = 0;
+			tly[i] = 0;
+			brx[i] = 0;
+			bry[i] = 0;
 			track[i] = 0;			
 		}
 		track_id = 0;
@@ -254,24 +253,23 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	}
 
 	xf::MeanShift<XF_MAX_OBJECTS,XF_MAX_ITERS,XF_MAX_OBJ_HEIGHT,XF_MAX_OBJ_WIDTH,XF_8UC4,XF_HEIGHT,XF_WIDTH,XF_NPPC1>
-		(inMat,tlx,tly,obj_height,obj_width,dx,dy,track,frame_status,XF_MAX_OBJECTS,XF_MAX_OBJECTS,XF_MAX_ITERS);
+		(inMat,(uint16_t *)tlx,(uint16_t *)tly,obj_height,obj_width,dx,dy,track,frame_status,XF_MAX_OBJECTS,XF_MAX_OBJECTS,XF_MAX_ITERS);
 
 	for (int k = 0; k < XF_MAX_OBJECTS; k++) {
+		// out of range
+		if (tlx[k] <= 0 || tly[k] <= 0 || brx[k] >= XF_WIDTH || bry[k] >= XF_HEIGHT)  track[k] = 0;
 		if (!track[k]) continue;
-		printf("%s: x diff %d, y diff %d, %d %d\n",__FUNCTION__,DIFF_ABS(c_x[k],dx[k]),DIFF_ABS(c_y[k],dy[k]),dx[k],dy[k]);
-		if (DIFF_ABS(c_x[k],dx[k]) > 1 ||
-		    DIFF_ABS(c_y[k],dy[k]) > 1) {
-			c_x[k] = dx[k];
-			c_y[k] = dy[k];
-			tlx[k] = c_x[k] - h_x[k];
-			tly[k] = c_y[k] - h_y[k];
-			brx[k] = c_x[k] + h_x[k];
-			bry[k] = c_y[k] + h_y[k];
-			dx [k] = dy[k] = 0;
-		}
+		c_x[k] = dx[k];
+		c_y[k] = dy[k];
+		tlx[k] = c_x[k] - h_x[k];
+		tly[k] = c_y[k] - h_y[k];
+		brx[k] = c_x[k] + h_x[k];
+		bry[k] = c_y[k] + h_y[k];
+		dx [k] = dy[k] = 0;
 	}
 	
 	for (int k = 0; k < XF_MAX_OBJECTS; k++) {
+#pragma HLS PIPELINE II=1		
 		outs.write(track[k]);
 		outs.write(tlx[k]);
 		outs.write(tly[k]);

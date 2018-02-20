@@ -39,7 +39,7 @@ void flir_lepton (hls::stream<ap_axis_dk<16> > &cam_s)
 			loc = 0;
 			frame = flir_db.start_writing();			
 			if (fc++ == 100) {
-				printf("%s: Got 100 more elements in q %d\n",__FUNCTION__,cam_s.size());				
+				printf("%s: Got 100 more packets in q %d\n",__FUNCTION__,cam_s.size());				
 				fc = 0;
 			}
 		}
@@ -56,17 +56,51 @@ void flir_lepton (hls::stream<ap_axis_dk<16> > &cam_s)
 	} while(1);
 }
 
-void flir_get_image(uint16_t *buffp)
+void flir_send_image(hls::stream<uint16_t> &outs, hls::stream<int> &cont)
 {
-	frame_buffer *rf = flir_db.start_reading();
-	memmove(buffp, rf->fb, FRAME_SIZE);
-	flir_db.end_reading();
+	while (1) {
+		frame_buffer *rf = flir_db.start_reading();
+		cv::Mat s_img (NROWS,NCOLS,CV_16UC1,rf->fb);		
+		flir_db.end_reading();
+		if (s_img.isContinuous()) {
+			outs.write(s_img.data,s_img.total()*s_img.elemSize());
+			cont.read(); // wait till pipe is ready
+		} else {
+			printf("%s:Cannot handle non-contiguos image\n",__FUNCTION__);
+		}
+		usleep(5000);
+	}
 }
 
+static unsigned int g_minmax[6];
+
+// ///////////////////////////////////////////////////////////////////
+//  thisfunction is invoked when the xf:minMaxLoc computation is complete
+//  the hls::stream ins is expected to contain 6 integers in this order
+//   	[0] = min_value
+//   	[1] = max_value
+// 	[2] = minx loc
+//	[3] = miny loc
+//	[4] = maxx loc
+//	[5] = maxy loc
+//  the function applies average filter to reduce the high frequency noise
+//  in the min max computation.
+//  the hls::stream cont tells the producer that the compuation is complete
+// ///////////////////////////////////////////////////////////////////
+void flir_save_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
+{
+	for (int i = 0 ; i < 6 ; i++) g_minmax[i] = ins.read();
+	
+	//memcpy(g_minmax,minmax,sizeof(minmax));
+	// printf("%s: got minmax(%03d,%03d) (%03d,%03d) (%03d,%03d)\n",__FUNCTION__,
+	//        g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
+	cont.write(1); // let pipeline continue
+}
+
+ProducerConsumerDoubleBuffer<cv::Mat> flir_ddb;
 void flir_opencv_display()
 {
 	int fc = 0;
-	sleep(5);
 	while(1) {
 		frame_buffer *rf = flir_db.start_reading();
 		cv::Mat simg (NROWS,NCOLS,CV_16UC1,rf->fb);		
@@ -76,11 +110,19 @@ void flir_opencv_display()
 		cv::Mat cimg;
 		
 		cv::normalize(simg,nimg,0,255,cv::NORM_MINMAX,CV_8UC1); 
-		cv::applyColorMap(nimg, cimg, cv::COLORMAP_HOT);		
+		cv::applyColorMap(nimg, cimg, cv::COLORMAP_HOT);
 		cv::resize(cimg,dimg,cv::Size(8*simg.cols,8*simg.rows));
-		cv::imshow("flir",dimg);		
-		cv::waitKey(10);
-		usleep(10000);
+		
+		// mark the max location
+		uint16_t max_x = g_minmax[4]*8;
+		uint16_t max_y = g_minmax[5]*8;
+		cv::Rect rect_max(max_x-25,max_y-25,50,50);
+		cv::rectangle(dimg,rect_max,cv::Scalar(255,0,0),1,8);
+		
+		cv::Mat *d_img = flir_ddb.start_writing();
+		*d_img = dimg.clone();
+		flir_ddb.end_writing();
+		usleep(5000);
 		if (fc++ == 100) {
 			printf ("%s: Display 100 more images\n",__FUNCTION__);
 			fc= 0;

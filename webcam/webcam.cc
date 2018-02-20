@@ -246,7 +246,7 @@ static track_data g_track[4];
 //  in the min max computation.
 //  the hls::stream cont tells the producer that the compuation is complete
 // ///////////////////////////////////////////////////////////////////
-void webcam_mark_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
+void webcam_save_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
 {
 	static unsigned int g_minmax_save[10][6];
 	static int loc = 0;
@@ -271,43 +271,32 @@ void webcam_mark_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
 // /////////////////////////////////////////////////////////////////////////
 //  thisfunction is invoked when the xf::MeanShift computation is complete
 //  the hls::stream ins is expected to contain 4 trackdata in this order
-//  the hls::stream cont tells the producer that the compuation is complete
+//  the hls::stream cont tells the producer that the computation is complete
 // /////////////////////////////////////////////////////////////////////////
 void webcam_save_track (hls::stream<uint16_t> &ins, hls::stream<int> &cont)
 {
+	static int fc = 0;
 	for (int i = 0;  i < 4 ; i++) {
 		int j = (i == 0 ? i : i);
 		g_track[j].tracking = ins.read();
-		g_track[j].tlx      = ins.read();
 		g_track[j].tly      = ins.read();
-		g_track[j].brx      = ins.read();
-		g_track[j].bry      = ins.read();		
-		if (g_track[j].tracking)
-			printf("%s: tracking %d (%d,%d) (%d,%d) \n",__FUNCTION__,
-			       g_track[j].tracking,
-			       g_track[j].tlx     , 
-			       g_track[j].tly     ,
-			       g_track[j].brx     , 
-			       g_track[j].bry     );
+		g_track[j].tlx      = ins.read();
+		g_track[j].bry      = ins.read();
+		g_track[j].brx      = ins.read();		
+		// if (g_track[j].tracking)
+		// 	printf("%s: tracking %d (%d,%d) (%d,%d) \n",__FUNCTION__,
+		// 	       g_track[j].tracking,
+		// 	       g_track[j].tlx     , 
+		// 	       g_track[j].tly     ,
+		// 	       g_track[j].brx     , 
+		// 	       g_track[j].bry     );
+	}
+	//printf("%s: got tracking data\n",__FUNCTION__);
+	if (fc++ == 100) {
+		printf("%s: got 100 more tracks\n",__FUNCTION__);
+		fc = 0;
 	}
 	cont.write(1); // let pipeline continue
-}
-
-// ///////////////////////////////////////////////////////////////////
-// Reads from the webcams double buffer and sends it out for further
-// processing over a hls::stream outs. Will wait for response on the
-// hls::stream cont to proceed with the next frame.
-// ///////////////////////////////////////////////////////////////////
-void webcam_process_image(hls::stream<uint16_t> &outs, hls::stream<int> &cont)
-{
-	do {
-		// read from captured buffer and send it out for processing
-		wc_db_t *bp = mywebcam.wc_db.start_reading();
-		wc_convert_buff_2_hls_stream<uint16_t,WC_IMGSIZE,3>(bp->buff,outs);
-		mywebcam.wc_db.end_reading();
-		cont.read(); // wait till pipe is ready
-		usleep(2500);
-	} while (1);
 }
 
 // ///////////////////////////////////////////////////////////////////
@@ -327,55 +316,17 @@ void webcam_process_image_cvt(hls::stream<uint32_t> &outs, hls::stream<int> &con
 		cv::Mat d_img;
 		cv::Mat s_img;
 		cv::cvtColor(img, s_img, cv::COLOR_BGR2RGBA);
-		//cv::imshow("debug",s_img);
-		//cv::waitKey(10);
 		if (s_img.isContinuous()) {
 			outs.write(s_img.data,s_img.total()*s_img.elemSize());
 			cont.read(); // wait till pipe is ready
 		} else {
 			printf("Cannot handle non-contiguos image\n");
 		}
-		printf("%s : got continue\n",__FUNCTION__);
+		//printf("%s : got continue\n",__FUNCTION__);
+		usleep(5000);
 	} while (1);
 }
 
-
-// ///////////////////////////////////////////////////////////////////
-// this is an externally callable API : will allocate a buffer copy
-// image from the double buffer into it and send the pointer & length
-// into the pointers provided
-// ///////////////////////////////////////////////////////////////////
-void webcam_getimage(unsigned char *buffp)
-{
-	static bool inited = false;
-	
-	char header[]="P6\n640 480 255\n";
-	unsigned char* asil=buffp;
-	
-	// read from double buffer
-	wc_db_t *dbr = mywebcam.wc_db.start_reading();
-	// wc_db.end_reading();
-	cv::Mat image(WC_NROWS,WC_NCOLS,CV_8UC3,dbr->buff); // copy into cv::mat
-	mywebcam.wc_db.end_reading();
-
-	// draw rectangles around min and max brightness areas
-	cv::Rect rect_min(g_minmax[2],g_minmax[3],20,30);
-	cv::rectangle(image,rect_min,cv::Scalar(0,0,255),1,8);
-	cv::Rect rect_max(g_minmax[4],g_minmax[5],30,20);
-	cv::rectangle(image,rect_max,cv::Scalar(255,0,255),1,8);
-
-	uint8_t *lbuffer = asil+strlen(header);
-	
-	if (image.isContinuous()) {
-		memcpy(asil+strlen(header), image.data, WC_IMGSIZE);
-	} else {
-		for (int r = 0 ; r < image.rows ; r++) {
-			memcpy(lbuffer,image.ptr<uint8_t>(r),3*WC_NCOLS);
-			lbuffer += 3*WC_NCOLS;
-		}
-	}
-	memcpy(asil,header,strlen(header));
-}
 
 // ///////////////////////////////////////////////////////////////////
 // start the webcam capture into buffer
@@ -415,12 +366,14 @@ static void webcam_mouse_callback(int event, int x, int y, int flags, void *user
 		// g_track[0].tly = tly;
 		// g_track[0].brx = brx;
 		// g_track[0].bry = bry;
-		track_out->write(tlx);
 		track_out->write(tly);
-		track_out->write(brx);
+		track_out->write(tlx);
 		track_out->write(bry);
+		track_out->write(brx);
 	}
 }
+
+ProducerConsumerDoubleBuffer<cv::Mat> wc_ddb;
 
 // ///////////////////////////////////////////////////////////////////
 // display the webcam image on a window
@@ -429,8 +382,8 @@ void webcam_display_image(hls::stream<uint16_t> &track_out)
 //void webcam_opencv_display()
 {
 	int fc = 0;
-	printf("Display image started\n");
 	sleep(5);
+	printf("%s:started\n",__FUNCTION__);
 	//cv::namedWindow("webcam", 1);
 	//cv::namedWindow("debug",1);
 	cv::setMouseCallback("webcam",webcam_mouse_callback,&track_out);
@@ -456,9 +409,10 @@ void webcam_display_image(hls::stream<uint16_t> &track_out)
 		// cv::rectangle(image,rect_max,cv::Scalar(255,0,255),1,8);
 
 		// display it
-		cv::imshow("webcam", image);
-		cv::waitKey(1);
-		usleep(10000);
+		cv::Mat *d_img = wc_ddb.start_writing();
+		*d_img = image.clone();
+		wc_ddb.end_writing();
+		usleep(20000);
 		if (fc++ == 100) {
 			printf ("%s: Display 100 more images\n",__FUNCTION__);
 			fc = 0;
@@ -466,14 +420,36 @@ void webcam_display_image(hls::stream<uint16_t> &track_out)
 	}
 }
 
+extern ProducerConsumerDoubleBuffer<cv::Mat> mic_ddb;
+extern ProducerConsumerDoubleBuffer<cv::Mat> wc_ddb;
+extern ProducerConsumerDoubleBuffer<cv::Mat> flir_ddb;
 void opencv_display_thread()
 {
 	cv::namedWindow("webcam",1);
 	cv::namedWindow("microphone",1);
-	cv::namedWindow("debug",1);
 	cv::namedWindow("flir",1);
-	
-	while(1) sleep(10); // wait forever
+	//cv::namedWindow("debug",1);
+	sleep(3);
+	while(1) {
+		if (mic_ddb.m_wc) {
+			cv::Mat *mic_dimg = mic_ddb.start_reading();
+			cv::imshow("microphone",*mic_dimg);
+			mic_ddb.end_reading();
+		}
+		if (wc_ddb.m_wc) {
+			cv::Mat *wc_dimg = wc_ddb.start_reading();
+			cv::imshow("webcam",*wc_dimg);
+			wc_ddb.end_reading();
+		}
+		if (flir_ddb.m_wc) {
+			cv::Mat *flir_dimg = flir_ddb.start_reading();
+			cv::imshow("flir",*flir_dimg);
+			flir_ddb.end_reading();
+		}
+		
+		cv::waitKey(1);
+		usleep(5000);
+	}
 }
 
 #endif

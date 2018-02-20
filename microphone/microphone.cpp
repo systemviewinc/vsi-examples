@@ -96,9 +96,10 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 	}
 }
 #ifndef __VSI_HLS_SYN__
+#include "double_buffer.h"
+ProducerConsumerDoubleBuffer<cv::Mat> mic_ddb;
 void mic_opencv_display()
 {
-	sleep(5);
 	printf("%s: started\n",__FUNCTION__); 
 	while (1) {
 		ampl *ampl_buff = ampl_db.start_reading();
@@ -112,12 +113,11 @@ void mic_opencv_display()
 		cv::Mat matY (dataY);
 		cv::Ptr<cv::plot::Plot2d> plot = cv::plot::createPlot2d(matX, matY);
 		cv::Mat img;
-		//plot->setMaxX(10000.0);
-		//plot->setMaxY(10000.0);
 		plot->render(img);
-		cv::imshow("microphone",img);
-		cv::waitKey(10);
-		usleep(10000);
+		cv::Mat *d_img = mic_ddb.start_writing();
+		*d_img = img.clone();
+		mic_ddb.end_writing();
+		usleep(1000);
 	}
 }
 #endif
