@@ -48,7 +48,6 @@
 #ifndef WEBCAM_H
 #define WEBCAM_H
 #include <hls_stream.h>
-#include "ap_int.h"
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 struct buffer {
 	void   *start;
@@ -59,10 +58,6 @@ struct buffer {
 #define WC_IMGSIZE (3*WC_NROWS*WC_NCOLS)
 #define WC_BPP	 3
 
-struct wc_vs {
-	ap_uint<8> data;
-	ap_uint<1>  last;
-};
 /* ****************************************************************
  * 			non sythesizable portion
  * **************************************************************** */
@@ -113,7 +108,7 @@ class webcam {
 	~webcam();
 	void webcam_capture_image();
 	ProducerConsumerDoubleBuffer<wc_db_t> wc_db;
-	static void xioctl(int fh, int request, void *arg);
+	int xioctl(int fh, int request, void *arg);
 };
 #else
 typedef unsigned short uint16_t;

@@ -11,9 +11,11 @@
 template <typename T>
 class ProducerConsumerDoubleBuffer {
 public:
+	bool m_wc ;
 	ProducerConsumerDoubleBuffer() {
 		m_write_busy = false;
 		m_read_idx = m_write_idx = 0;
+		m_wc = false;
 	}
 	
 	~ProducerConsumerDoubleBuffer() { }
@@ -27,7 +29,6 @@ public:
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_write_busy = true;
 		m_write_idx = 1 - m_read_idx;
-		
 		return &m_buf[m_write_idx];
 	}
 	// The writer thread must call end_writing()
@@ -37,6 +38,7 @@ public:
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
 		m_write_busy = false;
+		m_wc = true;
 		mw_mutex.unlock();
 	}
 	
@@ -75,5 +77,6 @@ private:
 	std::mutex mw_mutex;
 	std::mutex mr_mutex;
 };
+
 #endif
 #endif

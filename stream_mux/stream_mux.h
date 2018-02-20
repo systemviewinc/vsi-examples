@@ -36,6 +36,7 @@ struct ap_axis_dkt {
 	ap_uint<1> id;
 };
 
+
 template<typename T,int packet_size=0> void stream_split(hls::stream<T> &ins,
 							 hls::stream<T> &o1,
 							 hls::stream<T> &o2)

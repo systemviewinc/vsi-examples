@@ -18,4 +18,6 @@ install(DIRECTORY
 	microphone
 	memoryrwtest
 	flir_sw
+	xilinx_vlib
+	image_alogs
 DESTINATION ${TARGET_EXAMPLE_DIR})

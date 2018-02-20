@@ -30,11 +30,13 @@ void get_micsample(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<in
 			fft_d.data.im = 0.0;
 			fft_d.last = (i == SAMPLES);
 			os.write(fft_d);
+			//printf("%s: got value %d\n",__FUNCTION__,wv);
 		}
 		auto t_end   = std::chrono::high_resolution_clock::now();
 		r_time = t_end - t_start;
 		samples_p_sec = SAMPLES*1e9/r_time.count();
 		cont.read() ; // wait for fft to complete
+		//printf("%s Continuing\n",__FUNCTION__);
 	}
 }
 
@@ -44,7 +46,7 @@ ProducerConsumerDoubleBuffer<ampl> ampl_db;
 void recv_fft_data (hls::stream<fft_amp> &amp_in, hls::stream<int> &cont)
 {
 	int pc = 0, i = 0;
-	bool print = false;
+	bool print = true;
 	ampl *ampl_buff = ampl_db.start_writing();
 	while (1) {
 		fft_amp amp_d = amp_in.read();
@@ -57,11 +59,10 @@ void recv_fft_data (hls::stream<fft_amp> &amp_in, hls::stream<int> &cont)
 			i = 0 ;
 			if (pc++ == 100) {
 				pc = 0;
-				print = true;
+				printf("%s: Got 100 more packets\n",__FUNCTION__);
 			} else print = false;
-			ampl_db.start_writing();
+			ampl_buff = ampl_db.start_writing();
 		}
-		//if (print) printf("AMP [%d] = %f bucket = %f\n",i-1,amplitude[i-1],);
 	}
 }
 
@@ -94,3 +95,29 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 		else sc++;
 	}
 }
+#ifndef __VSI_HLS_SYN__
+#include "double_buffer.h"
+ProducerConsumerDoubleBuffer<cv::Mat> mic_ddb;
+void mic_opencv_display()
+{
+	printf("%s: started\n",__FUNCTION__); 
+	while (1) {
+		ampl *ampl_buff = ampl_db.start_reading();
+		std::vector<double> dataX, dataY;
+		for (int i = 0 ; i < SAMPLES/2 ;i++) {
+			dataY.push_back((double)ampl_buff->amplitude[i]);
+			dataX.push_back((double)ampl_buff->frequency[i]);
+		}
+		ampl_db.end_reading();
+		cv::Mat matX (dataX);
+		cv::Mat matY (dataY);
+		cv::Ptr<cv::plot::Plot2d> plot = cv::plot::createPlot2d(matX, matY);
+		cv::Mat img;
+		plot->render(img);
+		cv::Mat *d_img = mic_ddb.start_writing();
+		*d_img = img.clone();
+		mic_ddb.end_writing();
+		usleep(1000);
+	}
+}
+#endif
