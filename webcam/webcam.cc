@@ -230,7 +230,7 @@ void webcam::webcam_capture_image()
 }
 
 static webcam mywebcam;
-static unsigned int g_minmax[6];
+static unsigned int wc_minmax[6];
 static track_data g_track[4];
 
 // ///////////////////////////////////////////////////////////////////
@@ -246,26 +246,11 @@ static track_data g_track[4];
 //  in the min max computation.
 //  the hls::stream cont tells the producer that the compuation is complete
 // ///////////////////////////////////////////////////////////////////
-void webcam_save_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
+void webcam_save_minmax (hls::stream<int> &ins)
 {
-	static unsigned int g_minmax_save[10][6];
-	static int loc = 0;
-	unsigned int minmax[6];
-	for (int i = 0 ; i < 6 ; i++) minmax[i] = ins.read();
-	
-	memcpy(g_minmax,minmax,sizeof(minmax));
-	// if (loc < 10) loc++;
-	// else loc = 0;
-	// // average out min max location from the last 10 samples
-	// for (int i = 0 ; i < 6 ; i++) {
-	// 	int avg = 0 ;
-	// 	for (int j = 0; j < 10; j++) avg += g_minmax_save[j][i];
-	// 	avg /= 10;
-	// 	g_minmax[i] = avg;
-	// }
-	printf("%s: got minmax(%03d,%03d) (%03d,%03d) (%03d,%03d)\n",__FUNCTION__,
-	       g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
-	cont.write(1); // let pipeline continue
+	for (int i = 0 ; i < 6 ; i++) {
+		wc_minmax[i] = ins.read();
+	}	
 }
 
 // /////////////////////////////////////////////////////////////////////////
@@ -400,13 +385,11 @@ void webcam_display_image(hls::stream<uint16_t> &track_out)
 				cv::Rect rect_min(g_track[i].tlx,g_track[i].tly,
 						  g_track[i].brx-g_track[i].tlx,
 						  g_track[i].bry-g_track[i].tly);
-				cv::rectangle(image,rect_min,cv::Scalar(0,255,255),1,8);
+				cv::rectangle(image,rect_min,cv::Scalar(0,255,255),2,8);
 			}
 		}
-		// cv::Rect rect_min(g_minmax[2],g_minmax[3],20,30);
-		// cv::rectangle(image,rect_min,cv::Scalar(0,255,255),1,8);
-		// cv::Rect rect_max(g_minmax[4],g_minmax[5],30,20);
-		// cv::rectangle(image,rect_max,cv::Scalar(255,0,255),1,8);
+		//cv::Rect rect_max((wc_minmax[4]*8)-25,(wc_minmax[5]*8)-25,50,50);
+		cv::circle(image,cv::Point(wc_minmax[4]*8,wc_minmax[5]*8),25,cv::Scalar(0,255,0),2,8);
 
 		// display it
 		cv::Mat *d_img = wc_ddb.start_writing();
@@ -433,17 +416,17 @@ void opencv_display_thread()
 	while(1) {
 		if (mic_ddb.m_wc) {
 			cv::Mat *mic_dimg = mic_ddb.start_reading();
-			cv::imshow("microphone",*mic_dimg);
+			if (!mic_dimg->empty()) cv::imshow("microphone",*mic_dimg);
 			mic_ddb.end_reading();
 		}
 		if (wc_ddb.m_wc) {
 			cv::Mat *wc_dimg = wc_ddb.start_reading();
-			cv::imshow("webcam",*wc_dimg);
+			if (!wc_dimg->empty()) cv::imshow("webcam",*wc_dimg);
 			wc_ddb.end_reading();
 		}
 		if (flir_ddb.m_wc) {
 			cv::Mat *flir_dimg = flir_ddb.start_reading();
-			cv::imshow("flir",*flir_dimg);
+			if (!flir_dimg->empty()) cv::imshow("flir",*flir_dimg);
 			flir_ddb.end_reading();
 		}
 		
