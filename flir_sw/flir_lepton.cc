@@ -87,13 +87,12 @@ static unsigned int g_minmax[6];
 //  in the min max computation.
 //  the hls::stream cont tells the producer that the compuation is complete
 // ///////////////////////////////////////////////////////////////////
-void flir_save_minmax (hls::stream<int> &ins, hls::stream<int> &cont)
+void flir_save_minmax (hls::stream<int> &ins, hls::stream<int> &outs, hls::stream<int> &cont)
 {
-	for (int i = 0 ; i < 6 ; i++) g_minmax[i] = ins.read();
-	
-	//memcpy(g_minmax,minmax,sizeof(minmax));
-	// printf("%s: got minmax(%03d,%03d) (%03d,%03d) (%03d,%03d)\n",__FUNCTION__,
-	//        g_minmax[0],g_minmax[1],g_minmax[2],g_minmax[3],g_minmax[4],g_minmax[5]);
+	for (int i = 0 ; i < 6 ; i++) {
+		g_minmax[i] = ins.read();
+		outs.write(g_minmax[i]);
+	}
 	cont.write(1); // let pipeline continue
 }
 
@@ -116,8 +115,8 @@ void flir_opencv_display()
 		// mark the max location
 		uint16_t max_x = g_minmax[4]*8;
 		uint16_t max_y = g_minmax[5]*8;
-		cv::Rect rect_max(max_x-25,max_y-25,50,50);
-		cv::rectangle(dimg,rect_max,cv::Scalar(255,0,0),1,8);
+		//cv::Rect rect_max(max_x-25,max_y-25,50,50);
+		cv::circle(dimg,cv::Point(max_x,max_y),25,cv::Scalar(0,255,0),2,8);
 		
 		cv::Mat *d_img = flir_ddb.start_writing();
 		*d_img = dimg.clone();
