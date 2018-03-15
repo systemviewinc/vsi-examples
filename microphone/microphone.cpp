@@ -95,6 +95,35 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 		else sc++;
 	}
 }
+
+void get_micsample_hw(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+{
+	uint32_t wv = 0;
+	uint32_t cr = 0;
+	mic.pwrite(&wv,sizeof(wv),0x70); // enable slave
+	wv = 0x067; // reset fifos : master mode : enable core
+	mic.pwrite(&wv,sizeof(wv),0x60);
+	mic.pread(&cr,sizeof(cr),0x60);
+	while (1) {
+		for (int i = 1 ; i <= SAMPLES; i++) {
+			fft_data_s fft_d;
+			wv = i;	
+			mic.pwrite(&wv,sizeof(wv),0x68); // dummy write
+			do {
+				mic.pread(&wv,sizeof(wv),0x64);
+			} while (wv & 1);
+			mic.pread(&wv,sizeof(wv),0x6c); // read value
+			fft_d.data.re = (float)wv;
+			fft_d.data.im = 0.0;
+			fft_d.last = (i == SAMPLES);
+			os.write(fft_d);
+			//printf("%s: got value %d\n",__FUNCTION__,wv);
+		}
+		cont.read() ; // wait for fft to complete
+		//printf("%s Continuing\n",__FUNCTION__);
+	}
+}
+
 #ifndef __VSI_HLS_SYN__
 #include "double_buffer.h"
 ProducerConsumerDoubleBuffer<cv::Mat> mic_ddb;
