@@ -19,5 +19,5 @@ install(DIRECTORY
 	memoryrwtest
 	flir_sw
 	xilinx_vlib
-	image_alogs
+	image_algos
 DESTINATION ${TARGET_EXAMPLE_DIR})
