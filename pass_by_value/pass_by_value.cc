@@ -18,6 +18,7 @@ void kernel_gzip(hls::stream<ap_uint<K_WIDTH > > &in_stream,
 	//if we recieve data then we will "process" it
 	//  while there is data read it out, once we are empty generate our data
 	static uint512_t output_array[128];
+	printf("sizeof output array %d, %d\n",sizeof(output_array),in_size);
 	
 	//read insize
 	uint32_t i_size = in_size;
@@ -49,8 +50,7 @@ void trigger_kernel(hls::stream<ap_uint<K_WIDTH > > &out_stream,
 		    vsi::device &inmem) {
 	int out_write = (WRITE_SIZE + K_BYTES - 1 )/K_BYTES;
 	printf("Write size is 0x%08x \n", WRITE_SIZE);
-	printf("#of writes is 0x%08x \n", WRITE_SIZE);
-	
+	printf("#of writes is 0x%08x %d\n", WRITE_SIZE,out_write * sizeof(ap_uint<K_WIDTH >));
 	uint512_t * write_array = malloc(out_write * sizeof(ap_uint<K_WIDTH >));
 	
 	
@@ -58,7 +58,7 @@ void trigger_kernel(hls::stream<ap_uint<K_WIDTH > > &out_stream,
 	//send the size we want to write
 	printf("Write size stream %d\n",WRITE_SIZE);
 	uint32_t o_size = WRITE_SIZE;
-	out_size.pwrite(o_size,sizeof(o_size),0);
+	out_size.pwrite(&o_size,sizeof(o_size),0);
 	
 	
 	sleep(5);
