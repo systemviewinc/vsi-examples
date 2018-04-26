@@ -20,4 +20,5 @@ install(DIRECTORY
 	flir_sw
 	xilinx_vlib
 	image_algos
+	pass_thru_r5
 DESTINATION ${TARGET_EXAMPLE_DIR})
