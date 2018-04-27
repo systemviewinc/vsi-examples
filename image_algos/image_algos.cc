@@ -1,47 +1,47 @@
-// image_algos.cc --- 
-// 
+// image_algos.cc ---
+//
 // Filename: 		image_algos.cc
 // Description: 	Contains synthesizable image processing algorithms
 // Author: 		Sandeep <sandeep@systemviewinc.com>
-// Maintainer: 
+// Maintainer:
 // Created: 		Wed Jan 10 09:36:47 2018 (-0800)
-// Version: 
+// Version:
 // Package-Requires: ()
-// Last-Updated: 
-//           By: 
+// Last-Updated:
+//           By:
 //     Update #: 0
-// URL: 
-// Doc URL: 
-// Keywords: 
-// Compatibility: 
-// 
-// 
+// URL:
+// Doc URL:
+// Keywords:
+// Compatibility:
+//
+//
 
-// Commentary: 
-// 
-// 
-// 
-// 
+// Commentary:
+//
+//
+//
+//
 
 // Change Log:
-// 
-// 
-// 
-// 
+//
+//
+//
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or (at
 // your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
-// 
-// 
+//
+//
 
 // Code:
 
@@ -60,16 +60,20 @@
 #include "imgproc/xf_median_blur.hpp"
 #include "imgproc/xf_gaussian_filter.hpp"
 #include "imgproc/xf_mean_shift.hpp"
+#include "imgproc/xf_canny.hpp"
+
+
 //#include "webcam.h"
 #include "ap_int.h"
 
 
-//#define _USE_XF_OPENCV
+#define _USE_XF_OPENCV
 #define FILTER_WIDTH 3
+
 // ///////////////////////////////////////////////////////////////////
 // calls the xf::minMaxLoc opencv function to compute the minmax on
 // the image it receives on hls::stream<> ins. The output is sent
-// on hls::stream<> outs the order is 
+// on hls::stream<> outs the order is
 //   	[0] = min_value
 //   	[1] = max_value
 // 	[2] = minx loc
@@ -77,23 +81,23 @@
 //	[4] = maxx loc
 //	[5] = maxy loc
 // ///////////////////////////////////////////////////////////////////
-template <int NROWS, int NCOLS>
-void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
+template <int NROWS, int NCOLS, typename T = uint16_t>
+void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 {
-#pragma HLS inline self	
+#pragma HLS inline self
 
 	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
-	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;	
-#ifdef _USE_XF_OPENCV	
+	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;
+#ifdef _USE_XF_OPENCV
  	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
  	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
  	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
-		uint16_t td = ins.read();
+		T td = ins.read();
 		cam_mat.data[idx] = (uint8_t) td;
 	}
-	xf::medianBlur <FILTER_WIDTH, XF_BORDER_REPLICATE, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat, cam_mat_i);
-	xf::minMaxLoc<XF_8UC1,NROWS,NCOLS,XF_NPPC1>(cam_mat_i, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
+	//xf::medianBlur <FILTER_WIDTH, XF_BORDER_REPLICATE, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat, cam_mat_i);
+	xf::minMaxLoc<XF_8UC1,NROWS,NCOLS,XF_NPPC1>(cam_mat, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
 	outs.write((int)_min_val);
 	outs.write((int)_max_val);
 	outs.write((int)_min_locy);
@@ -102,10 +106,13 @@ void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	outs.write((int)_max_locx);
 #else  // !_USE_XF_OPENCV
 	// copy image into a local buffer
-	uint16_t img_data[NROWS][NCOLS];	
+	uint16_t img_data[NROWS*NCOLS];
+	#pragma HLS RESOURCE variable=img_data core=RAM_1P_BRAM
  	for (int idy = 0 ; idy < NROWS ; idy++ ) {
 		for (int idx = 0 ; idx < NCOLS ; idx++) {
-			img_data[idy][idx] = ins.read();
+			#pragma HLS PIPELINE II=1
+
+			img_data[(idy*NCOLS)+idx] = ins.read();
 		}
 	}
 	// do median_blur and minmax in the same loop
@@ -113,15 +120,15 @@ void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 		for (int idx = 1; idx < (NCOLS-1); idx++) {
 #pragma HLS PIPELINE II=1
 			uint32_t data = 0;
-			data += (uint32_t)img_data[idy][idx];
-			data += (uint32_t)img_data[idy][idx+1];
-			data += (uint32_t)img_data[idy][idx-1];
-			data += (uint32_t)img_data[idy+1][idx];
-			data += (uint32_t)img_data[idy+1][idx+1];
-			data += (uint32_t)img_data[idy+1][idx-1];
-			data += (uint32_t)img_data[idy-1][idx];
-			data += (uint32_t)img_data[idy-1][idx+1];
-			data += (uint32_t)img_data[idy-1][idx-1];
+			data += (uint32_t)img_data[(idy*NCOLS)+idx];
+			data += (uint32_t)img_data[(idy*NCOLS)+idx+1];
+			data += (uint32_t)img_data[(idy*NCOLS)+idx-1];
+			data += (uint32_t)img_data[((idy+1)*NCOLS)+idx];
+			data += (uint32_t)img_data[((idy+1)*NCOLS)+idx+1];
+			data += (uint32_t)img_data[((idy+1)*NCOLS)+idx-1];
+			data += (uint32_t)img_data[((idy-1)*NCOLS)+idx];
+			data += (uint32_t)img_data[((idy-1)*NCOLS)+idx+1];
+			data += (uint32_t)img_data[((idy-1)*NCOLS)+idx-1];
 			data /= (uint32_t)9;
 			if (data < _min_val) {
 				_min_val = data;
@@ -143,6 +150,46 @@ void calc_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 	outs.write((int)_max_locy);
 	//usleep(1000);
 #endif
+}
+
+template <int NROWS, int NCOLS, typename T = uint16_t>
+void edge_detect(hls::stream<T> &ins,	hls::stream<T> &outs, float sigma)
+{
+#pragma HLS inline self
+
+ 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
+ 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
+	unsigned char *output;
+
+ 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+#pragma HLS PIPELINE II=1
+		T td = ins.read();
+		cam_mat.data[idx] = (uint8_t) td;
+	}
+	//xf::minMaxLoc<XF_8UC1,NROWS,NCOLS,XF_NPPC1>(cam_mat_i, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
+	//xf::GaussianBlur <FILTER_WIDTH, XF_BORDER_CONSTANT, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat, cam_mat_i, sigma);
+//	xf::GaussianBlur<FILTER_WIDTH, XF_BORDER_CONSTANT, XF_8UC1, HEIGHT, WIDTH, NPC1>(imgInput, imgOutput, sigma);
+
+	//xf::Canny <FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat_i, cam_mat, 3, 30);
+
+
+	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+#pragma HLS PIPELINE II=1
+		outs.write(cam_mat.data[idx]);
+	}
+}
+
+void cam_edge(hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
+{
+	float sigma = 0.5f;
+
+	edge_detect<240,320,uint8_t>(ins,outs, sigma);
+}
+
+
+void cam_byte_min_max(hls::stream<uint8_t> &ins,	hls::stream<int> &outs)
+{
+	calc_min_max<480,640,uint8_t>(ins,outs);
 }
 
 void cam_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
@@ -173,7 +220,7 @@ void flir_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 // coordinate system uses (row, col) where row = 0 and col = 0 correspond to the top-left corner of the input image
 const uint16_t X1[XF_MAX_OBJECTS]= {50, 150, 200, 400};        // row coordinates of the top-left corner of all the objects to be tracked
 const uint16_t Y1[XF_MAX_OBJECTS]= {50, 150, 200, 400};        // col coordinates of the top-left corner of all the objects to be tracked
-const uint16_t HEIGHT_MST[XF_MAX_OBJECTS] = {50, 50, 50, 50}; // height of all the objects to be tracked (measured from top-left corner)      
+const uint16_t HEIGHT_MST[XF_MAX_OBJECTS] = {50, 50, 50, 50}; // height of all the objects to be tracked (measured from top-left corner)
 const uint16_t WIDTH_MST[XF_MAX_OBJECTS]  = {50, 50, 50, 50}; // width of all the objects to be tracked (measured from top-left corner)
 void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls::stream <uint16_t> &outs)
 {
@@ -192,7 +239,7 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	static uint16_t dy 		[XF_MAX_OBJECTS];
 	static int 	track_id      = 0;
 	static uint8_t	frame_status  = 0;
-	
+
 	printf("%s: started\n",__FUNCTION__);
 	// initialize the first time
 	if (!frame_status) {
@@ -203,15 +250,15 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 			h_y[i] = 0;
 			c_x[i] = 0;
 			c_y[i] = 0;
-			
+
 			obj_height[i] = 0;
 			obj_width[i] = 0;
-			
+
 			tlx[i] = 0;
 			tly[i] = 0;
 			brx[i] = 0;
 			bry[i] = 0;
-			track[i] = 0;			
+			track[i] = 0;
 		}
 		track_id = 0;
 	} else {
@@ -229,10 +276,10 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 			h_y[i] = (_bry - _tly)/2;
 			c_x[i] = _tlx + h_x[i];
 			c_y[i] = _tly + h_y[i];
-			
+
 			obj_height[i] = h_y[i]*2;
 			obj_width[i]  = h_x[i]*2;
-			
+
 			tlx[i] = _tlx;
 			tly[i] = _tly;
 			brx[i] = c_x[i] + h_x[i];
@@ -248,12 +295,12 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	// 8 bit 4 channel so 32 bit per pixel
 	// copy incoming data into xf::Mat
 	for (int i = 0 ; i < (XF_HEIGHT*XF_WIDTH) ; i++) {
-#pragma HLS PIPELINE II=1		
+#pragma HLS PIPELINE II=1
 		inMat.data[i] = ins.read();
 	}
 
-	xf::MeanShift<XF_MAX_OBJECTS,XF_MAX_ITERS,XF_MAX_OBJ_HEIGHT,XF_MAX_OBJ_WIDTH,XF_8UC4,XF_HEIGHT,XF_WIDTH,XF_NPPC1>
-		(inMat,(uint16_t *)tlx,(uint16_t *)tly,obj_height,obj_width,dx,dy,track,frame_status,XF_MAX_OBJECTS,XF_MAX_OBJECTS,XF_MAX_ITERS);
+	//xf::MeanShift<XF_MAX_OBJECTS,XF_MAX_ITERS,XF_MAX_OBJ_HEIGHT,XF_MAX_OBJ_WIDTH,XF_8UC4,XF_HEIGHT,XF_WIDTH,XF_NPPC1>
+	//	(inMat,(uint16_t *)tlx,(uint16_t *)tly,obj_height,obj_width,dx,dy,track,frame_status,XF_MAX_OBJECTS,XF_MAX_OBJECTS,XF_MAX_ITERS);
 
 	for (int k = 0; k < XF_MAX_OBJECTS; k++) {
 		// out of range
@@ -267,9 +314,9 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 		bry[k] = c_y[k] + h_y[k];
 		dx [k] = dy[k] = 0;
 	}
-	
+
 	for (int k = 0; k < XF_MAX_OBJECTS; k++) {
-#pragma HLS PIPELINE II=1		
+#pragma HLS PIPELINE II=1
 		outs.write(track[k]);
 		outs.write(tlx[k]);
 		outs.write(tly[k]);
@@ -279,5 +326,5 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	frame_status = 1;
 	printf("%s: done\n",__FUNCTION__);
 }
-// 
+//
 // image_algos.cc ends here
