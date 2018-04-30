@@ -21,4 +21,5 @@ install(DIRECTORY
 	xilinx_vlib
 	image_algos
 	pass_thru_r5
+	facial_landmark_detection
 DESTINATION ${TARGET_EXAMPLE_DIR})
