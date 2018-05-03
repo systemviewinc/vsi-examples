@@ -14,6 +14,7 @@ install(DIRECTORY
 	blocking_read
 	device
 	webcam
+	webcam_opencv
 	include
 	microphone
 	memoryrwtest

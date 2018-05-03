@@ -158,20 +158,21 @@ void display_fpga(hls::stream<uint8_t> &out_image,	hls::stream<uint8_t> &in_imag
 		cvtColor(small, edges, COLOR_BGR2GRAY);
 
 		if (edges.isContinuous()) {
-			printf("Wiriting %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
+			//printf("Wiriting %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
 			out_image.write(edges.data,edges.total()*edges.elemSize());
 		} else {
 			printf("Cannot handle non-contiguos image\n");
 		}
-		printf("Reading %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
+		//printf("Reading %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
 		
 		for (int i = 0 ; i < 320*240; i++) img_buffer[i] = in_image.read();
+		printf("Number of points = %d\n",img_buffer[0] + (img_buffer[1] << 8));
 		Mat recieve_image = Mat(240,320,CV_8UC1, img_buffer);
 		Mat d_frame;
 		resize(recieve_image,d_frame,Size(640,480));
 
 		imshow("edges", d_frame);		
-		waitKey(0);
+		waitKey(1);
 	}
 	// the camera will be deinitialized automatically in VideoCapture destructor
 	exit(0);

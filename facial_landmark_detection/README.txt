@@ -12,7 +12,7 @@ g++ face_landmark.cxx -o face_landmark -I $VSI_INSTALL/target/X86/include -std=c
 
 ARM64:
 
-aarch64-linux-gnu-g++ face_detections.cxx -o face_detection_arm64 -I $VSI_INSTALL/target/ARM64/include -std=c++11 -L$VSI_INSTALL/target/ARM64/lib  -ldlib -lopenblas -static -pthread -DBENCHMARK
+aarch64-linux-gnu-g++ face_detection.cxx -o face_detection_arm64 -I $VSI_INSTALL/target/ARM64/include -std=c++11 -L$VSI_INSTALL/target/ARM64/lib  -ldlib -lopenblas -static -pthread -DBENCHMARK
 aarch64-linux-gnu-g++ face_landmark.cxx -o face_landmark -I $VSI_INSTALL/target/ARM64/include -std=c++11 -L$VSI_INSTALL/target/ARM64/lib  -ldlib -lopenblas -static -pthread -DBENCHMARK
 
 Run:
