@@ -129,61 +129,53 @@ void display_min_max(hls::stream<uint16_t> &out_image,	hls::stream<int> &in_poin
 }
 
 //Displays webcam image on arm after image has been processed by the FPGA
-
+static uint8_t img_buffer[320*240];
 
 void display_fpga(hls::stream<uint8_t> &out_image,	hls::stream<uint8_t> &in_image)
 {
 
 
-    VideoCapture cap(0); // open the default camera
-    if(!cap.isOpened()){  // check if we succeeded
+	VideoCapture cap(0); // open the default camera
+	if(!cap.isOpened()){  // check if we succeeded
 		printf("open failed!\n");
 		exit(0);
 	}
 
-    Mat edges;
+	Mat edges;
 	Mat frame;
 	Mat small;
-	Mat recieve_image;
+	int fno= 0;
+	
+	namedWindow("edges",1);
 
-
-    namedWindow("edges",1);
-
-    for(;;)
-    {
-        cap >> frame; // get a new frame from camera
+	for(;;) {
+		cap >> frame; // get a new frame from camera
+		printf("Captured image %d\n",fno++);
 
 		//resize smaller due to fpga limitations
 		resize(frame,small,Size(320,240));
 
-        cvtColor(small, edges, COLOR_BGR2GRAY);
+		cvtColor(small, edges, COLOR_BGR2GRAY);
 
 		if (edges.isContinuous()) {
-			printf("Wiriting %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
+			//printf("Wiriting %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
 			out_image.write(edges.data,edges.total()*edges.elemSize());
 		} else {
 			printf("Cannot handle non-contiguos image\n");
 		}
-		printf("Reading %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
+		//printf("Reading %d(total) * %d(size) 0x%x\n",edges.total(),edges.elemSize(), edges.total()*edges.elemSize());
+		
+		for (int i = 0 ; i < 320*240; i++) img_buffer[i] = in_image.read();
+		printf("Number of points = %d\n",img_buffer[0] + (img_buffer[1] << 8));
+		Mat recieve_image = Mat(240,320,CV_8UC1, img_buffer);
+		Mat d_frame;
+		resize(recieve_image,d_frame,Size(640,480));
 
-		recieve_image = Mat::zeros(Size(320,240), CV_8UC1);
-
-		for(int i = 0; i < 320; i++)
-		{
-			printf("Read %d\n",i);
-			//in_image.read(recieve_image.data[x],edges.total()*edges.elemSize());
-			in_image.read(recieve_image.data[i*240],240);
-		}
-
-
-		resize(recieve_image,frame,Size(640,480));
-
-        imshow("edges", frame);
-
-        if(waitKey(10000) >= 0) break;
-    }
-    // the camera will be deinitialized automatically in VideoCapture destructor
-    exit(0);
+		imshow("edges", d_frame);		
+		waitKey(1);
+	}
+	// the camera will be deinitialized automatically in VideoCapture destructor
+	exit(0);
 }
 
 #endif

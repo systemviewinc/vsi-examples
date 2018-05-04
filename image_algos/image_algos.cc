@@ -52,7 +52,8 @@
 // ///////////////////////////////////////////////////////////////////
 
 
-#include "stream_mux.h"
+//#include "stream_mux.h"
+#include <strings.h>
 #include "hls_stream.h"
 #include "common/xf_common.h"
 #include "common/xf_utility.h"
@@ -61,6 +62,8 @@
 #include "imgproc/xf_gaussian_filter.hpp"
 #include "imgproc/xf_mean_shift.hpp"
 #include "imgproc/xf_canny.hpp"
+#include "imgproc/xf_edge_tracing.hpp"
+#include "features/xf_fast.hpp"
 
 
 //#include "webcam.h"
@@ -152,40 +155,112 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 #endif
 }
 
-template <int NROWS, int NCOLS, typename T = uint16_t>
-void edge_detect(hls::stream<T> &ins,	hls::stream<T> &outs, float sigma)
+// template <int NROWS, int NCOLS, typename T = uint16_t>
+// void edge_detect(hls::stream<T> &ins,	hls::stream<T> &outs, float sigma)
+// {
+// #pragma HLS inline self
+
+//  	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
+//  	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);	
+// 	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC32> tmp_mat(NROWS,NCOLS);
+// 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC8> tmp2_mat(NROWS,NCOLS);
+	
+//  	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+// #pragma HLS PIPELINE II=1
+// 		T td = ins.read();
+// 		cam_mat.data[idx] = (uint8_t) td;
+// 	}
+
+// 	xf::Canny<FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_2UC1, NROWS, NCOLS, XF_NPPC1,XF_NPPC4> (cam_mat, cam_mat_i, 20, 54);
+// 	tmp_mat.copyTo(cam_mat_i.data); // convert to NPPC32
+// 	xf::EdgeTracing<XF_2UC1, XF_8UC1, NROWS, NCOLS, XF_NPPC32, XF_NPPC8> (tmp_mat, tmp2_mat);
+// 	cam_mat.copyTo(tmp2_mat.data); // convert to NPPC1
+	
+// 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+// #pragma HLS PIPELINE II=1
+// 		outs.write(cam_mat.data[idx]);
+// 	}
+// }
+
+namespace xf {
+template<int ROWS, int COLS>
+void xfEdgeTracing_(unsigned long long * _src, unsigned long long *_dst)
 {
-#pragma HLS inline self
+	xf::xfEdgeTracing((unsigned long long *)_dst,(unsigned long long *)_src,ROWS,COLS);
+}
+}
+template <int NROWS, int NCOLS, typename T = uint64_t>
+static void edge_trace (T *src, T *dst)
+{
+	#pragma HLS interface bram port=src depth=307200
+	#pragma HLS interface bram port=dst depth=307200
+	xf::xfEdgeTracing_<NROWS,NCOLS>((unsigned long long *)src, (unsigned long long *)dst);
+}
 
- 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
- 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
-	unsigned char *output;
+template <int NROWS, int NCOLS, typename T = uint8_t>
+static void canny_edge(hls::stream<T> &ins, T *outs)
+{
+	#pragma HLS interface bram port=outs depth=307200
+	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
+ 	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);
 
+	// read input
  	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
 		T td = ins.read();
 		cam_mat.data[idx] = (uint8_t) td;
 	}
-	//xf::minMaxLoc<XF_8UC1,NROWS,NCOLS,XF_NPPC1>(cam_mat_i, &_min_val, &_max_val, &_min_locx, &_min_locy, &_max_locx, &_max_locy);
-	//xf::GaussianBlur <FILTER_WIDTH, XF_BORDER_CONSTANT, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat, cam_mat_i, sigma);
-//	xf::GaussianBlur<FILTER_WIDTH, XF_BORDER_CONSTANT, XF_8UC1, HEIGHT, WIDTH, NPC1>(imgInput, imgOutput, sigma);
+	// compute canny
+	xf::Canny<FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_2UC1, NROWS, NCOLS, XF_NPPC1,XF_NPPC4> (cam_mat, cam_mat_i, 20, 54);
+	memcpy(outs, cam_mat_i.data, cam_mat_i.size);
+}
 
-	//xf::Canny <FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_8UC1, NROWS, NCOLS,XF_NPPC1> (cam_mat_i, cam_mat, 3, 30);
+void cam_edge(hls::stream<uint8_t> &ins,uint64_t *outs)
+{
+	printf("%s: starting\n",__FUNCTION__);
+	uint64_t *t_outs;
+#pragma HLS DATAFLOW	
+	canny_edge<240,320,uint8_t>(ins,(uint8_t *)t_outs);
+	edge_trace<240,320,uint64_t>(t_outs, outs); 
+}
 
 
-	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+// fast corner detection
+template <int NROWS, int NCOLS, int NMS, int THRESHOLD>
+static void fast_corner (hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
+{
+	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
+	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
+	// read input
+ 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
-		outs.write(cam_mat.data[idx]);
+		uint8_t td = ins.read();
+		cam_mat.data[idx] = (uint8_t) td;
+	}
+	xf::fast<NMS,XF_8UC1,NROWS, NCOLS,XF_NPPC1>(cam_mat,cam_mat_i,THRESHOLD);
+	int  n_points = 0;
+	for (int j = 0; j < cam_mat_i.rows; j++) {
+		for (int i = 0; i < (cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1)); i++) {
+#pragma HLS PIPELINE II=1
+			unsigned char value = cam_mat_i.data[j*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+i];//.at<unsigned char>(j, i);
+			if (value != 0) n_points++;
+		}
+	}
+	// cam_mat_i.data[0] = n_points & 0xff;
+	// cam_mat_i.data[1] = (n_points >> 8) & 0xff;
+	// send output
+ 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+#pragma HLS PIPELINE II=1
+		if (idx == 0) outs.write(n_points & 0xff);
+		else if (idx == 1) outs.write((n_points >> 8) & 0xff);
+		else outs.write(cam_mat_i.data[idx]);
 	}
 }
 
-void cam_edge(hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
+void cam_fast_corner(hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
 {
-	float sigma = 0.5f;
-
-	edge_detect<240,320,uint8_t>(ins,outs, sigma);
+	fast_corner<240,320,1,8>(ins, outs);
 }
-
 
 void cam_byte_min_max(hls::stream<uint8_t> &ins,	hls::stream<int> &outs)
 {

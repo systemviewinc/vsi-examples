@@ -14,6 +14,7 @@ install(DIRECTORY
 	blocking_read
 	device
 	webcam
+	webcam_opencv
 	include
 	microphone
 	memoryrwtest
@@ -21,4 +22,5 @@ install(DIRECTORY
 	xilinx_vlib
 	image_algos
 	pass_thru_r5
+	facial_landmark_detection
 DESTINATION ${TARGET_EXAMPLE_DIR})
