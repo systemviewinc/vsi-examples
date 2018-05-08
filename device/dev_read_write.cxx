@@ -7,8 +7,8 @@
 #include <ap_utils.h>
 #include <hls_stream.h>
 #include "ap_axi_sdata.h"
-#include "dev_read_write.h"
 #include <vsi_device.h>
+#include "dev_read_write.h"
 
 void set_control (vsi::device &dev) {
 	unsigned int val = 10;

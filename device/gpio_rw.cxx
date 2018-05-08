@@ -39,3 +39,8 @@ void led_8bit (vsi::device &led)
 		else val << 1;
 	}
 }
+
+void device_control(vsi::device &dev)
+{
+	while (1) sleep(10);
+}
