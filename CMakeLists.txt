@@ -23,4 +23,5 @@ install(DIRECTORY
 	image_algos
 	pass_thru_r5
 	facial_landmark_detection
+	univariate_linear_regression
 DESTINATION ${TARGET_EXAMPLE_DIR})
