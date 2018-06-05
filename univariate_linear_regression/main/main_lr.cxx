@@ -28,12 +28,12 @@ extern "C" int main () {
         int targ = 0; 
 	TrainingExample te(feat, targ);
 	V_TrainingExample_arg_1_seq_i_0.push_back(te);
-        std::cout << "Num of training examples = " << M << ", Num of featurs = " << N << "\n";
+        //std::cout << "Num of training examples = " << M << ", Num of featurs = " << N << "\n";
         for (int i = 0; i < M; i++)
         {       
                 f >> feat;
                 f >> targ;
-                std::cout<<"feature="<<feat<<"\t target="<<targ<<"\n";
+                //std::cout<<"feature="<<feat<<"\t target="<<targ<<"\n";
                 TrainingExample te(feat, targ);
                 V_TrainingExample_arg_1_seq_i_0.push_back(te);
         }
@@ -43,8 +43,8 @@ extern "C" int main () {
 	V_TrainingExample_Stream_arg_1_seq_i_0->write(V_TrainingExample_arg_1_seq_i_0);
 	std::vector<double> V_Theta_arg_2_seq_o_0 = V_Theta_Stream_arg_2_seq_o_0->read();
 	
-	for(int n=1; n< V_Theta_arg_2_seq_o_0.size(); n++) {
-        std::cout << V_Theta_arg_2_seq_o_0[n] << '\n';
-    }
+	//for(int n=1; n< V_Theta_arg_2_seq_o_0.size(); n++) {
+        //std::cout << V_Theta_arg_2_seq_o_0[n] << '\n';
+    //}
 
 }

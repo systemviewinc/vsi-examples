@@ -30,11 +30,11 @@ link_directories(
 
 
 
-add_executable(zynq_ps_example
-	zynq_ps_example.cxx
+add_executable(main_lr
+	main_lr.cxx
 )
 
-target_link_libraries(zynq_ps_example
+target_link_libraries(main_lr
 	zynq_ps
 )
 
