@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <assert.h>
 #include <vector>
+#include <string>
+#include <cstdlib>
+
 
 #include "zynq_ps_api.h"
 
@@ -14,10 +17,12 @@ extern "C" int main () {
 	hls::stream<std::vector<TrainingExample>> *V_TrainingExample_Stream_arg_1_seq_i_0 = static_cast<hls::stream<std::vector<TrainingExample>>*>(sb_arg_1_seq_i_0);
 	assert(V_TrainingExample_Stream_arg_1_seq_i_0 && "V_TrainingExample_Stream_arg_1_seq_i_0 is null");
 	std::vector<TrainingExample> V_TrainingExample_arg_1_seq_i_0;
+	std::string env_VSI_INSTALL = std::getenv("VSI_INSTALL");
+	std::string path_training_example = env_VSI_INSTALL + "/target/common/hls_examples/univariate_linear_regression/main/data.txt";
 
 	int M,N;
 	std::ifstream f;
-        f.open("/home/somayeh/linear_main/build/bin/data.txt");
+        f.open(path_training_example);
         if (f.fail())
         {       
                 std::cout << "File not opened" << "\n";
