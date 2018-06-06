@@ -25,9 +25,13 @@ extern "C" int main () {
         f.open(path_training_example);
         if (f.fail())
         {       
-                std::cout << "File not opened" << "\n";
+                std::cout << "Training Example file doesn't exist in the " << path_training_example <<"\n";
                 return 1;
-        } 
+        }
+	else
+	{
+	std::cout << "Training Example file opened from " << path_training_example <<"\n";
+	} 
         f >> M >> N;
 	int feat=0;
         int targ = 0; 
