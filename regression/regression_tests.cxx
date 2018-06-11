@@ -327,4 +327,60 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
     exit(0);
 }
 
+void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
+{
+    int out_arr[1024];
+    int in_arr[1024];
+    int sw_sort[1024];
+
+    char* test;
+	char* size;
+	char* num_tests;
+    int gpio_write = 0xDEADBEEF;
+    int gpio_read  = 0x0F0F0F0F;
+    int ret, t, number_of_tests;
+
+	srand(time(NULL));
+	num_tests = getenv("NUM_TESTS");
+
+	//check to make sure we have a  file and size
+	if (num_tests!=NULL) {
+		number_of_tests = (int)strtol(num_tests, NULL, 10);
+	}
+	else{
+		number_of_tests = 1;
+	}
+	printf("Running %d number of sorts!\n", number_of_tests);
+
+    //SW sort
+	for(t = 0; t < number_of_tests; t++) {
+
+		fill_arrays(out_arr, 1024);
+
+        printf("Running software sort\n");
+        //sort(out_arr, sw_sort);
+
+        //HW sort
+
+        printf("Write HW sort\n");
+        out_sort_mem.pwrite(&out_arr,sizeof(out_arr),0);
+
+        printf("Poll HW sort\n");
+        in_sort_mem.poll(-1);
+
+        printf("Read HW sort\n");
+        in_sort_mem.pread(&in_arr,sizeof(in_arr),0);
+
+        ret = compare_arrays(sw_sort, in_arr, 1024);
+        if(ret){
+            printf("ERROR SORT test failed! \n");
+            exit(1);
+        }
+	}
+
+
+	printf("Sort completed sucessfully \n");
+    exit(0);
+}
+
 #endif
