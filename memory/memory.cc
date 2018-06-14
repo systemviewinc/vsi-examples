@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include "mem_test.h"
+
 #ifndef __VSI_HLS_SYN__
 #include <iostream>
 #include <iomanip>
@@ -97,7 +98,6 @@ void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_
 		else offset += 4096;
 	}
 }
-#endif
 /**
  * @brief read from a file and write to a stream then go to sleep
  *
@@ -220,4 +220,11 @@ void mem_write_read(vsi::device &mem, hls::stream<int> &ctl_in)
 		offset += sizeof(val);
 		if (offset >= BOARD_MEM_SIZE) offset = 0;
 	}
+}
+#endif
+
+void mem_arr(char ar[1024])
+{
+	for (int i = 0 ; i < 1024; i++)
+		ar[i] = i;
 }
