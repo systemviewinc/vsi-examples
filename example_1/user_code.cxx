@@ -6,6 +6,12 @@
 char s[] = "Echo.";
 int s_len = sizeof(s) -1;
 
+/**
+ * @brief process data
+ *
+ @param in1 direction=input access=stream
+ @param out1 direction=output access=stream
+ */
 void process_tcp1(
 		char in1[256],
 		char out1[256]){
@@ -97,7 +103,7 @@ void write_4k(int outd[1024])
 		printf("going to sleep\n");
 		while(1) sleep(1);
 	}
-	for (int i = 0 ; i < 1024; i++) outd[i] = i;	
+	for (int i = 0 ; i < 1024; i++) outd[i] = i;
 }
 
 void read_4k(int ind[1024])

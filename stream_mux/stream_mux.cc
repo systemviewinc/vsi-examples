@@ -80,8 +80,8 @@ void stream_split_2_16(hls::stream<ap_axis_dk<16> > &ins,
 /**
  * @brief send data out in bursts
  *
- * @param in_stream
- * @param out_mem
+ * @param in_stream direction=inout access=stream
+ * @param out_mem direction=output access=memory
  */
 void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
 {
