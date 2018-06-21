@@ -7,10 +7,10 @@ char s[] = "Echo.";
 int s_len = sizeof(s) -1;
 
 /**
- * @brief process data
+ * @brief process data version=1.1 revision=1
  *
- @param in1 direction=input access=stream
- @param out1 direction=output access=stream
+ * @param in1 direction=input access=stream
+ * @param out1 direction=output access=stream
  */
 void process_tcp1(
 		char in1[256],
