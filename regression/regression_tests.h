@@ -9,9 +9,14 @@ using namespace std;
 #include <hls_stream.h>
 #include <ap_utils.h>
 #include "ap_axi_sdata.h"
+#include "quick_sort.h"
+
 #ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
 #include <unistd.h>
+#include <time.h>
+#include <stdlib.h>
+#include <hls_stream.h>
 #endif
 
 #define DATA_WIDTH 32
@@ -33,6 +38,5 @@ struct test_user_last_type {
 	ap_uint<D/8> keep;
 	ap_uint<1> id;
 };
-
 
 #endif

@@ -46,16 +46,6 @@ void stream_w_last_user_sum(hls::stream<test_user_last_type<DATA_WIDTH> > &in_st
 
 #ifndef __VSI_HLS_SYN__
 
-
-#include <time.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <vsi_device.h>
-#include <hls_stream.h>
-
-
-
-
 int compare_arrays(int array_one[], int array_two[], int size) {
     int ret = 0;
     printf("Index\t\t\tInput\t\tOutput\n");
@@ -274,7 +264,7 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
 				fill_arrays(out_arr, 1024);
 
 	            printf("Running software sort\n");
-	            //sort(out_arr, sw_sort);
+	            quick_sort(out_arr, sw_sort);
 
 	            //HW sort
 
@@ -329,8 +319,8 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
 
 void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
 {
-    int out_arr[1024];
-    int in_arr[1024];
+    int write_arr[1024];
+    int read_arr[1024];
     int sw_sort[1024];
 
     char* test;
@@ -355,23 +345,23 @@ void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
     //SW sort
 	for(t = 0; t < number_of_tests; t++) {
 
-		fill_arrays(out_arr, 1024);
-
-        printf("Running software sort\n");
-        //sort(out_arr, sw_sort);
+		fill_arrays(write_arr, 1024);
 
         //HW sort
 
         printf("Write HW sort\n");
-        out_sort_mem.pwrite(&out_arr,sizeof(out_arr),0);
+        out_sort_mem.pwrite(&write_arr,sizeof(write_arr),0);
 
         printf("Poll HW sort\n");
         in_sort_mem.poll(-1);
 
         printf("Read HW sort\n");
-        in_sort_mem.pread(&in_arr,sizeof(in_arr),0);
+        in_sort_mem.pread(&read_arr,sizeof(read_arr),0);
 
-        ret = compare_arrays(sw_sort, in_arr, 1024);
+		printf("Running software sort\n");
+        quick_sort(write_arr, sw_sort);
+
+        ret = compare_arrays(read_arr, sw_sort, 1024);
         if(ret){
             printf("ERROR SORT test failed! \n");
             exit(1);
