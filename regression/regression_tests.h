@@ -9,7 +9,6 @@ using namespace std;
 #include <hls_stream.h>
 #include <ap_utils.h>
 #include "ap_axi_sdata.h"
-#include "quick_sort.h"
 
 #ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
@@ -22,6 +21,7 @@ using namespace std;
 #define DATA_WIDTH 32
 #define USER_WIDTH 8
 
+extern void sort (int in_arr[1024], int out_arr[1024]);
 
 template<int D>
 struct test_last_type {

@@ -264,7 +264,7 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
 				fill_arrays(out_arr, 1024);
 
 	            printf("Running software sort\n");
-	            quick_sort(out_arr, sw_sort);
+	            sort(out_arr, sw_sort);
 
 	            //HW sort
 
@@ -354,14 +354,14 @@ void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
 
         printf("Poll HW sort\n");
         in_sort_mem.poll(-1);
-
         printf("Read HW sort\n");
         in_sort_mem.pread(&read_arr,sizeof(read_arr),0);
 
 		printf("Running software sort\n");
-        quick_sort(write_arr, sw_sort);
+        sort(write_arr, sw_sort);
 
-        ret = compare_arrays(read_arr, sw_sort, 1024);
+	ret = compare_arrays(read_arr, sw_sort, 1024);
+
         if(ret){
             printf("ERROR SORT test failed! \n");
             exit(1);
