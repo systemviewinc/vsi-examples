@@ -314,6 +314,7 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
     }
 
 	printf("Tests completed sucessfully \n");
+	sleep(1);
     exit(0);
 }
 
@@ -352,8 +353,10 @@ void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
         printf("Write HW sort\n");
         out_sort_mem.pwrite(&write_arr,sizeof(write_arr),0);
 
-        printf("Poll HW sort\n");
-        in_sort_mem.poll(-1);
+        //printf("Poll HW sort\n");
+        //in_sort_mem.poll(-1);
+		printf("Sleep 2\n");
+		sleep(2);
         printf("Read HW sort\n");
         in_sort_mem.pread(&read_arr,sizeof(read_arr),0);
 
