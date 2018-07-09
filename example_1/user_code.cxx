@@ -21,6 +21,13 @@ void process_tcp1(
 	}
 }
 
+/**
+ * @brief test version=1.1 revision=1
+ *
+ * @param a direction=input access=stream
+ * @param b direction=output access=stream
+ * @param r direction=input access=stream
+ */
 void func1(int a[16], hls::stream<int> &b, hls::stream<int> &r) {
 	for(int i = 0; i < 16; i++ ) {
 		b.write(a[i]);
@@ -28,6 +35,12 @@ void func1(int a[16], hls::stream<int> &b, hls::stream<int> &r) {
 	int j = r.read();
 }
 
+/**
+ * @brief test version=1.1 revision=1
+ *
+ * @param a direction=input access=stream
+ * @param r direction=output access=stream
+ */
 void func2(hls::stream<int> &a, hls::stream<int> &r) {
 	int _r = 0;
 	while(!a.empty()) {
@@ -38,6 +51,12 @@ void func2(hls::stream<int> &a, hls::stream<int> &r) {
 
 int count = 0;
 
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ * @param data_in direction=input access=stream
+ * @param mem direction=output access=memory
+ */
 void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
 	int offset = 0;
 	printf("entered func\n");
@@ -60,6 +79,13 @@ void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
 	}
 }
 
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ * @param data_in direction=input access=stream
+ * @param data_out direction=output access=stream
+ * @param mem direction=output access=memory
+ */
 void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::device &mem) {
 	int offset = 0;
 	printf("entered func\n");
@@ -83,16 +109,30 @@ void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::
 	}
 }
 
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ * @param str direction=input access=stream
+ */
 void write_test(char str[265]) {
 	strcpy(str, "TEST STRING");
 }
 
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ */
 void void_test() {
 	printf("void stuff\n");
 }
 
 // non synthesizable
 #ifndef __VSI_HLS_SYN__
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ * @param outd direction=output access=stream
+ */
 void write_4k(int outd[1024])
 {
 	static int first = 0;
@@ -106,6 +146,11 @@ void write_4k(int outd[1024])
 	for (int i = 0 ; i < 1024; i++) outd[i] = i;
 }
 
+/**
+ * @brief memory test version=1.1 revision=1
+ *
+ * @param ind direction=input access=stream
+ */
 void read_4k(int ind[1024])
 {
 	printf("Got Data\n");
