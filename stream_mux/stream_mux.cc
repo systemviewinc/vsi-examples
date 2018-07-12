@@ -216,6 +216,13 @@ void pass_thru_streaming(
     }
 }
 
+void inout_test(hls::stream<uint8_t> &input, hls::stream<uint8_t> &output)
+{
+	for (int i = 0 ; i < 1024; i ++) {
+		uint8_t td = input.read();
+		output.write(td);
+	}
+}
 
 #ifndef __VSI_HLS_SYN__
 void bulk_write(hls::stream<uint8_t> &outs, hls::stream<int> &cont)
