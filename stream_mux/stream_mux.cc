@@ -132,6 +132,37 @@ void vsi_memory_ctl(int in_arr[1024],
 	ap_axis_d<32> r = resp.read();
 	printf("%s done %d\n",__FUNCTION__,count++);
 }
+
+
+
+void write_double_buffer (hls::stream<int> &dsize, ap_uint<64> buffer_storage [16][16]) {
+	static int second_time = 0;
+	int size = 0 ;
+	if (second_time) while(1) sleep(10);
+	for (int i = 0 ; i < 16 ; i++) {
+		for (int j = 0 ; j < 16 ; j++) buffer_storage[i][j] = size++;
+	}
+	dsize.write(size);
+	second_time = 1;
+}
+
+void read_double_buffer(hls::stream<int> &dsize, ap_uint<64> buffer_storage [16][16]) {
+	int r_size = dsize.read();
+	int size = 0;
+	bool mis_match = false;
+	for (int i = 0 ; i < 16 ; i++) {
+		for (int j = 0 ; j < 16 ; j++) {
+			if (buffer_storage[i][j] != size) {
+				printf("Error mismatch @ %d %d got %d, expected %d\n",i,j,(int)buffer_storage[i][j],size);
+				mis_match = true;
+			}
+			size++;
+		}
+	}
+	if (!mis_match) printf("test passed\n");
+	exit(1);
+}
+
 #endif
 
 /**
