@@ -96,7 +96,7 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 	}
 }
 
-void get_micsample_hw(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+void get_micsample_hw(vsi::device mic)// hls::stream<fft_data_s> &os, hls::stream<int> &cont)
 {
 	uint32_t wv = 0;
 	uint32_t cr = 0;
@@ -113,15 +113,24 @@ void get_micsample_hw(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream
 				mic.pread(&wv,sizeof(wv),0x64);
 			} while (wv & 1);
 			mic.pread(&wv,sizeof(wv),0x6c); // read value
-			fft_d.data.re = (float)wv;
-			fft_d.data.im = 0.0;
-			fft_d.last = (i == SAMPLES);
-			os.write(fft_d);
+			// fft_d.data.re = (float)wv;
+			// fft_d.data.im = 0.0;
+			// fft_d.last = (i == SAMPLES);
+			// os.write(fft_d);
 			//printf("%s: got value %d\n",__FUNCTION__,wv);
 		}
-		cont.read() ; // wait for fft to complete
+		//cont.read() ; // wait for fft to complete
 		//printf("%s Continuing\n",__FUNCTION__);
 	}
+}
+
+void recv_mic_raw_data(hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+{
+	for (int i = 1; i <= SAMPLES; i++) {
+		fft_data_s fft_d = os.read();
+		printf("Sample [%d] value %f\n",i,fft_d.data.re);
+	}
+	cont.write(1);
 }
 
 #ifndef __VSI_HLS_SYN__
