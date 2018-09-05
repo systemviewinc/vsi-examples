@@ -80,8 +80,8 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
 	test_user_last_type<DATA_WIDTH> out;
 
     char* test;
-	char* size;
-	char* num_tests;
+    char* size;
+    char* num_tests;
     int gpio_write = 0xDEADBEEF;
     int gpio_read  = 0x0F0F0F0F;
     int ret, i, t, test_val, size_val, number_of_tests;
@@ -318,6 +318,374 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
     exit(0);
 }
 
+
+void gpio_test_controller(vsi::device &GPIO_0, vsi::device &GPIO_1)
+{
+	char* test;
+	char* num_tests;
+	int gpio_write = 0xDEADBEEF;
+	int gpio_read  = 0x0F0F0F0F;
+	int test_val, number_of_tests;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 1) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		//GPIO TEST
+		for(t = 0; t < number_of_tests; t++) {
+
+			//write output gpio
+			gpio_write = rand();
+			GPIO_0.pwrite(&gpio_write,sizeof(gpio_write),0);
+			printf("Wrote \t0x%08x to output GPIO\n", gpio_write);
+
+			//read input gpio
+			GPIO_1.pread(&gpio_read,sizeof(gpio_read),0);
+			printf("Read  \t0x%08x from input GPIO\n", gpio_read);
+			if(gpio_read != gpio_write){
+				printf("ERROR GPIO test failed! \n");
+				exit(1);
+			}
+		}
+		exit(0)
+	}
+	sleep(1000);
+}
+
+void mem_test_controller(vsi::device &bram_memory)
+{
+	int out_arr[1024];
+	int in_arr[1024];
+
+	char* test;
+	char* num_tests;
+	int test_val, number_of_tests;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 2) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		//BRAM TEST
+		for(t = 0; t < number_of_tests; t++) {
+
+			fill_arrays(out_arr, 1024);
+
+			printf("Write BRAM\n");
+			bram_memory.pwrite(&out_arr,sizeof(in_arr),0);
+			printf("Read BRAM\n");
+			bram_memory.pread(&in_arr,sizeof(in_arr),0);
+
+			ret = compare_arrays(out_arr, in_arr, 1024);
+			if(ret){
+				printf("ERROR BRAM test failed! \n");
+				exit(1);
+			}
+		}
+		exit(0)
+	}
+	sleep(1000);
+}
+
+void steaming_w_last_test_controller(hls::stream<test_last_type<DATA_WIDTH> > &out_stream_last, hls::stream<test_last_type<DATA_WIDTH> > &in_stream_last)
+{
+	int out_arr[1024];
+	int in_arr[1024];
+
+	test_last_type<DATA_WIDTH> in_last;
+	test_last_type<DATA_WIDTH> out_last;
+
+	char* test;
+	char* size;
+	char* num_tests;
+	int test_val, size_val, number_of_tests;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+	size = getenv("SIZE");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 3) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		for(t = 0; t < number_of_tests; t++) {
+			//write out_stream_last
+			printf("Write streaming with last size 0x%x\n", size_val);
+			for(i = 0; i < size_val; i++){
+				out_last.data = (ap_uint<DATA_WIDTH>)out_arr[i];
+				if(i == size_val -1){
+					out_last.last = 1;
+				} else {
+					out_last.last = 0;
+				}
+				out_stream_last.write(out_last);
+			}
+
+			//read input gpio
+			printf("Reading streaming with last size 0x%x\n", size_val);
+			for(i = 0; i < size_val; i++){
+				in_stream_last.read(in_last);
+				in_arr[i] = in_last.data;
+				if(i == size_val -1){
+					//out.last = 1;
+				} else {
+					//out.last = 0;
+				}
+			}
+			sleep(10);
+
+			ret = compare_arrays(out_arr, in_arr, size_val);
+			if(ret){
+				printf("ERROR STREAMING WITH LAST test failed! \n");
+				exit(1);
+			}
+		}
+
+		exit(0)
+
+	}
+	sleep(1000);
+}
+
+void streaming_wo_last_test_controller(hls::stream<int> &out_stream, hls::stream<int> &in_stream)
+{
+	int out_arr[1024];
+	int in_arr[1024];
+
+	char* test;
+	char* num_tests;
+	int test_val, number_of_tests, ret;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+	size = getenv("SIZE");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 4) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		for(t = 0; t < number_of_tests; t++) {
+			fill_arrays(out_arr, 1024);
+			printf("Write out stream\n");
+			out_stream.write(&out_arr,sizeof(out_arr));
+
+			printf("read in_stream\n");
+			ret = 0;
+			while(ret < 1024*4){
+				ret += in_stream.read(&in_arr[ret/4],sizeof(in_arr));
+				printf("read amount %d\n", ret);
+			}
+
+			ret = compare_arrays(out_arr, in_arr, 1024);
+			if(ret){
+				printf("ERROR STREAMING test failed! \n");
+				exit(1);
+			}
+		}
+
+		exit(0)
+
+	}
+	sleep(1000);
+}
+
+void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
+{
+	int out_arr[1024];
+	int in_arr[1024];
+	int sw_sort[1024];
+
+	test_last_type<DATA_WIDTH> in_last;
+	test_last_type<DATA_WIDTH> out_last;
+	test_user_last_type<DATA_WIDTH> in;
+	test_user_last_type<DATA_WIDTH> out;
+
+	char* test;
+	char* size;
+	char* num_tests;
+	int gpio_write = 0xDEADBEEF;
+	int gpio_read  = 0x0F0F0F0F;
+	int test_val, size_val, number_of_tests;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+	size = getenv("SIZE");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 5) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		for(t = 0; t < number_of_tests; t++) {
+			fill_arrays(write_arr, 1024);
+
+			//HW sort
+			printf("Write HW sort\n");
+			out_sort_mem.pwrite(&write_arr,sizeof(write_arr),0);
+
+			printf("Poll HW sort\n");
+			in_sort_mem.poll(-1);
+
+			printf("Read HW sort\n");
+			in_sort_mem.pread(&read_arr,sizeof(read_arr),0);
+
+			printf("Running software sort\n");
+			sort(write_arr, sw_sort);
+
+			ret = compare_arrays(read_arr, sw_sort, 1024);
+
+			if(ret){
+				printf("ERROR SORT test failed! \n");
+				exit(1);
+			}
+		}
+
+		printf("Sort completed sucessfully \n");
+		exit(0)
+
+	}
+	sleep(1000);
+}
+
+void sort_array_test_controller(int out_arr[1024], int in_arr[1024])
+{
+	int out_arr[1024];
+	int in_arr[1024];
+	int sw_sort[1024];
+
+	test_last_type<DATA_WIDTH> in_last;
+	test_last_type<DATA_WIDTH> out_last;
+	test_user_last_type<DATA_WIDTH> in;
+	test_user_last_type<DATA_WIDTH> out;
+
+	char* test;
+	char* size;
+	char* num_tests;
+	int gpio_write = 0xDEADBEEF;
+	int gpio_read  = 0x0F0F0F0F;
+	int test_val, size_val, number_of_tests;
+
+	srand(time(NULL));
+	test = getenv("TEST");
+	num_tests = getenv("NUM_TESTS");
+	size = getenv("SIZE");
+
+	//check to make sure we have a  file and size
+	if (test!=NULL) {
+		test_val = (int)strtol(test, NULL, 10);
+	}
+	else {
+		test_val = 0;
+	}
+	if(test_val == 6) {		//our test number
+				//check to make sure we have a  file and size
+		if (num_tests!=NULL) {
+			number_of_tests = (int)strtol(num_tests, NULL, 10);
+		}
+		else{
+			number_of_tests = 1;
+		}
+		printf("Running test type %d!\n", test_val);
+		printf("Running %d number of tests!\n", number_of_tests);
+		//do test here
+		printf("TODO\n");		//todo
+
+
+		exit(0)
+
+	}
+	sleep(1000);
+}
+
+
+
+
+
+
+
+
+
+
+
 void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
 {
     int write_arr[1024];
@@ -355,7 +723,7 @@ void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
 
         printf("Poll HW sort\n");
         in_sort_mem.poll(-1);
-		
+
         printf("Read HW sort\n");
         in_sort_mem.pread(&read_arr,sizeof(read_arr),0);
 
