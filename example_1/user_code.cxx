@@ -138,9 +138,9 @@ void write_4k(int outd[1024])
 	static int first = 0;
 	if (!first) {
 		first = 1;
-		printf("%s: Sending data\n", __FUNCTION__);
+		printf("{{TID}} %s: Sending data\n", __FUNCTION__);
 	} else {
-		printf("%s: Going to sleep\n", __FUNCTION__);
+		printf("{{TID}} %s: Going to sleep\n", __FUNCTION__);
 		while(1) sleep(1);
 	}
 	for (int i = 0 ; i < 1024; i++) outd[i] = i;
@@ -152,9 +152,9 @@ void write_4k1(int outd[1024])
 	static int first = 0;
 	if (!first) {
 		first = 1;
-		printf("%s: Sending data\n", __FUNCTION__);
+		printf("{{TID}} %s: Sending data\n", __FUNCTION__);
 	} else {
-		printf("%s: Going to sleep\n", __FUNCTION__);
+		printf("{{TID}} %s: Going to sleep\n", __FUNCTION__);
 		while(1) sleep(1);
 	}
 	for (int i = 0 ; i < 1024; i++) outd[i] = i + 10;
@@ -167,20 +167,20 @@ void write_4k1(int outd[1024])
  */
 void read_4k(int ind[1024])
 {
-	printf("%s: Got Data:", __FUNCTION__);
+	printf("{{TID}} %s: Got Data:", __FUNCTION__);
 	for (int i = 0; i < 10; i++)
 		printf("%d:", ind[i]);
-	printf("\n%s: Going to sleep\n", __FUNCTION__);
+	printf("Going to sleep\n");
 	while(1) sleep(1);
 	// exit(0);
 }
 
 void read_4k1(int ind[1024])
 {
-	printf("%s: Got Data:", __FUNCTION__);
+	printf("{{TID}} %s: Got Data:", __FUNCTION__);
 	for (int i = 0; i < 10; i++)
 		printf("%d:", ind[i]);
-	printf("\n%s: Going to sleep\n", __FUNCTION__);
+	printf("Going to sleep\n");
 	while(1) sleep(1);
 	// exit(0);
 }
