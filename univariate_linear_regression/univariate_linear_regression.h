@@ -7,13 +7,13 @@
 #include <cmath>
 
 class TrainingExample
-{   
+{
     private:
         int feature;
         int target;
     public:
         TrainingExample(int feat, int tar)
-        {   
+        {
             feature = feat;
             target = tar;
         }
@@ -24,7 +24,7 @@ class TrainingExample
 
 class Hypothesis
 {
-    private:
+        private:
                 std::vector<double> theta;
                 std::vector<TrainingExample> ts;
                 unsigned mExamples, nFeatures;
@@ -43,14 +43,12 @@ class Hypothesis
             }
             return sum / (2.0*(mExamples-1));
         }
-
         Hypothesis(std::vector<TrainingExample> examples,std::vector<double> THETA_init)
         {
-		copy(THETA_init.begin(), THETA_init.end(), back_inserter(theta));
-                ts=examples;
-                mExamples = examples.size();
+            copy(THETA_init.begin(), THETA_init.end(), back_inserter(theta));
+            ts=examples;
+            mExamples = examples.size();
         }
-
         std::vector<double> gradientDescent()
         {
             const double alpha = 0.0000001;
@@ -66,7 +64,6 @@ class Hypothesis
                 sum_thetha_0=0;
                 sum_thetha_1=0;
                 //cout << "J(theta) = " << J() << endl << endl;
-
                 for (unsigned i = 1; i < mExamples; i++)
                 {
                     HH = H(newTheta[0], newTheta[1], ts[i].getFeature());
@@ -82,6 +79,5 @@ class Hypothesis
              }
              return theta;
         }
-
 };
 #endif

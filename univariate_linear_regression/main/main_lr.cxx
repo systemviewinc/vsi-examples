@@ -22,38 +22,32 @@ extern "C" int main () {
 
 	int M,N;
 	std::ifstream f;
-        f.open(path_training_example);
-        if (f.fail())
-        {       
-                std::cout << "Training Example file doesn't exist in the " << path_training_example <<"\n";
-                return 1;
-        }
-	else
-	{
-	std::cout << "Training Example file opened from " << path_training_example <<"\n";
-	} 
-        f >> M >> N;
+	f.open(path_training_example);
+	if (f.fail()) {
+		std::cout << "Training Example file doesn't exist in the " << path_training_example <<"\n";
+		return 1;
+	}
+	else {
+		std::cout << "Training Example file opened from " << path_training_example <<"\n";
+	}
+	f >> M >> N;
 	int feat=0;
-        int targ = 0; 
+	int targ = 0;
 	TrainingExample te(feat, targ);
 	V_TrainingExample_arg_1_seq_i_0.push_back(te);
-        //std::cout << "Num of training examples = " << M << ", Num of featurs = " << N << "\n";
-        for (int i = 0; i < M; i++)
-        {       
-                f >> feat;
-                f >> targ;
-                //std::cout<<"feature="<<feat<<"\t target="<<targ<<"\n";
-                TrainingExample te(feat, targ);
-                V_TrainingExample_arg_1_seq_i_0.push_back(te);
-        }
-        f.close();
-
+	//std::cout << "Num of training examples = " << M << ", Num of featurs = " << N << "\n";
+	for (int i = 0; i < M; i++) {
+		f >> feat;
+		f >> targ;
+		//std::cout<<"feature="<<feat<<"\t target="<<targ<<"\n";
+		TrainingExample te(feat, targ);
+		V_TrainingExample_arg_1_seq_i_0.push_back(te);
+	}
+	f.close();
 	hls::stream<std::vector<double>> *V_Theta_Stream_arg_2_seq_o_0 = static_cast<hls::stream<std::vector<double>>*>(sb_arg_2_seq_o_0);
 	V_TrainingExample_Stream_arg_1_seq_i_0->write(V_TrainingExample_arg_1_seq_i_0);
 	std::vector<double> V_Theta_arg_2_seq_o_0 = V_Theta_Stream_arg_2_seq_o_0->read();
-	
 	//for(int n=1; n< V_Theta_arg_2_seq_o_0.size(); n++) {
-        //std::cout << V_Theta_arg_2_seq_o_0[n] << '\n';
-    //}
-
+		//std::cout << V_Theta_arg_2_seq_o_0[n] << '\n';
+	//}
 }
