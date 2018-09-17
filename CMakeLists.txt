@@ -25,5 +25,6 @@ install(DIRECTORY
 	facial_landmark_detection
 	univariate_linear_regression
 	hls_video
+	hls_master
 	regression
 DESTINATION ${TARGET_EXAMPLE_DIR})
