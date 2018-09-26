@@ -326,6 +326,7 @@ void gpio_test_controller(vsi::device &GPIO_0, vsi::device &GPIO_1)
 	int gpio_write = 0xDEADBEEF;
 	int gpio_read  = 0x0F0F0F0F;
 	int test_val, number_of_tests;
+	int t;
 
 	srand(time(NULL));
 	test = getenv("TEST");
@@ -365,7 +366,7 @@ void gpio_test_controller(vsi::device &GPIO_0, vsi::device &GPIO_1)
 				exit(1);
 			}
 		}
-		exit(0)
+		exit(0);
 	}
 	sleep(1000);
 }
@@ -377,7 +378,7 @@ void mem_test_controller(vsi::device &bram_memory)
 
 	char* test;
 	char* num_tests;
-	int test_val, number_of_tests;
+	int test_val, number_of_tests, t, ret;
 
 	srand(time(NULL));
 	test = getenv("TEST");
@@ -417,7 +418,7 @@ void mem_test_controller(vsi::device &bram_memory)
 				exit(1);
 			}
 		}
-		exit(0)
+		exit(0);
 	}
 	sleep(1000);
 }
@@ -433,7 +434,7 @@ void steaming_w_last_test_controller(hls::stream<test_last_type<DATA_WIDTH> > &o
 	char* test;
 	char* size;
 	char* num_tests;
-	int test_val, size_val, number_of_tests;
+	int test_val, size_val, number_of_tests, t, i, ret;
 
 	srand(time(NULL));
 	test = getenv("TEST");
@@ -491,7 +492,7 @@ void steaming_w_last_test_controller(hls::stream<test_last_type<DATA_WIDTH> > &o
 			}
 		}
 
-		exit(0)
+		exit(0);
 
 	}
 	sleep(1000);
@@ -504,12 +505,12 @@ void streaming_wo_last_test_controller(hls::stream<int> &out_stream, hls::stream
 
 	char* test;
 	char* num_tests;
-	int test_val, number_of_tests, ret;
+	char* size;
+	int test_val, number_of_tests, ret, t;
 
 	srand(time(NULL));
 	test = getenv("TEST");
 	num_tests = getenv("NUM_TESTS");
-	size = getenv("SIZE");
 
 	//check to make sure we have a  file and size
 	if (test!=NULL) {
@@ -548,7 +549,7 @@ void streaming_wo_last_test_controller(hls::stream<int> &out_stream, hls::stream
 			}
 		}
 
-		exit(0)
+		exit(0);
 
 	}
 	sleep(1000);
@@ -556,8 +557,8 @@ void streaming_wo_last_test_controller(hls::stream<int> &out_stream, hls::stream
 
 void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
 {
-	int out_arr[1024];
-	int in_arr[1024];
+	int write_arr[1024];
+	int read_arr[1024];
 	int sw_sort[1024];
 
 	test_last_type<DATA_WIDTH> in_last;
@@ -570,7 +571,7 @@ void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sor
 	char* num_tests;
 	int gpio_write = 0xDEADBEEF;
 	int gpio_read  = 0x0F0F0F0F;
-	int test_val, size_val, number_of_tests;
+	int test_val, size_val, number_of_tests, t, ret;
 
 	srand(time(NULL));
 	test = getenv("TEST");
@@ -620,7 +621,7 @@ void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sor
 		}
 
 		printf("Sort completed sucessfully \n");
-		exit(0)
+		exit(0);
 
 	}
 	sleep(1000);
@@ -628,14 +629,7 @@ void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sor
 
 void sort_array_test_controller(int out_arr[1024], int in_arr[1024])
 {
-	int out_arr[1024];
-	int in_arr[1024];
-	int sw_sort[1024];
 
-	test_last_type<DATA_WIDTH> in_last;
-	test_last_type<DATA_WIDTH> out_last;
-	test_user_last_type<DATA_WIDTH> in;
-	test_user_last_type<DATA_WIDTH> out;
 
 	char* test;
 	char* size;
@@ -669,14 +663,11 @@ void sort_array_test_controller(int out_arr[1024], int in_arr[1024])
 		//do test here
 		printf("TODO\n");		//todo
 
-
-		exit(0)
+		exit(0);
 
 	}
 	sleep(1000);
 }
-
-
 
 
 

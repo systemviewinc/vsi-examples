@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <hls_stream.h>
 
+#define LOOP_COUNT 10
 
 static int rnd_seed = 402143098;
 static int count = 0;
@@ -67,7 +68,7 @@ void hls_reader_writer(vsi::device mem)
 	int write_buff[40];
 	int read_buff[40];
 	printf("[read/write]-----WRITE BUFFER-----\n");
-	for (int i = 0 ; i < 10*4; i++) {
+	for (int i = 0 ; i < 40; i++) {
 		write_buff[i] = count++;
 		printf("[read/write]%d : %d \n", i, write_buff[i]);
 	}
@@ -86,23 +87,31 @@ void hls_reader_writer(vsi::device mem)
 void system_controller(hls::stream<int> &out_1, hls::stream<int> &out_2, hls::stream<int> &out_3,
                         hls::stream<int> &in_1, hls::stream<int> &in_2, hls::stream<int> &in_3)
 {
-    printf("\n\n\n\n[Controller]----------SW READ COUNTER----------\n");
-    out_1.write((int)1);
-    in_1.read();
-    printf("[Controller]---------------------------------------\n");
+    int ret = 0;
+    bool failed = false;
+    for(int i = 0; i < LOOP_COUNT; i++) {
+        printf("\n[Controller]----------SW READ COUNTER----------\n");
+        out_1.write((int)1);
+        failed =  in_1.read() || failed  ? true : false;
+        printf("[Controller]---------------------------------------\n");
+        printf("\n[Controller]----------HW READ COUNTER----------\n");
+        out_2.write((int)2);
+        failed =  in_2.read() || failed ? true : false;
+        printf("[Controller]---------------------------------------\n");
+        printf("\n[Controller]----------HW READ/WRITE ADDER----------\n");
+        out_3.write((int)3);
+        failed =  in_3.read()  || failed ? true : false;
+        printf("[Controller]---------------------------------------\n");
+    }
+    if (failed)
+        printf("[Controller] Failed!");
+    else
+        printf("[Controller] Passed!");
+    sleep(5);
+#ifndef __VSI_HLS_SYN__
+    exit(0);
+#endif
 
-    getchar();
-    printf("\n\n\n\n[Controller]----------HW READ RANDOM----------\n");
-    out_2.write((int)2);
-    in_2.read();
-    printf("[Controller]---------------------------------------\n");
-    getchar();
-    printf("\n\n\n\n[Controller]----------HW READ/WRITE ADDER----------\n");
-    out_3.write((int)3);
-    in_3.read();
-    printf("[Controller]---------------------------------------\n");
-
-    getchar();
 }
 
 
@@ -111,14 +120,25 @@ void hls_reader_controlled(hls::stream<int> &input, vsi::device mem, hls::stream
 {
     int num = input.read();
 	int buff[10*4];
+    bool failed = false;
 	mem.pread(buff,sizeof(buff),0);
 	printf("[reader_%i]-----READ BUFFER-----\n", num);
-	for (int i = 0 ; i < 10*4; i++)
+
+	for (int i = 0 ; i < 10*4; i++) {
 		printf("[reader_%i]%d : %d \n", num, i, buff[i]);
+        if(buff[i] != i) {
+            failed = true;
+            printf("[reader_%i]\tFail! \n", num);
+        }
+    }
 	printf("[reader_%i]---------------------\n", num);
-    output.write((int)1);
 
-
+    if(failed) {
+        output.write((int)-1);
+    }
+    else {
+        output.write((int)0);
+    }
 }
 
 void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device mem, hls::stream<int> &output)
@@ -126,18 +146,32 @@ void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device mem, hls:
     int num = input.read();
 	int write_buff[40];
 	int read_buff[40];
+    bool failed = false;
+
 	printf("[read/write_%i]-----WRITE BUFFER-----\n", num);
-	for (int i = 0 ; i < 10*4; i++) {
+	for (int i = 0 ; i < 40; i++) {
 		write_buff[i] = 5*count++;
 		printf("[read/write_%i]%d : %d \n", num, i, write_buff[i]);
 	}
 	mem.pwrite(&write_buff,sizeof(write_buff),0);
 	printf("[read/write_%i]---------------------\n", num);
-    //sleep(1);
+    //wait some time for hls block to be able to process
+    sleep(1);
 	mem.pread(&read_buff,sizeof(read_buff),sizeof(write_buff));
 	printf("[read/write_%i]-----READ BUFFER-----\n", num);
-	for (int i = 0 ; i < 40; i++)
+	for (int i = 0 ; i < 40; i++){
 		printf("[read/write_%i]%d : %d \n", num, i, read_buff[i]);
+        if(read_buff[i] != write_buff[i]+10) {
+            failed = true;
+            printf("[read/write_%i]\tFail! \n", num);
+        }
+    }
 	printf("[read/write_%i]---------------------\n", num);
-    output.write((int)1);
+
+    if(failed) {
+        output.write((int)-1);
+    }
+    else {
+        output.write((int)0);
+    }
 }

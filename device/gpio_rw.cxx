@@ -21,7 +21,7 @@ void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
 			     << rval << std::endl;
 			exit(-1);
 		}
-		sleep(1); // wait a sec 
+		sleep(1); // wait a sec
 		wval++;
 		if (wval == 0xffffffff) {
 			std::cout << "SUCCESS : test finished " << std::endl;
@@ -38,6 +38,18 @@ void led_8bit (vsi::device &led)
 		if (val == 0x0080) val = 1;
 		else val << 1;
 	}
+}
+
+//This function will toggle a gpio high to reset a system at start
+void device_reset (vsi::device &rst)
+{
+	unsigned int val = 1;
+	rst.pwrite(&val,sizeof(val),0);
+	sleep(1);
+	unsigned int val = 0;
+	rst.pwrite(&val,sizeof(val),0);
+	//sleep forever
+	while (1) sleep(100);
 }
 
 void device_control(vsi::device &dev)
