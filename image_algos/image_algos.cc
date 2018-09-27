@@ -61,6 +61,8 @@
 #include "imgproc/xf_median_blur.hpp"
 #include "imgproc/xf_gaussian_filter.hpp"
 #include "imgproc/xf_mean_shift.hpp"
+#include "imgproc/xf_dilation.hpp"
+#include "imgproc/xf_erosion.hpp"
 #include "imgproc/xf_canny.hpp"
 #include "imgproc/xf_edge_tracing.hpp"
 #include "features/xf_fast.hpp"
@@ -278,8 +280,8 @@ void flir_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 }
 
 // // MeanShift
-#define XF_HEIGHT 480
-#define XF_WIDTH  640
+#define XF_HEIGHT (480/2)
+#define XF_WIDTH  (640/2)
 #define XF_ROWS	  XF_HEIGHT
 #define XF_COLS	  XF_WIDTH
 // set the maximum height and width from the objects given for latency report and resource allocation
@@ -400,6 +402,56 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	}
 	frame_status = 1;
 	printf("%s: done\n",__FUNCTION__);
+}
+
+#define ED_SIZE 4
+
+void vsi_dilate (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) {
+	uint8_t *outa = (uint8_t *)&outx[0];
+	for (int i = 0 ; i < XF_HEIGHT ; i++) {
+		for (int j = 0 ; j < XF_WIDTH ; j++) {
+#pragma HLS PIPELINE II=1
+			outa[(i*XF_WIDTH)+j] = ins.read();
+		}
+	}
+	for (int idy = ED_SIZE ; idy < (XF_HEIGHT-ED_SIZE); idy+=ED_SIZE) {
+		for (int idx = ED_SIZE; idx < (XF_WIDTH-ED_SIZE); idx+=ED_SIZE) {
+			uint32_t data = 0;
+			uint32_t max_val = 0;
+			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+#pragma HLS PIPELINE II=1
+					if (outa[((idy+i)*XF_WIDTH)+idx+j] > max_val) max_val = outa[((idy+i)*XF_WIDTH)+idx+j];
+			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+#pragma HLS PIPELINE II=1
+					outa[((idy+i)*XF_WIDTH)+idx+j] = max_val;
+		}
+	}
+}
+
+void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) {
+	uint8_t *outa = (uint8_t *)&outx[0];
+	for (int i = 0 ; i < (XF_HEIGHT) ; i++) 
+		for (int j = 0 ; j < XF_WIDTH ; j++)
+#pragma HLS PIPELINE II=1
+			outa[(i*XF_WIDTH)+j] = ins.read();
+
+	for (int idy = ED_SIZE ; idy < (XF_HEIGHT-ED_SIZE); idy+=ED_SIZE) {
+		for (int idx = ED_SIZE; idx < (XF_WIDTH-ED_SIZE); idx+=ED_SIZE) {
+			uint32_t data = 0;
+			uint32_t min_val = -1;
+			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+#pragma HLS PIPELINE II=1
+					if (outa[((idy+i)*XF_WIDTH)+idx+j] < min_val) min_val = outa[((idy+i)*XF_WIDTH)+idx+j];
+						       
+			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+#pragma HLS PIPELINE II=1
+					outa[((idy+i)*XF_WIDTH)+idx+j] = min_val;
+		}
+	}
 }
 //
 // image_algos.cc ends here
