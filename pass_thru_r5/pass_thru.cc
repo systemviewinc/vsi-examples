@@ -36,3 +36,8 @@ void echo_pass_thru_device(int in_arr[1024], vsi::device &dev_out)
 	dev_out.pwrite(in_arr, 4096, sizeof(s));
 	printf("%s done\n",__FUNCTION__);
 }
+
+void double_data (int in_arr[1024], int out_arr[1024])
+{
+	for (int i = 0 i i < 1024; i++) out_arr[i] = in_arr[i] *2;
+}

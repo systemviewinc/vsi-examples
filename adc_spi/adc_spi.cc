@@ -90,12 +90,12 @@ static void read_registers(unsigned int reg, int nregs, unsigned int reg_vals[],
 	adc.pwrite(&wv,sizeof(wv),0x68); // number of regs
 
 	enable_slave(adc,1);
-	enable_master(adc);
 	usleep(5); // wait a little
 	for (int i = 0 ; i < nregs; i++) {
 		wv = 0; 		
 		adc.pwrite(&wv,sizeof(wv),0x68); // nop
 	}
+	enable_master(adc);
 	for (int i = 0 ; i < nregs; i++) {
 		do {
 			adc.pread(&wv,sizeof(wv),0x64);
