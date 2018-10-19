@@ -39,5 +39,5 @@ void echo_pass_thru_device(int in_arr[1024], vsi::device &dev_out)
 
 void double_data (int in_arr[1024], int out_arr[1024])
 {
-	for (int i = 0 i i < 1024; i++) out_arr[i] = in_arr[i] *2;
+	for (int i = 0 ; i < 1024; i++) out_arr[i] = in_arr[i] *2;
 }
