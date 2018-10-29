@@ -46,7 +46,7 @@ void device_reset (vsi::device &rst)
 	unsigned int val = 1;
 	rst.pwrite(&val,sizeof(val),0);
 	sleep(1);
-	unsigned int val = 0;
+	val = 0;
 	rst.pwrite(&val,sizeof(val),0);
 	//sleep forever
 	while (1) sleep(100);
