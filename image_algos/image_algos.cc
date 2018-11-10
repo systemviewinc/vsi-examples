@@ -163,10 +163,10 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 // #pragma HLS inline self
 
 //  	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
-//  	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);	
+//  	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);
 // 	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC32> tmp_mat(NROWS,NCOLS);
 // 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC8> tmp2_mat(NROWS,NCOLS);
-	
+
 //  	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 // #pragma HLS PIPELINE II=1
 // 		T td = ins.read();
@@ -177,55 +177,12 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 // 	tmp_mat.copyTo(cam_mat_i.data); // convert to NPPC32
 // 	xf::EdgeTracing<XF_2UC1, XF_8UC1, NROWS, NCOLS, XF_NPPC32, XF_NPPC8> (tmp_mat, tmp2_mat);
 // 	cam_mat.copyTo(tmp2_mat.data); // convert to NPPC1
-	
+
 // 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 // #pragma HLS PIPELINE II=1
 // 		outs.write(cam_mat.data[idx]);
 // 	}
 // }
-
-namespace xf {
-template<int ROWS, int COLS>
-void xfEdgeTracing_(unsigned long long * _src, unsigned long long *_dst)
-{
-	xf::xfEdgeTracing((unsigned long long *)_dst,(unsigned long long *)_src,ROWS,COLS);
-}
-}
-template <int NROWS, int NCOLS, typename T = uint64_t>
-static void edge_trace (T *src, T *dst)
-{
-	#pragma HLS interface bram port=src depth=307200
-	#pragma HLS interface bram port=dst depth=307200
-	xf::xfEdgeTracing_<NROWS,NCOLS>((unsigned long long *)src, (unsigned long long *)dst);
-}
-
-template <int NROWS, int NCOLS, typename T = uint8_t>
-static void canny_edge(hls::stream<T> &ins, T *outs)
-{
-	#pragma HLS interface bram port=outs depth=307200
-	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
- 	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);
-
-	// read input
- 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
-#pragma HLS PIPELINE II=1
-		T td = ins.read();
-		cam_mat.data[idx] = (uint8_t) td;
-	}
-	// compute canny
-	xf::Canny<FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_2UC1, NROWS, NCOLS, XF_NPPC1,XF_NPPC4> (cam_mat, cam_mat_i, 20, 54);
-	memcpy(outs, cam_mat_i.data, cam_mat_i.size);
-}
-
-void cam_edge(hls::stream<uint8_t> &ins,uint64_t *outs)
-{
-	printf("%s: starting\n",__FUNCTION__);
-	uint64_t *t_outs;
-#pragma HLS DATAFLOW	
-	canny_edge<240,320,uint8_t>(ins,(uint8_t *)t_outs);
-	edge_trace<240,320,uint64_t>(t_outs, outs); 
-}
-
 
 // fast corner detection
 template <int NROWS, int NCOLS, int NMS, int THRESHOLD>
@@ -419,11 +376,11 @@ void vsi_dilate (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4])
 			uint32_t data = 0;
 			uint32_t max_val = 0;
 			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
-				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++)
 #pragma HLS PIPELINE II=1
 					if (outa[((idy+i)*XF_WIDTH)+idx+j] > max_val) max_val = outa[((idy+i)*XF_WIDTH)+idx+j];
 			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
-				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++)
 #pragma HLS PIPELINE II=1
 					outa[((idy+i)*XF_WIDTH)+idx+j] = max_val;
 		}
@@ -432,7 +389,7 @@ void vsi_dilate (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4])
 
 void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) {
 	uint8_t *outa = (uint8_t *)&outx[0];
-	for (int i = 0 ; i < (XF_HEIGHT) ; i++) 
+	for (int i = 0 ; i < (XF_HEIGHT) ; i++)
 		for (int j = 0 ; j < XF_WIDTH ; j++)
 #pragma HLS PIPELINE II=1
 			outa[(i*XF_WIDTH)+j] = ins.read();
@@ -442,16 +399,18 @@ void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) 
 			uint32_t data = 0;
 			uint32_t min_val = -1;
 			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
-				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++)
 #pragma HLS PIPELINE II=1
 					if (outa[((idy+i)*XF_WIDTH)+idx+j] < min_val) min_val = outa[((idy+i)*XF_WIDTH)+idx+j];
-						       
+
 			for (int i = -ED_SIZE/2 ; i < ED_SIZE/2 ; i ++)
-				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++) 
+				for (int j = -ED_SIZE/2 ; j < ED_SIZE/2; j++)
 #pragma HLS PIPELINE II=1
 					outa[((idy+i)*XF_WIDTH)+idx+j] = min_val;
 		}
 	}
 }
+
+// Canny edge detection from an array
 //
 // image_algos.cc ends here

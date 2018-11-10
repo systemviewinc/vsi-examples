@@ -17,9 +17,9 @@ public:
 		m_read_idx = m_write_idx = 0;
 		m_wc = false;
 	}
-	
+
 	~ProducerConsumerDoubleBuffer() { }
-	
+
 	// The writer thread using this class must call
 	// start_writing() at the start of its iteration
 	// before doing anything else to get the pointer
@@ -36,17 +36,17 @@ public:
 	// to release the write busy flag.
 	void end_writing(void) {
 		std::lock_guard<std::mutex> lock(m_mutex);
-		
+
 		m_write_busy = false;
 		m_wc = true;
 		mw_mutex.unlock();
 	}
-	
+
 	// The reader thread must call start_reading()
 	// at the start of its iteration to get the pointer
 	// to the current read buffer.
 	// If the write thread is not active at this time,
-	// the read buffer pointer will be set to the 
+	// the read buffer pointer will be set to the
 	// (previous) write buffer - so the reader gets the latest data.
 	// If the write buffer is busy, the read pointer is not changed.
 	// In this case the read buffer may contain stale data,
@@ -57,18 +57,18 @@ public:
 		if (!m_write_busy) {
 			m_read_idx = m_write_idx;
 		}
-		
+
 		return &m_buf[m_read_idx];
 	}
 	// The reader thread must call end_reading()
 	// at the end of its iteration.
 	void end_reading(void) {
 		std::lock_guard<std::mutex> lock(m_mutex);
-		
+
 		m_read_idx = m_write_idx;
 		mr_mutex.unlock();
 	}
-	
+
 private:
 	T m_buf[2];
 	bool m_write_busy;

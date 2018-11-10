@@ -1,43 +1,43 @@
-/* webcam.h --- 
- * 
+/* webcam.h ---
+ *
  * Filename: webcam.h
- * Description: 
+ * Description:
  * Author: Sandeep
  * Maintainer: System View Inc
  * Created: Thu Oct 12 13:44:41 2017 (-0700)
- * Version: 
+ * Version:
  * Package-Requires: ()
- * Last-Updated: 
- *           By: 
+ * Last-Updated:
+ *           By:
  *     Update #: 0
- * URL: 
- * Doc URL: 
- * Keywords: 
- * Compatibility: 
- * 
+ * URL:
+ * Doc URL:
+ * Keywords:
+ * Compatibility:
+ *
  */
 
-/* Commentary: 
- * 
- * 
- * 
+/* Commentary:
+ *
+ *
+ *
  */
 
 /* Change Log:
- *  
- * 
+ *
+ *
  */
 
 /* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -49,14 +49,16 @@
 #define WEBCAM_H
 #include <hls_stream.h>
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+
 struct buffer {
 	void   *start;
 	size_t length;
 };
 #define WC_NROWS 480
 #define WC_NCOLS 640
-#define WC_IMGSIZE (3*WC_NROWS*WC_NCOLS)
 #define WC_BPP	 3
+#define WC_IMGSIZE (WC_BPP*WC_NROWS*WC_NCOLS)
+
 
 /* ****************************************************************
  * 			non sythesizable portion
@@ -76,13 +78,14 @@ struct buffer {
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include <atomic>
+#include <mutex>
 extern "C" {
 #include "libv4l2.h"
 #include "libv4lconvert.h"
 }
 
 #include "double_buffer.h"
-typedef struct { unsigned char buff[WC_IMGSIZE+1];} wc_db_t;
 
 /* ****************************************************************
  *  The Webcam class
@@ -98,18 +101,42 @@ class webcam {
 	struct timeval                  tv;
 	int                             r, fd;
 	unsigned int                    n_buffers;
-	char                           *dev_name;
 	struct v4lconvert_data 	      *v4lconvert_data;
 	struct v4l2_format 	       src_fmt;
 	unsigned char 		      *dst_buf;
 	struct buffer                  *buffers;
  public:
-	webcam();
+	std::atomic<bool>	       	paused;
+	std::atomic<bool>		running;
+	std::mutex			o_lock;  // lock for overlay image 
+	cv::Mat 			o_image; // image to overlay for display
+	ProducerConsumerDoubleBuffer<cv::Mat> wc_db; // input
+	ProducerConsumerDoubleBuffer<cv::Mat> wc_ddb;// display
+	webcam(const char *);
 	~webcam();
 	void webcam_capture_image();
-	ProducerConsumerDoubleBuffer<wc_db_t> wc_db;
+	void webcam_display_image();
 	int xioctl(int fh, int request, void *arg);
+	virtual void webcam_cvt_process_image(hls::stream<uint32_t> &, hls::stream<int> &, hls::stream<int>&,
+					      std::function<void (cv::Mat &, cv::Mat &)> const &cvt =
+					      [] (cv::Mat &in, cv::Mat &out) {
+						      out = in.clone();
+					      });
+	virtual void webcam_cvt_process_image(uint32_t oa[WC_IMGSIZE], hls::stream<int> &, hls::stream<int>&,
+					      std::function<void (cv::Mat &, cv::Mat &)> const &cvt =
+					      [] (cv::Mat &in, cv::Mat &out) {
+						      out = in.clone();
+					      });
+
 };
+
+class opencv_display {
+ public:
+	ProducerConsumerDoubleBuffer<cv::Mat> wc_db;
+	opencv_display() {};
+	void opencv_start_display();
+};
+
 #else
 typedef unsigned short uint16_t;
 typedef unsigned int   uint32_t;
