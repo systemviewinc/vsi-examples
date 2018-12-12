@@ -54,6 +54,7 @@
 
 //#include "stream_mux.h"
 #include <strings.h>
+#include <math.h>
 #include "hls_stream.h"
 #include "common/xf_common.h"
 #include "common/xf_utility.h"
@@ -387,7 +388,7 @@ void vsi_dilate (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4])
 	}
 }
 
-void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) {
+void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) { 
 	uint8_t *outa = (uint8_t *)&outx[0];
 	for (int i = 0 ; i < (XF_HEIGHT) ; i++)
 		for (int j = 0 ; j < XF_WIDTH ; j++)
@@ -411,6 +412,35 @@ void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) 
 	}
 }
 
+template <int cols, int rows, int bpp> void vsi_line_draw(uint32_t degree,
+							  uint8_t out_frame[rows*cols*bpp])
+{
+#pragma HLS inline self
+	printf("%s: started : degrees = %d\n",__FUNCTION__,degree);
+	float theta = (3.14159/degree) ; //assume between 0-180 degrees
+	int cr = rows/2;
+	int cc = cols/2;
+	int x, y;
+	float r = sqrt(cr*cr + cc*cc);
+	int p0x = (cols/2)-10;
+	int p0y = (rows/2)+10;
+	do {
+		x = r* cos(theta);
+		y = r* sin(theta);
+		x += p0x;
+		y = p0y - y;
+		r -= 1.0;
+		if (x > 0 && x < cols && y > 0 && y < rows)
+			out_frame[(x*bpp) + (y*cols*bpp)] = 255; 
+	} while (r > 0);
+}
+
+void line_draw_640_480_1 (uint32_t degree,
+			  uint8_t out_frame[640*480*1])
+{
+	//memset(out_frame,0,640*480*1);
+	vsi_line_draw<640,480,1> (degree,out_frame);
+}
 // Canny edge detection from an array
 //
 // image_algos.cc ends here
