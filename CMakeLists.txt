@@ -21,6 +21,7 @@ install(DIRECTORY
 	flir_sw
 	xilinx_vlib
 	image_algos
+	lod_image_algos
 	pass_thru_r5
 	facial_landmark_detection
 	univariate_linear_regression
