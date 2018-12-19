@@ -56,6 +56,7 @@
 #include <strings.h>
 #include <math.h>
 #include "hls_stream.h"
+#include <vsi_device.h>
 #include "common/xf_common.h"
 #include "common/xf_utility.h"
 #include "core/xf_min_max_loc.hpp"
@@ -71,6 +72,7 @@
 
 //#include "webcam.h"
 #include "ap_int.h"
+#include "image_algos.h"
 
 
 #define _USE_XF_OPENCV
@@ -236,6 +238,7 @@ void flir_min_max(hls::stream<uint16_t> &ins,	hls::stream<int> &outs)
 {
 	calc_min_max<60,80>(ins,outs);
 }
+// Canny edge detection from an array
 
 // // MeanShift
 #define XF_HEIGHT (480/2)
@@ -411,36 +414,116 @@ void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) 
 		}
 	}
 }
+// ///////////////////////////////////////////////////////////////////
+// Line drawing
+// ///////////////////////////////////////////////////////////////////
 
-template <int cols, int rows, int bpp> void vsi_line_draw(uint32_t degree,
-							  uint8_t out_frame[rows*cols*bpp])
+#ifdef __VSI_HLS_SYN__
+typedef  unsigned char uint8_t;
+typedef  unsigned int  uint32_t;
+#endif
+
+#define PI 3.14159
+#define ABSx(a) (a < 0 ? -1*a : a)
+static inline uint32_t set_val(int idx)
 {
-#pragma HLS inline self
-	printf("%s: started : degrees = %d\n",__FUNCTION__,degree);
-	float theta = (3.14159/degree) ; //assume between 0-180 degrees
-	int cr = rows/2;
-	int cc = cols/2;
-	int x, y;
-	float r = sqrt(cr*cr + cc*cc);
-	int p0x = (cols/2)-10;
-	int p0y = (rows/2)+10;
-	do {
-		x = r* cos(theta);
-		y = r* sin(theta);
-		x += p0x;
-		y = p0y - y;
-		r -= 1.0;
-		if (x > 0 && x < cols && y > 0 && y < rows)
-			out_frame[(x*bpp) + (y*cols*bpp)] = 255; 
-	} while (r > 0);
+	int rem = idx % 4;
+	switch (rem) {
+	case 3: return 0xff000000;
+	case 2: return 0x00ff0000;
+	case 1: return 0x0000ff00;
+	case 0: return 0x000000ff;
+	}
 }
 
-void line_draw_640_480_1 (uint32_t degree,
-			  uint8_t out_frame[640*480*1])
+template<int rows,int cols> void drawline(int x0, int y0, int x1, int y1, uint32_t out_frame[rows*cols/4])
 {
-	//memset(out_frame,0,640*480*1);
-	vsi_line_draw<640,480,1> (degree,out_frame);
+#pragma HLS inline self	
+	int x , y ;
+	int dx = ABSx((x1-x0));
+	int sx = x0<x1 ? 1 : -1;
+	int dy = ABSx((y1-y0));
+	int sy = y0<y1 ? 1 : -1;
+	int err = (dx>dy ? dx : -dy)/2, e2;
+
+	while(1) {
+#pragma HLS pipeline II=1		
+		if (x0 < cols-1 && y0 < rows && x0 > 1 && y0 > 0) {
+			out_frame[(x0+(y0*cols))/4] = set_val(x0+(y0*cols));
+		}
+		if (x0==x1 && y0==y1) break;
+		e2 = err;
+		if (e2 >-dx) { err -= dy; x0 += sx;}
+		if (e2 < dy) { err += dx; y0 += sy;}
+	}
 }
-// Canny edge detection from an array
+
+void dl_640x480(hls::stream<st> &angle, uint32_t of[640*480/4], hls::stream<st> &done)
+{
+	double r = 300;
+	int x0 = (640/2)-60;
+	int y0 = 480;
+	int degrees = angle.read().data;
+	double theta = ((int)degrees)*PI/(180.0);
+	int x1 = x0 + (r*cos(theta));
+	int y1 = y0 - (r*sin(theta));
+	drawline<480,640>(x0    , y0 ,x1, y1, of);
+	drawline<480,640>(x0+120, y0 ,x1+100, y1, of);
+	st dd ;
+	dd.data = 1;
+	dd.last = 1; 
+	done.write(dd);
+}
+
+#define FC_ROWS 480
+#define FC_COLS 640
+void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_frame[FC_ROWS*FC_COLS/4])
+{
+	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat(FC_ROWS,FC_COLS);
+	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat_i(FC_ROWS,FC_COLS);
+	st ss = start.read();
+	static uint8_t threshold = ss.data ;// threshold
+	// read input
+	//cam_mat_i.copyTo(io_frame);
+	for (int i = 0 , j =0; i < FC_ROWS*FC_COLS/4;i++,j+=4) {
+#pragma HLS PIPELINE II=1
+		uint32_t val = io_frame[i];
+		cam_mat_i.data[j]   = (val >> 24) & 0xff;
+		cam_mat_i.data[j+1] = (val >> 16) & 0xff;
+		cam_mat_i.data[j+2] = (val >>  8) & 0xff;
+		cam_mat_i.data[j+3] = (val >>  0) & 0xff;
+	}		
+	xf::fast<0,XF_8UC1,FC_ROWS, FC_COLS,XF_NPPC1>(cam_mat_i,cam_mat,threshold);
+	int  n_points = 0;
+	for (int j = 0; j < cam_mat.rows; j++) {
+		for (int i = 0; i < (cam_mat.cols>>XF_BITSHIFT(XF_NPPC1)); i++) {
+#pragma HLS PIPELINE II=1
+			unsigned char value = cam_mat.data[j*(cam_mat.cols>>XF_BITSHIFT(XF_NPPC1))+i];//.at<unsigned char>(j, i);
+			if (value != 0) {
+				int x0 = i;
+				int y0 = j;
+				//printf("(%d,%d),(%d,%d)\n",x0,y0,x0+50,y0-50);
+				drawline<480,640>(x0-10,y0,x0+10,y0,io_frame);
+				drawline<480,640>(x0+10,y0,x0+10,y0+10,io_frame);
+				drawline<480,640>(x0+10,y0+10,x0-10,y0+10,io_frame);
+				drawline<480,640>(x0-10,y0+10,x0-10,y0,io_frame);
+				n_points++;
+			}
+		}
+	}
+	printf("npoints %d\n",n_points);
+	st dd ;
+	dd.data = n_points;
+	dd.last = 1; 
+	done.write(dd);
+}
+void vsi_track_lines_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+{
+	uint32_t io_frame[640*480/4];
+        mem.pread(io_frame,sizeof(io_frame),0);
+	printf("Got stared\n");
+	vsi_fast_corner(start,done,io_frame);
+	mem.pwrite(io_frame,sizeof(io_frame),0);
+}
 //
 // image_algos.cc ends here
