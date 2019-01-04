@@ -482,7 +482,7 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat(FC_ROWS,FC_COLS);
 	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat_i(FC_ROWS,FC_COLS);
 	st ss = start.read();
-	static uint8_t threshold = ss.data ;// threshold
+	uint8_t threshold = ss.data ;// threshold
 	// read input
 	//cam_mat_i.copyTo(io_frame);
 	for (int i = 0 , j =0; i < FC_ROWS*FC_COLS/4;i++,j+=4) {
@@ -503,10 +503,10 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 				int x0 = i;
 				int y0 = j;
 				//printf("(%d,%d),(%d,%d)\n",x0,y0,x0+50,y0-50);
-				drawline<480,640>(x0-10,y0,x0+10,y0,io_frame);
-				drawline<480,640>(x0+10,y0,x0+10,y0+10,io_frame);
-				drawline<480,640>(x0+10,y0+10,x0-10,y0+10,io_frame);
-				drawline<480,640>(x0-10,y0+10,x0-10,y0,io_frame);
+				drawline<480,640>(x0-5,y0,x0+5,y0,io_frame);
+				drawline<480,640>(x0+5,y0,x0+5,y0+5,io_frame);
+				drawline<480,640>(x0+5,y0+5,x0-5,y0+5,io_frame);
+				drawline<480,640>(x0-5,y0+5,x0-5,y0,io_frame);
 				n_points++;
 			}
 		}
