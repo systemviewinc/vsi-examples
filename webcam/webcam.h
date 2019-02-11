@@ -48,6 +48,7 @@
 #ifndef WEBCAM_H
 #define WEBCAM_H
 #include <hls_stream.h>
+#include <vsi_device.h>
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 struct buffer {
@@ -110,8 +111,8 @@ class webcam {
 	std::atomic<bool>		running;
 	std::mutex			o_lock;  // lock for overlay image 
 	cv::Mat 			o_image; // image to overlay for display
-	ProducerConsumerDoubleBuffer<cv::Mat> wc_db; // input
-	ProducerConsumerDoubleBuffer<cv::Mat> wc_ddb;// display
+	double_buffer<cv::Mat> wc_db; // input
+	double_buffer<cv::Mat> wc_ddb;// display
 	webcam(const char *);
 	~webcam();
 	void webcam_capture_image();
@@ -128,13 +129,21 @@ class webcam {
 						      out = in.clone();
 					      });
 
+	virtual void webcam_cvt_process_image(vsi::device &mem, hls::stream<int>&,
+					      std::function<void (cv::Mat &, cv::Mat &)> const &cvt =
+					      [] (cv::Mat &in, cv::Mat &out) {
+						      out = in.clone();
+					      });
 };
 
 class opencv_display {
  public:
-	ProducerConsumerDoubleBuffer<cv::Mat> wc_db;
-	opencv_display() {};
-	void opencv_start_display();
+	double_buffer<cv::Mat> wc_db[2];
+	char window_name[256];
+	opencv_display(const char *wn) {
+		strcpy(window_name,wn);
+	};
+	void opencv_display_image();
 };
 
 #else
