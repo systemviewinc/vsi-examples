@@ -59,8 +59,8 @@ struct buffer {
 #define WC_NCOLS 640
 #define WC_BPP	 3
 #define WC_IMGSIZE (WC_BPP*WC_NROWS*WC_NCOLS)
-
-
+#define WC_IMGSIZE_BW (WC_NROWS*WC_NCOLS)
+#define WC_HIMGSIZE_BW ((WC_NROWS/2)*(WC_NCOLS)/2)
 /* ****************************************************************
  * 			non sythesizable portion
  * **************************************************************** */
@@ -143,7 +143,7 @@ class opencv_display {
 	opencv_display(const char *wn) {
 		strcpy(window_name,wn);
 	};
-	void opencv_display_image();
+	void opencv_display_image(hls::stream<int> &);
 };
 
 #else

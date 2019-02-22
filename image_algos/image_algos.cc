@@ -475,8 +475,8 @@ void dl_640x480(hls::stream<st> &angle, uint32_t of[640*480/4], hls::stream<st> 
 	done.write(dd);
 }
 
-#define FC_ROWS 480
-#define FC_COLS 640
+#define FC_ROWS (480/2)
+#define FC_COLS (640/2)
 void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_frame[FC_ROWS*FC_COLS/4])
 {
 	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat(FC_ROWS,FC_COLS);
@@ -492,6 +492,10 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 		cam_mat_i.data[j+1] = (val >> 16) & 0xff;
 		cam_mat_i.data[j+2] = (val >>  8) & 0xff;
 		cam_mat_i.data[j+3] = (val >>  0) & 0xff;
+		cam_mat.data[j]     = 0;
+		cam_mat.data[j+1]   = 0;
+		cam_mat.data[j+2]   = 0;
+		cam_mat.data[j+3]   = 0;
 	}		
 	xf::fast<0,XF_8UC1,FC_ROWS, FC_COLS,XF_NPPC1>(cam_mat_i,cam_mat,threshold);
 	int  n_points = 0;
@@ -503,10 +507,10 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 				int x0 = i;
 				int y0 = j;
 				//printf("(%d,%d),(%d,%d)\n",x0,y0,x0+50,y0-50);
-				drawline<480,640>(x0-5,y0,x0+5,y0,io_frame);
-				drawline<480,640>(x0+5,y0,x0+5,y0+5,io_frame);
-				drawline<480,640>(x0+5,y0+5,x0-5,y0+5,io_frame);
-				drawline<480,640>(x0-5,y0+5,x0-5,y0,io_frame);
+				drawline<FC_ROWS,FC_COLS>(x0-5,y0,x0+5,y0,io_frame);
+				drawline<FC_ROWS,FC_COLS>(x0+5,y0,x0+5,y0+5,io_frame);
+				drawline<FC_ROWS,FC_COLS>(x0+5,y0+5,x0-5,y0+5,io_frame);
+				drawline<FC_ROWS,FC_COLS>(x0-5,y0+5,x0-5,y0,io_frame);
 				n_points++;
 			}
 		}
@@ -517,13 +521,87 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 	dd.last = 1; 
 	done.write(dd);
 }
+
 void vsi_track_lines_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
 {
-	uint32_t io_frame[640*480/4];
+	uint32_t io_frame[FC_ROWS*FC_COLS/4];
         mem.pread(io_frame,sizeof(io_frame),0);
 	printf("Got stared\n");
 	vsi_fast_corner(start,done,io_frame);
 	mem.pwrite(io_frame,sizeof(io_frame),0);
 }
+
+void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_frame[FC_ROWS*FC_COLS/4])
+{
+
+	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
+	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;
+	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat_i(FC_ROWS,FC_COLS);
+	st ss = start.read();
+	printf("min Max got started\n");
+	for (int i = 0 , j =0; i < FC_ROWS*FC_COLS/4;i++,j+=4) {
+#pragma HLS PIPELINE II=1
+		uint32_t val = io_frame[i];
+		cam_mat_i.data[j]   = (val >> 24) & 0xff;
+		cam_mat_i.data[j+1] = (val >> 16) & 0xff;
+		cam_mat_i.data[j+2] = (val >>  8) & 0xff;
+		cam_mat_i.data[j+3] = (val >>  0) & 0xff;
+	}		
+	// do median_blur and minmax in the same loop
+	for (int idy = 1 ; idy < FC_ROWS-2; idy++) {
+		for (int idx = 1; idx < (FC_COLS-2); idx++) {
+#pragma HLS PIPELINE II=1
+			uint32_t data = 0;
+			
+			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
+			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
+			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
+			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];
+			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];
+			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];			
+			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
+			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
+			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
+			data /= (uint32_t)9;
+			if (data < _min_val) {
+				_min_val = data;
+				_min_locx = idx;
+				_min_locy = idy;
+			}
+			if (data > _max_val) {
+				_max_val = data;
+				_max_locx = idx;
+				_max_locy = idy;
+			}
+		}
+	}
+	int x0 = _min_locx;
+	int y0 = _min_locy;
+	drawline<FC_ROWS,FC_COLS>(x0-10,y0,x0+10,y0,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0+10,y0,x0+10,y0+10,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0+10,y0+10,x0-10,y0+10,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0-10,y0+10,x0-10,y0,io_frame);
+	x0 = _max_locx;
+	y0 = _max_locy;
+	drawline<FC_ROWS,FC_COLS>(x0-10,y0,x0+10,y0,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0+10,y0,x0+10,y0+10,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0+10,y0+10,x0-10,y0+10,io_frame);
+	drawline<FC_ROWS,FC_COLS>(x0-10,y0+10,x0-10,y0,io_frame);
+	printf("%s min(%d,%d) max(%d,%d)\n",__FUNCTION__,_min_locx, _min_locy, _max_locx, _max_locy);
+	st dd ;
+	dd.data = 0;
+	dd.last = 1; 
+	done.write(dd);
+
+}
+
+void vsi_min_max_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+{
+	uint32_t io_frame[FC_COLS*FC_ROWS/4];
+        mem.pread(io_frame,sizeof(io_frame),0);
+	min_max_shmem(start,done,io_frame);
+	mem.pwrite(io_frame,sizeof(io_frame),0);
+}
+
 //
 // image_algos.cc ends here

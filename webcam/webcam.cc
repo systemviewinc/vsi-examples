@@ -294,16 +294,16 @@ void webcam::webcam_cvt_process_image(vsi::device &mem,
 	}
 	// read from captured buffer convert it & send it out for processing
 	cv::Mat *s_img = wc_db.start_reading();
-	cv::Mat img;
-	cvt(*s_img, img);
-	wc_db.end_reading();
 	if (s_img->empty()) {
 		printf("Image empty will wait 1 second\n");
 		sleep(1);
 		return;
 	}
-	if (s_img->isContinuous()) {
-		mem.pwrite(s_img->data,s_img->total()*s_img->elemSize(),0);
+	cv::Mat img;
+	cvt(*s_img, img);
+	wc_db.end_reading();
+	if (img.isContinuous()) {
+		mem.pwrite(img.data,img.total()*img.elemSize(),0);
 	} else {
 		printf("Cannot handle non-contiguos image\n");
 	}
@@ -338,64 +338,99 @@ void webcam::webcam_display_image()
 
 // webcam class definition ends
 
-// opencvdisplay implementation
-void opencv_display::opencv_display_image()
+#include "ap_int.h"
+#include "image_algos.h"
+static void gs_mouse_callback(int event, int x, int y, int flags, void *param)
 {
-	cv::Mat d_img;
-	// read from doule buffer and display
-	cv::Mat *img_data = wc_db[0].start_reading();
-	if (!img_data->empty()) cv::imshow("User View 0",*img_data);
-	wc_db[0].end_reading();
-	cv::Mat *img_data1 = wc_db[1].start_reading();
-	if (!img_data1->empty()) cv::imshow("User View 1",*img_data1);
-	wc_db[1].end_reading();
-	cv::waitKey(1);
+	static int state = 0;
+	cv::Mat img ;
+	hls::stream<int> *ctrl = (hls::stream<int> *)param;
+	
+	if (event != CV_EVENT_LBUTTONDOWN) return;
+	
+	// forward then reverse
+	if (state == 0) {
+		state = 1;
+	} else {
+		state = 0;
+	}
+	ctrl->write(state); // send the state to anyone waiting
+}
+
+void opencv_display::opencv_display_image(hls::stream<int> &control)
+{
+	cv::namedWindow("User View 0");
+	cv::setMouseCallback("User View 0",gs_mouse_callback,&control);
+	while (1) {
+		// read from doule buffer and display
+		cv::Mat *img_data = wc_db[0].start_reading();
+		if (!img_data->empty()) cv::imshow("User View 0",*img_data);
+		wc_db[0].end_reading();
+		cv::waitKey(1);
+		usleep(10);
+	}
 }
 
 static opencv_display od("User_image0");
 
-void od_start(vsi::device &mem) {
-	static uint8_t ib [WC_IMGSIZE];
 
-	mem.pread(ib,WC_IMGSIZE,0); // get the image from shared memory
-	cv::Mat im(WC_NROWS,WC_NCOLS, CV_8UC3,(unsigned char*)ib); // create a cv matrix
+void display_image(hls::stream<int> &control) {
+	od.opencv_display_image(control);
+}
+
+static void make_bw(cv::Mat &in_mat, cv::Mat &out_mat) {
+	cv::Mat tmp_mat;
+	cv::cvtColor(in_mat, tmp_mat, cv::COLOR_RGB2GRAY);
+	cv::resize(tmp_mat,out_mat,cv::Size(WC_NCOLS/2,WC_NROWS/2));
+}
+
+void webcam0(hls::stream<int> &control,
+	     vsi::device &mem_mm, hls::stream<st> &start_mm, hls::stream<st> &done_mm,
+	     vsi::device &mem_fc, hls::stream<st> &start_fc, hls::stream<st> &done_fc
+	     ) {
+	static uint8_t ib [WC_HIMGSIZE_BW];
+	static webcam cam0 ("/dev/video0");
+	static int mode = 0;
+	hls::stream<int> ctl;
+	cam0.webcam_capture_image();
+
+	if (!control.empty()) {
+		mode = control.read();
+	}
+	st s;
+	s.data = 0;
+	s.last = 1;
+	//printf("%s mode = %d\n",__FUNCTION__,mode);
+	if (mode) {
+		static int threshold = 20;
+
+		cam0.webcam_cvt_process_image(mem_fc,ctl,make_bw);
+		s.data = threshold;
+		// send start to processing algo
+		start_fc.write(s);
+		st d = done_fc.read(); // wait for processing complete
+		// if ((int)d.data > 1000) {
+		// 	if (threshold < 150) threshold+=5;
+		// } else if ((int)d.data < 20) {
+		// 	if (threshold > 20) threshold-=5;
+		// }
+		mem_fc.pread(ib,WC_HIMGSIZE_BW,0); // get the image from shared memory
+	} else {
+		cam0.webcam_cvt_process_image(mem_mm,ctl,make_bw);
+		
+		// send start to processing algo
+		start_mm.write(s);
+		st d = done_mm.read(); // wait for processing complete
+		mem_mm.pread(ib,WC_HIMGSIZE_BW,0); // get the image from shared memory
+	}
+	
+	cv::Mat im(WC_NROWS/2,WC_NCOLS/2, CV_8UC1,(unsigned char*)ib); // create a cv matrix
+
 	// copy to the display double buffer
 	cv::Mat *d_img = od.wc_db[0].start_writing();
 	*d_img = im.clone();
 	od.wc_db[0].end_writing();
-	usleep(1250); // wait a little so other threads can proceed
+	usleep(625);
 }
 
-void od_start1(vsi::device &mem) {
-	static uint8_t ib [WC_IMGSIZE];
-	static opencv_display od("User_image1");
-
-	mem.pread(ib,WC_IMGSIZE,0); // get the image from shared memory
-	cv::Mat im(WC_NROWS,WC_NCOLS, CV_8UC3,(unsigned char*)ib); // create a cv matrix
-	// copy to the display double buffer
-	cv::Mat *d_img = od.wc_db[1].start_writing();
-	*d_img = im.clone();
-	od.wc_db[1].end_writing();
-	usleep(1250); // wait a little so other threads can proceed
-}
-
-void display_image() {
-	od.opencv_display_image();
-}
-
-void webcam0(vsi::device &mem) {
-	hls::stream<int> ctl;
-	static webcam cam0 ("/dev/video0");
-	cam0.webcam_capture_image();
-	cam0.webcam_cvt_process_image(mem,ctl);
-	usleep(1250);
-}
-
-void webcam1(vsi::device &mem) {
-	hls::stream<int> ctl;
-	static webcam cam1 ("/dev/video1");
-	cam1.webcam_capture_image();
-	cam1.webcam_cvt_process_image(mem,ctl);
-	usleep(1250);
-}
 #endif
