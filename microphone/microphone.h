@@ -8,10 +8,10 @@
 #include <limits.h>
 #include <vsi_device.h>
 #ifndef __VSI_HLS_SYN__
-#include "opencv2/opencv.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/plot.hpp"
+/* #include "opencv2/opencv.hpp" */
+/* #include "opencv2/highgui/highgui.hpp" */
+/* #include "opencv2/imgproc/imgproc.hpp" */
+/* #include "opencv2/plot.hpp" */
 #include <vector>
 #endif
 template<int D>
