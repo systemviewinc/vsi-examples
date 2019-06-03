@@ -77,6 +77,9 @@ void stream_split_2_16(hls::stream<ap_axis_dk<16> > &ins,
 	} while (1);
 }
 
+#ifndef __VSI_HLS_SYN__
+
+
 /**
  * @brief send data out in bursts
  *
@@ -99,7 +102,6 @@ void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
 
 }
 
-#ifndef __VSI_HLS_SYN__
 
 /**
  * @brief receive data from "world" copy to memory and start next
