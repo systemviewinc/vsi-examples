@@ -23,8 +23,8 @@ include_directories(
 	$ENV{PROJECT_PATH}/vsi_auto_gen/sw/system_1/zynq_ps/public
 	$ENV{VSI_INSTALL}/target/common/include
 	$ENV{XILINX_DIR}/Vivado/2018.2/lnx64/tools/fpo_v7_0/
-	/tools/Xilinx/Vivado/2018.3/lnx64/tools/fpo_v7_0/
 	$ENV{XILINX_DIR}/Vivado/2018.2/include
+	/tools/Xilinx//Vivado/2018.3/lnx64/tools/fpo_v7_0/
 	/tools/Xilinx/Vivado/2018.3/include
 )
 
