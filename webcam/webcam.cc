@@ -388,6 +388,7 @@ void webcam0(hls::stream<int> &control,
 	     vsi::device &mem_mm, hls::stream<st> &start_mm, hls::stream<st> &done_mm,
 	     vsi::device &mem_fc, hls::stream<st> &start_fc, hls::stream<st> &done_fc
 	     ) {
+  	//printf("Webcam0 started\n");
 	static uint8_t ib [WC_HIMGSIZE_BW];
 	static webcam cam0 ("/dev/video0");
 	static int mode = 0;
@@ -409,11 +410,6 @@ void webcam0(hls::stream<int> &control,
 		// send start to processing algo
 		start_fc.write(s);
 		st d = done_fc.read(); // wait for processing complete
-		// if ((int)d.data > 1000) {
-		// 	if (threshold < 150) threshold+=5;
-		// } else if ((int)d.data < 20) {
-		// 	if (threshold > 20) threshold-=5;
-		// }
 		mem_fc.pread(ib,WC_HIMGSIZE_BW,0); // get the image from shared memory
 	} else {
 		cam0.webcam_cvt_process_image(mem_mm,ctl,make_bw);

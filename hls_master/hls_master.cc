@@ -175,3 +175,103 @@ void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device mem, hls:
         output.write((int)0);
     }
 }
+
+#include <hls_master.h>
+
+// shared memory as an array
+void shmem_array (hls::stream<axis_dl> &start, 
+		  int sh_mem[256][256],
+		  hls::stream<axis_dl> &done) {
+	axis_dl ds = start.read();
+
+	for (int i = 0 ; i < 256; i ++) {
+		for (int j = 0 ; j < 256; j++) {
+			sh_mem[i][j] = i*j;
+		}
+	}
+	axis_dl dd;
+	dd.data = 1024;
+	dd.last = 1;
+	done.write(dd);
+}
+
+// shared memory as an array : add
+void shmem_array_add (hls::stream<axis_dl> &start, 
+		  int sh_mem[256][256],
+		  hls::stream<axis_dl> &done) {
+	axis_dl ds = start.read();
+
+	for (int i = 0 ; i < 256; i ++) {
+		for (int j = 0 ; j < 256; j++) {
+			sh_mem[i][j] = i+j;
+		}
+	}
+	axis_dl dd;
+	dd.data = 1024;
+	dd.last = 1;
+	done.write(dd);
+}
+
+#ifndef __VSI_HLS_SYN__
+#include <unistd.h>
+// software portion of the test
+void shmem_array_sw (hls::stream<axis_dl> &start,
+		     vsi::device &sh_mem_dev,
+		     hls::stream<axis_dl> &done) {
+	static int sh_mem[256][256];
+	axis_dl ds ;
+	ds.data = 1024;
+	ds.last = 1;
+	start.write(ds);
+	// wait for it to end
+	axis_dl dd = done.read();
+	printf("%s: Got done \n",__FUNCTION__);
+	sh_mem_dev.pread(sh_mem,sizeof(sh_mem),0);
+	for (int i = 0 ; i < 256; i ++) {
+		for (int j = 0 ; j < 256; j++) {
+			if (sh_mem[j][i] != i*j) {
+				printf("Mismatch @ [%d][%d] expected %d, got %d\n",i,j,i*j,sh_mem[i][j]);
+			}
+		}
+	}
+	printf("%s: All Ok \n",__FUNCTION__);
+	while(1) sleep(1);
+}	    
+
+void shmem_array_sw_add (hls::stream<axis_dl> &begin,
+			 hls::stream<axis_dl> &start,
+			 vsi::device &sh_mem_dev,
+			 hls::stream<axis_dl> &done) {
+	static int sh_mem[256][256];
+	axis_dl ds, bs ;
+	// wait for the begin 
+	bs = begin.read();
+
+	ds.data = 1024;
+	ds.last = 1;
+	start.write(ds);
+	// wait for it to end
+	axis_dl dd = done.read();
+	printf("%s: Got done \n",__FUNCTION__);
+	sh_mem_dev.pread(sh_mem,sizeof(sh_mem),0);
+	for (int i = 0 ; i < 256; i ++) {
+		for (int j = 0 ; j < 256; j++) {
+			if (sh_mem[j][i] != i+j) {
+				printf("Mismatch @ [%d][%d] expected %d, got %d\n",i,j,i+j,sh_mem[i][j]);
+			}
+		}
+	}
+	printf("%s: All Ok\n",__FUNCTION__);
+	while(1) sleep(1);
+}
+
+void broadcast (hls::stream<axis_dl> &in, 
+		hls::stream<axis_dl> &out_1,
+		hls::stream<axis_dl> &out_2) {
+	do {
+		axis_dl ind = in.read();
+		out_1.write(ind);
+		out_2.write(ind);
+	} while (!in.empty());
+}  
+#endif
