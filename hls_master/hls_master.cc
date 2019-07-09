@@ -274,4 +274,22 @@ void broadcast (hls::stream<axis_dl> &in,
 		out_2.write(ind);
 	} while (!in.empty());
 }  
+
+void five_memories(vsi::device &mem1, vsi::device &mem2, vsi::device &mem3,vsi::device &mem4,vsi::device &mem5 )
+{
+	static int buff[1024];
+
+	mem1.pread(buff,sizeof(buff),0);
+	mem2.pwrite(buff,sizeof(buff),0);
+	mem1.pwrite(buff,sizeof(buff),0);
+	mem3.pread(buff,sizeof(buff),0);
+	mem2.pwrite(buff,sizeof(buff),0);
+	mem3.pwrite(buff,sizeof(buff),0);
+	mem4.pread(buff,sizeof(buff),0);
+	mem2.pwrite(buff,sizeof(buff),0);
+	mem4.pwrite(buff,sizeof(buff),0);
+	mem5.pread(buff,sizeof(buff),0);
+	mem2.pwrite(buff,sizeof(buff),0);
+	mem5.pwrite(buff,sizeof(buff),0);
+}
 #endif
