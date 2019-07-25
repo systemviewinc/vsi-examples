@@ -23,9 +23,9 @@ def process_stream(sbIn, sbOut):
     buf_out = vsi_runtime.Buffer(256)
     process(buf_in, buf_out)
     if (COUNT % 100000) == 0:
-        print COUNT
-        print buf_in
-        print buf_out
+        print("{}".format(COUNT))
+        print("{}".format(buf_in))
+        print("{}".format(buf_out))
     sbOut.write(buf_out)
 
 
@@ -38,7 +38,7 @@ def process_device(dev):
     dev.pwrite(buf_in, OFFSET)
     dev.pread(buf_out, OFFSET)
     if  (COUNT % 20) == 0:
-        print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
+        print("Matched:{}, COUNT:{}, OFFSET:{}".format(buf_in.compare(buf_out), COUNT, OFFSET))
     OFFSET += 1
 
 file_name = 'data_in'
@@ -69,7 +69,7 @@ def process_device_file(dev):
             dev.pwrite(buf_in, OFFSET)
             dev.pread(buf_out, OFFSET)
             # if  (COUNT % 10) == 0:
-            print 'Matched:{}, COUNT:{}, OFFSET:{}'.format(buf_in.compare(buf_out), COUNT, OFFSET)
+            print("Matched:{}, COUNT:{}, OFFSET:{}".format(buf_in.compare(buf_out), COUNT, OFFSET))
             OFFSET += 1
             COUNT += 1
             buf_in.set(f.read(256))
@@ -84,16 +84,16 @@ def write_stream(sbOut):
     sbOut.write(buf_out)
     COUNT += 1
     if (COUNT % 10) == 0:
-        print COUNT
-        print buf_out
+        print("{}".format(COUNT))
+        print("{}".format(buf_out))
 
 def read_stream(sbIn):
     global COUNT
     buf_in = vsi_runtime.Buffer(4)
     sbIn.read(buf_in)
     if (COUNT % 10) == 0:
-        print COUNT
-        print buf_in
+        print("{}".format(COUNT))
+        print("{}".format(buf_in))
 
 def mem_test(data_in, mem):
     count = 0
@@ -101,14 +101,14 @@ def mem_test(data_in, mem):
     data_in.wait_if_empty()
     while not (data_in.empty()):
         i = data_in.read()
-        print 'data read {}'.format(i)
+        print("data read {}".format(i))
         mem.pwrite(i, offset)
-        print 'data write'
+        print("data write")
         out = 0
         mem.pread(out, offset)
         offset+= 4
         if (i != out):
-            print 'incorrect value read {}'.format(out)
+            print("incorrect value read {}".format(out))
         if (count % 1000):
-            print 'wrote {} times\ncurrent offset: {}'.format(count, offset)
+            print("wrote {} times\ncurrent offset: {}".format(count, offset))
         count += 1
