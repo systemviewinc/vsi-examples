@@ -275,7 +275,7 @@ void broadcast (hls::stream<axis_dl> &in,
 	} while (!in.empty());
 }  
 
-void five_memories(vsi::device &mem1, vsi::device &mem2, vsi::device &mem3,vsi::device &mem4,vsi::device &mem5 )
+void five_memories(vsi::device &mem1, vsi::device &mem2, vsi::device &mem3,vsi::device &mem4,vsi::device &mem5 ,vsi::device &dev, vsi::device &dev1, vsi::device &dev2)
 {
 	static int buff[1024];
 
