@@ -104,9 +104,9 @@ void system_controller(hls::stream<int> &out_1, hls::stream<int> &out_2, hls::st
         printf("[Controller]---------------------------------------\n");
     }
     if (failed)
-        printf("[Controller] Failed!");
+        printf("[Controller] Failed!\n");
     else
-        printf("[Controller] Passed!");
+        printf("[Controller] Passed!\n");
     sleep(5);
 #ifndef __VSI_HLS_SYN__
     exit(0);
@@ -179,7 +179,7 @@ void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device mem, hls:
 #include <hls_master.h>
 
 // shared memory as an array
-void shmem_array (hls::stream<axis_dl> &start, 
+void shmem_array (hls::stream<axis_dl> &start,
 		  int sh_mem[256][256],
 		  hls::stream<axis_dl> &done) {
 	axis_dl ds = start.read();
@@ -196,7 +196,7 @@ void shmem_array (hls::stream<axis_dl> &start,
 }
 
 // shared memory as an array : add
-void shmem_array_add (hls::stream<axis_dl> &start, 
+void shmem_array_add (hls::stream<axis_dl> &start,
 		  int sh_mem[256][256],
 		  hls::stream<axis_dl> &done) {
 	axis_dl ds = start.read();
@@ -236,7 +236,7 @@ void shmem_array_sw (hls::stream<axis_dl> &start,
 	}
 	printf("%s: All Ok \n",__FUNCTION__);
 	while(1) sleep(1);
-}	    
+}
 
 void shmem_array_sw_add (hls::stream<axis_dl> &begin,
 			 hls::stream<axis_dl> &start,
@@ -244,7 +244,7 @@ void shmem_array_sw_add (hls::stream<axis_dl> &begin,
 			 hls::stream<axis_dl> &done) {
 	static int sh_mem[256][256];
 	axis_dl ds, bs ;
-	// wait for the begin 
+	// wait for the begin
 	bs = begin.read();
 
 	ds.data = 1024;
@@ -265,7 +265,7 @@ void shmem_array_sw_add (hls::stream<axis_dl> &begin,
 	while(1) sleep(1);
 }
 
-void broadcast (hls::stream<axis_dl> &in, 
+void broadcast (hls::stream<axis_dl> &in,
 		hls::stream<axis_dl> &out_1,
 		hls::stream<axis_dl> &out_2) {
 	do {
@@ -273,7 +273,7 @@ void broadcast (hls::stream<axis_dl> &in,
 		out_1.write(ind);
 		out_2.write(ind);
 	} while (!in.empty());
-}  
+}
 
 void five_memories(vsi::device &mem1, vsi::device &mem2, vsi::device &mem3,vsi::device &mem4,vsi::device &mem5 ,vsi::device &dev, vsi::device &dev1, vsi::device &dev2)
 {
