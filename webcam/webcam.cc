@@ -403,8 +403,9 @@ void webcam0(hls::stream<int> &control,
 	s.last = 1;
 	//printf("%s mode = %d\n",__FUNCTION__,mode);
 	if (mode) {
-		static int threshold = 20;
-
+		static int threshold = 0;
+		if (threshold == 360) threshold = 0;
+		else threshold += 10;
 		cam0.webcam_cvt_process_image(mem_fc,ctl,make_bw);
 		s.data = threshold;
 		// send start to processing algo
@@ -426,7 +427,7 @@ void webcam0(hls::stream<int> &control,
 	cv::Mat *d_img = od.wc_db[0].start_writing();
 	*d_img = im.clone();
 	od.wc_db[0].end_writing();
-	usleep(625);
+	usleep(100);
 }
 
 #endif
