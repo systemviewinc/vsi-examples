@@ -602,6 +602,86 @@ void vsi_min_max_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device 
 
 #include <math.h>
 #define DEG_INC 10
+double _sin_tab[] = {
+	0.00000000000,   //   0 degrees
+	0.17364817766,   //  10 degrees
+	0.34202014332,   //  20 degrees
+	0.50000000000,   //  30 degrees
+	0.64278760968,   //  40 degrees
+	0.76604444311,   //  50 degrees
+	0.86602540378,   //  60 degrees
+	0.93969262078,   //  70 degrees
+	0.98480775301,   //  80 degrees
+	1.00000000000,   //  90 degrees
+	0.98480775301,   // 100 degrees
+	0.93969262078,   // 110 degrees
+	0.86602540378,   // 120 degrees
+	0.76604444311,   // 130 degrees
+	0.64278760968,   // 140 degrees
+	0.50000000000,   // 150 degrees
+	0.34202014332,   // 160 degrees
+	0.17364817766,   // 170 degrees
+	0.00000000000,   // 180 degrees	
+	-0.17364817766,  // 190 degrees
+	-0.34202014332,  // 200 degrees
+	-0.50000000000,  // 210 degrees
+	-0.64278760968,  // 220 degrees
+	-0.76604444311,  // 230 degrees
+	-0.86602540378,  // 240 degrees
+	-0.93969262078,  // 250 degrees
+	-0.98480775301,  // 260 degrees
+	-1.00000000000,  // 270 degrees
+	-0.98480775301,  // 280 degrees
+	-0.93969262078,  // 290 degrees
+	-0.86602540378,  // 300 degrees
+	-0.76604444311,  // 310 degrees
+	-0.64278760968,  // 320 degrees
+	-0.50000000000,  // 330 degrees
+	-0.34202014332,  // 340 degrees
+	-0.17364817766,  // 350 degrees
+	0.00000000000    // 360 degrees
+};
+
+double _cos_tab[] = {
+	1.00000000000,   //   0 degrees
+	0.98480775301,   //  10 degrees
+	0.93969262078,   //  20 degrees
+	0.86602540378,   //  30 degrees
+	0.76604444311,   //  40 degrees
+	0.64278760968,   //  50 degrees
+	0.50000000000,   //  60 degrees
+	0.34202014332,   //  70 degrees
+	0.17364817766,   //  80 degrees
+	0.00000000000,   //  90 degrees
+	-0.17364817766,  // 100 degrees
+	-0.34202014332,  // 110 degrees
+	-0.50000000000,  // 120 degrees
+	-0.64278760968,  // 130 degrees
+	-0.76604444311,  // 140 degrees
+	-0.86602540378,  // 150 degrees
+	-0.93969262078,  // 160 degrees
+	-0.98480775301,  // 170 degrees
+	-1.00000000000,  // 180 degrees	
+	-0.98480775301,  // 190 degrees
+	-0.93969262078,  // 200 degrees
+	-0.86602540378,  // 210 degrees
+	-0.76604444311,  // 220 degrees
+	-0.64278760968,  // 230 degrees
+	-0.50000000000,  // 240 degrees
+	-0.34202014332,  // 250 degrees
+	-0.17364817766,  // 260 degrees
+	-0.00000000000,  // 270 degrees
+	0.17364817766,   // 280 degrees
+	0.34202014332,   // 290 degrees
+	0.50000000000,   // 300 degrees
+	0.64278760968,   // 310 degrees
+	0.76604444311,   // 320 degrees
+	0.86602540378,   // 330 degrees
+	0.93969262078,   // 340 degrees
+	0.98480775301,   // 350 degrees
+	1.00000000000    // 360 degrees
+};
+
 // ///////////////////////////////////////////////////////////////////
 // Draw a speedometer : i.e. a circle with a line going from the
 // center to at a given angle : uses a shared memory
@@ -611,22 +691,30 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 	st ss = start.read(); // wait for start
 	int angle = ss.data;
 	int radius = FC_ROWS/4;
-	int x0 , y0 ;//= (FC_COLS/2) + radius, y0 = (FC_ROWS/2);
+	int x0 , y0 ;
 	// draw circle as lines with 10 degree increments
 	for (int deg = 0 ; deg <= 360; deg += DEG_INC) {
 #pragma HLS PIPELINE
-		double theta = (double)deg * (PI/180.0);
-		int x1 = (FC_COLS/2)+radius*sin(theta);
-		int y1 = (FC_ROWS/2)+radius*cos(theta);
+		//double theta = (double)deg * (PI/180.0);
+		//int x1 = (FC_COLS/2)+radius*sin(theta);
+		//int y1 = (FC_ROWS/2)+radius*cos(theta);
+		int x1 = (FC_COLS/2)+radius*_sin_tab[deg];
+		int y1 = (FC_ROWS/2)+radius*_cos_tab[deg];
 		if (deg > 0) 
 			drawline<FC_ROWS,FC_COLS>(x0,y0,x1,y1,io_frame);
 		x0 = x1;
 		y0 = y1;
 	}
 	// draw the speedometer needle
-	double theta = (double)angle * (PI/180.0);
-	int x1 = (FC_COLS/2) + (radius*sin(theta));
-	int y1 = (FC_ROWS/2) + (radius*cos(theta));
+	// double theta = (double)angle * (PI/180.0);
+	// int x1 = (FC_COLS/2) + (radius*sin(theta));
+	// int y1 = (FC_ROWS/2) + (radius*cos(theta));
+	// round to lowest tenth
+	angle /= 10;
+	angle *= 10;
+	int x1 = (FC_COLS/2) + (radius*_sin_tab[angle]);
+	int y1 = (FC_ROWS/2) + (radius*_cos_tab[angle]);
+	
 	// printf("%s angle = %d (%d,%d) - (%d,%d) \n",__FUNCTION__,
 	//         angle,FC_COLS/2,FC_ROWS/2,x1,y1);
 	drawline<FC_ROWS,FC_COLS>(FC_COLS/2, FC_ROWS/2 ,x1, y1, io_frame);
