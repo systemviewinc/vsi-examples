@@ -89,6 +89,7 @@ void system_controller(hls::stream<int> &out_1, hls::stream<int> &out_2, hls::st
 {
     int ret = 0;
     bool failed = false;
+    sleep(1); // Allow other writer blocks to complete before system controller startup.
     for(int i = 0; i < LOOP_COUNT; i++) {
         printf("\n[Controller]----------SW READ COUNTER----------\n");
         out_1.write((int)1);
