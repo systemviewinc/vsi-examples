@@ -698,8 +698,8 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 		//double theta = (double)deg * (PI/180.0);
 		//int x1 = (FC_COLS/2)+radius*sin(theta);
 		//int y1 = (FC_ROWS/2)+radius*cos(theta);
-		int x1 = (FC_COLS/2)+radius*_sin_tab[deg];
-		int y1 = (FC_ROWS/2)+radius*_cos_tab[deg];
+		int x1 = (FC_COLS/2)+radius*_sin_tab[deg/10];
+		int y1 = (FC_ROWS/2)+radius*_cos_tab[deg/10];
 		if (deg > 0) 
 			drawline<FC_ROWS,FC_COLS>(x0,y0,x1,y1,io_frame);
 		x0 = x1;
@@ -707,16 +707,16 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 	}
 	// draw the speedometer needle
 	// double theta = (double)angle * (PI/180.0);
-	// int x1 = (FC_COLS/2) + (radius*sin(theta));
-	// int y1 = (FC_ROWS/2) + (radius*cos(theta));
+	// int x1_a = (FC_COLS/2) + (radius*sin(theta));
+	// int y1_a = (FC_ROWS/2) + (radius*cos(theta));
 	// round to lowest tenth
 	angle /= 10;
 	angle *= 10;
-	int x1 = (FC_COLS/2) + (radius*_sin_tab[angle]);
-	int y1 = (FC_ROWS/2) + (radius*_cos_tab[angle]);
+	int x1 = (FC_COLS/2) + (radius*_sin_tab[angle/10]);
+	int y1 = (FC_ROWS/2) + (radius*_cos_tab[angle/10]);
 	
-	// printf("%s angle = %d (%d,%d) - (%d,%d) \n",__FUNCTION__,
-	//         angle,FC_COLS/2,FC_ROWS/2,x1,y1);
+	// printf("%s angle = %d (%d,%d) - (%d,%d) (%f,%f)\n",__FUNCTION__,
+	//        angle,x1_a,x1,y1_a,y1,sin(theta),_sin_tab[angle/10]);
 	drawline<FC_ROWS,FC_COLS>(FC_COLS/2, FC_ROWS/2 ,x1, y1, io_frame);
 	st dd;
 	dd.last = 1;
