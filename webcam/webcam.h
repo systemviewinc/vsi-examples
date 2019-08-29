@@ -145,6 +145,12 @@ class opencv_display {
 	};
 	void opencv_display_image(hls::stream<int> &);
 };
+#include "ap_int.h"
+typedef struct {
+	ap_uint<32>  	   data;
+	ap_uint<1> last;
+} st;
+
 
 #else
 typedef unsigned short uint16_t;
