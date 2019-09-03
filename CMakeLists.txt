@@ -5,27 +5,28 @@ project(vsi_hls_examples)
 set(TARGET_EXAMPLE_DIR ${STAGING_DIR}/target/common/hls_examples)
 
 install(DIRECTORY
-	example_1
-	sort
-	led_blinker
-	memory
-	regex_packet
-	stream_mux
 	blocking_read
 	device
+	example_1
+	facial_landmark_detection
+	flir_sw
+	hls_master
+	hls_video
+	image_algos
+	include
+	led_blinker
+	lod_image_algos
+	memory
+	memoryrwtest
+	microphone
+	pass_thru_r5
+	preset_yaml_files
+	regex_packet
+	regression
+	sort
+	stream_mux
+	univariate_linear_regression
 	webcam
 	webcam_opencv
-	include
-	microphone
-	memoryrwtest
-	flir_sw
 	xilinx_vlib
-	image_algos
-	lod_image_algos
-	pass_thru_r5
-	facial_landmark_detection
-	univariate_linear_regression
-	hls_video
-	hls_master
-	regression
 DESTINATION ${TARGET_EXAMPLE_DIR})

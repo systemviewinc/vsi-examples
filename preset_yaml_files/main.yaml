@@ -1,0 +1,10 @@
+examples:
+  - name: sort
+    supported_ctx: sw hw
+    path: data/sort.yaml
+  - name: FFT
+    supported_ctx: sw
+    path: data/FFT.yaml
+  - name: invertor
+    supported_ctx: sw hw
+    path: data/invertor.yaml
