@@ -9,6 +9,7 @@ install(DIRECTORY
 	device
 	example_1
 	facial_landmark_detection
+	fft
 	flir_sw
 	hls_master
 	hls_video
