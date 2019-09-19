@@ -1,23 +1,24 @@
-name: vsi_gen_ip_0
-vendor_library_name_version: vsi.com:soft_ip:vsi_gen_ip:1.0
-context: zynq_ps
-hierarchy: /zynq_ps
-type: hls
-cname: inverter
-frequency: 100000000
-source_dirs: $(VSI_INSTALL)/target/common/hls_examples/sort,
-source_file: $(VSI_INSTALL)/target/common/hls_examples/sort/sort.cc
-thread_type: dedicated
-interfaces: 
-  - name: in_arr
-    direction: input
-    access_type: streaming
-    type: array
-    max_packet_size: 4096
-    trigger: true
-    connect: tcp_server_0:server_data_out
-  - name: out_arr
-    direction: output
-    access_type: local_memory
-    type: array
-    max_packet_size: 4096
+kernel:
+  - name: vsi_gen_ip_0
+    vendor_library_name_version: vsi.com:soft_ip:vsi_gen_ip:1.0
+    context: zynq_ps
+    hierarchy: /zynq_ps
+    type: hls
+    cname: inverter
+    frequency: 100000000
+    source_dirs: $(VSI_INSTALL)/target/common/hls_examples/sort,
+    source_file: $(VSI_INSTALL)/target/common/hls_examples/sort/sort.cc
+    thread_type: dedicated
+    interfaces: 
+      - name: in_arr
+        direction: input
+        access_type: streaming
+        type: array
+        max_packet_size: 4096
+        trigger: true
+        connect: tcp_server_0:server_data_out
+      - name: out_arr
+        direction: output
+        access_type: local_memory
+        type: array
+        max_packet_size: 4096
