@@ -338,8 +338,9 @@ void webcam::webcam_display_image()
 
 // webcam class definition ends
 
-#include "ap_int.h"
-#include "image_algos.h"
+// ///////////////////////////////////////////////////////////////////
+// mouse event call back function
+// ///////////////////////////////////////////////////////////////////
 static void gs_mouse_callback(int event, int x, int y, int flags, void *param)
 {
 	static int state = 0;
@@ -357,6 +358,10 @@ static void gs_mouse_callback(int event, int x, int y, int flags, void *param)
 	ctrl->write(state); // send the state to anyone waiting
 }
 
+// ///////////////////////////////////////////////////////////////////
+// implementation of the opencv display method: reads from the display
+// double buffer of opencv_display class and call imshow
+// ///////////////////////////////////////////////////////////////////
 void opencv_display::opencv_display_image(hls::stream<int> &control)
 {
 	cv::namedWindow("User View 0");
@@ -366,24 +371,42 @@ void opencv_display::opencv_display_image(hls::stream<int> &control)
 		cv::Mat *img_data = wc_db[0].start_reading();
 		if (!img_data->empty()) cv::imshow("User View 0",*img_data);
 		wc_db[0].end_reading();
-		cv::waitKey(1);
+		int key = cv::waitKey(1);
+		if (key != -1) control.write(key);
 		usleep(10);
 	}
 }
 
+// ///////////////////////////////////////////////////////////////////
+// instantiate the Open_cv display
+// ///////////////////////////////////////////////////////////////////
 static opencv_display od("User_image0");
 
 
+// ///////////////////////////////////////////////////////////////////
+// Function to display the image 
+// ///////////////////////////////////////////////////////////////////
 void display_image(hls::stream<int> &control) {
 	od.opencv_display_image(control);
 }
 
+// ///////////////////////////////////////////////////////////////////
+// converts image to Black & white and resizes to required size
+// ///////////////////////////////////////////////////////////////////
 static void make_bw(cv::Mat &in_mat, cv::Mat &out_mat) {
 	cv::Mat tmp_mat;
 	cv::cvtColor(in_mat, tmp_mat, cv::COLOR_RGB2GRAY);
 	cv::resize(tmp_mat,out_mat,cv::Size(WC_NCOLS/2,WC_NROWS/2));
 }
 
+// ///////////////////////////////////////////////////////////////////
+// The main webcam function : instantiates a webcam starts the image
+// capture for it. Call the webcam's convert process image to convert
+// to Black & White  writes the image into the shared buffer. Then sends
+// a start command to the image processing block in (depending on mode)
+// and waits for the processing to complete. When complete it copies the 
+// image into the display double buffer and continues
+// ///////////////////////////////////////////////////////////////////
 void webcam0(hls::stream<int> &control,
 	     vsi::device &mem_mm, hls::stream<st> &start_mm, hls::stream<st> &done_mm,
 	     vsi::device &mem_fc, hls::stream<st> &start_fc, hls::stream<st> &done_fc
@@ -391,20 +414,32 @@ void webcam0(hls::stream<int> &control,
   	//printf("Webcam0 started\n");
 	static uint8_t ib [WC_HIMGSIZE_BW];
 	static webcam cam0 ("/dev/video0");
+	int p_param = 0;
 	static int mode = 0;
 	hls::stream<int> ctl;
 	cam0.webcam_capture_image();
 
 	if (!control.empty()) {
-		mode = control.read();
-	}
+		int c = control.read();
+		if (c < 0x10) mode = c;
+		p_param = c;
+	} 
 	st s;
 	s.data = 0;
 	s.last = 1;
 	//printf("%s mode = %d\n",__FUNCTION__,mode);
 	if (mode) {
-		static int threshold = 20;
-
+		static int threshold = 300;
+		// if up-arrow then increase speed
+		if (p_param == 0x52 && threshold > 100) {
+			//printf("%s: Up Arrow %d\n",__FUNCTION__,threshold);
+			threshold -= 10;
+		}
+		// if down arrow then decrease speed
+		if (p_param == 0x54 && threshold < 300) {
+			//printf("%s: Down Arrow %d\n",__FUNCTION__,threshold);
+			threshold += 10;
+		}
 		cam0.webcam_cvt_process_image(mem_fc,ctl,make_bw);
 		s.data = threshold;
 		// send start to processing algo
@@ -422,11 +457,11 @@ void webcam0(hls::stream<int> &control,
 	
 	cv::Mat im(WC_NROWS/2,WC_NCOLS/2, CV_8UC1,(unsigned char*)ib); // create a cv matrix
 
-	// copy to the display double buffer
+	// copy to the display double buffer of the opencv display
 	cv::Mat *d_img = od.wc_db[0].start_writing();
 	*d_img = im.clone();
 	od.wc_db[0].end_writing();
-	usleep(625);
+	usleep(100);
 }
 
 #endif

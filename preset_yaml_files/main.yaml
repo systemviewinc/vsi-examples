@@ -1,0 +1,10 @@
+examples:
+  - name: sort
+    supported_ctx: sw hw
+    path: $::env(VSI_INSTALL)/target/common/hls_examples/preset_yaml_files/sort.yaml
+  - name: fft
+    supported_ctx: sw
+    path: $::env(VSI_INSTALL)/target/common/hls_examples/preset_yaml_files/fft.yaml
+  - name: inverter
+    supported_ctx: sw hw
+    path: $::env(VSI_INSTALL)/target/common/hls_examples/preset_yaml_files/inverter.yaml

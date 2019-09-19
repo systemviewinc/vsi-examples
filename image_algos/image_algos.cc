@@ -97,9 +97,9 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
 	int32_t _min_val = 0xfffff,_max_val = 0, _min_idx = 0, _max_idx = 0;
 #ifdef _USE_XF_OPENCV
- 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
- 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
- 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
+	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
+	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
 		T td = ins.read();
 		cam_mat.data[idx] = (uint8_t) td;
@@ -116,7 +116,7 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 	// copy image into a local buffer
 	uint16_t img_data[NROWS*NCOLS];
 	#pragma HLS RESOURCE variable=img_data core=RAM_1P_BRAM
- 	for (int idy = 0 ; idy < NROWS ; idy++ ) {
+	for (int idy = 0 ; idy < NROWS ; idy++ ) {
 		for (int idx = 0 ; idx < NCOLS ; idx++) {
 			#pragma HLS PIPELINE II=1
 
@@ -160,33 +160,6 @@ void calc_min_max(hls::stream<T> &ins,	hls::stream<int> &outs)
 #endif
 }
 
-// template <int NROWS, int NCOLS, typename T = uint16_t>
-// void edge_detect(hls::stream<T> &ins,	hls::stream<T> &outs, float sigma)
-// {
-// #pragma HLS inline self
-
-//  	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
-//  	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC4> cam_mat_i(NROWS,NCOLS);
-// 	xf::Mat<XF_2UC1,NROWS,NCOLS,XF_NPPC32> tmp_mat(NROWS,NCOLS);
-// 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC8> tmp2_mat(NROWS,NCOLS);
-
-//  	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
-// #pragma HLS PIPELINE II=1
-// 		T td = ins.read();
-// 		cam_mat.data[idx] = (uint8_t) td;
-// 	}
-
-// 	xf::Canny<FILTER_WIDTH, XF_L1NORM, XF_8UC1, XF_2UC1, NROWS, NCOLS, XF_NPPC1,XF_NPPC4> (cam_mat, cam_mat_i, 20, 54);
-// 	tmp_mat.copyTo(cam_mat_i.data); // convert to NPPC32
-// 	xf::EdgeTracing<XF_2UC1, XF_8UC1, NROWS, NCOLS, XF_NPPC32, XF_NPPC8> (tmp_mat, tmp2_mat);
-// 	cam_mat.copyTo(tmp2_mat.data); // convert to NPPC1
-
-// 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
-// #pragma HLS PIPELINE II=1
-// 		outs.write(cam_mat.data[idx]);
-// 	}
-// }
-
 // fast corner detection
 template <int NROWS, int NCOLS, int NMS, int THRESHOLD>
 static void fast_corner (hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
@@ -194,7 +167,7 @@ static void fast_corner (hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat(NROWS,NCOLS);
 	xf::Mat<XF_8UC1,NROWS,NCOLS,XF_NPPC1> cam_mat_i(NROWS,NCOLS);
 	// read input
- 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
 		uint8_t td = ins.read();
 		cam_mat.data[idx] = (uint8_t) td;
@@ -211,7 +184,7 @@ static void fast_corner (hls::stream<uint8_t> &ins, hls::stream<uint8_t> &outs)
 	// cam_mat_i.data[0] = n_points & 0xff;
 	// cam_mat_i.data[1] = (n_points >> 8) & 0xff;
 	// send output
- 	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
+	for (int idx = 0 ; idx < (NROWS*NCOLS) ; idx++ ) {
 #pragma HLS PIPELINE II=1
 		if (idx == 0) outs.write(n_points & 0xff);
 		else if (idx == 1) outs.write((n_points >> 8) & 0xff);
@@ -270,7 +243,7 @@ void MeanShift (hls::stream<uint32_t> &ins, hls::stream<uint16_t> &track_in, hls
 	static  int16_t tly 		[XF_MAX_OBJECTS];
 	static  int16_t brx 		[XF_MAX_OBJECTS];
 	static  int16_t bry 		[XF_MAX_OBJECTS];
-        static uint16_t track		[XF_MAX_OBJECTS];
+	static uint16_t track		[XF_MAX_OBJECTS];
 	static uint16_t obj_height 	[XF_MAX_OBJECTS];
 	static uint16_t obj_width 	[XF_MAX_OBJECTS];
 	static uint16_t dx 		[XF_MAX_OBJECTS];
@@ -391,7 +364,7 @@ void vsi_dilate (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4])
 	}
 }
 
-void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) { 
+void vsi_erode (hls::stream<uint8_t> &ins, uint32_t outx[XF_HEIGHT*XF_WIDTH/4]) {
 	uint8_t *outa = (uint8_t *)&outx[0];
 	for (int i = 0 ; i < (XF_HEIGHT) ; i++)
 		for (int j = 0 ; j < XF_WIDTH ; j++)
@@ -436,9 +409,14 @@ static inline uint32_t set_val(int idx)
 	}
 }
 
-template<int rows,int cols> void drawline(int x0, int y0, int x1, int y1, uint32_t out_frame[rows*cols/4])
+// ///////////////////////////////////////////////////////////////////
+// drawline : will draw a line between coordinates (x0,y0) - (x1,y1)
+//	      into the frame buffer "out_frame"
+// ///////////////////////////////////////////////////////////////////
+template<int rows,int cols> void drawline(int x0, int y0, int x1, int y1,
+					  uint32_t out_frame[rows*cols/4])
 {
-#pragma HLS inline self	
+#pragma HLS inline self
 	int x , y ;
 	int dx = ABSx((x1-x0));
 	int sx = x0<x1 ? 1 : -1;
@@ -447,9 +425,9 @@ template<int rows,int cols> void drawline(int x0, int y0, int x1, int y1, uint32
 	int err = (dx>dy ? dx : -dy)/2, e2;
 
 	while(1) {
-#pragma HLS pipeline II=1		
+#pragma HLS pipeline II=1
 		if (x0 < cols-1 && y0 < rows && x0 > 1 && y0 > 0) {
-			out_frame[(x0+(y0*cols))/4] = set_val(x0+(y0*cols));
+			out_frame[(x0+(y0*cols))/4] |= set_val(x0+(y0*cols));
 		}
 		if (x0==x1 && y0==y1) break;
 		e2 = err;
@@ -457,9 +435,11 @@ template<int rows,int cols> void drawline(int x0, int y0, int x1, int y1, uint32
 		if (e2 < dy) { err += dx; y0 += sy;}
 	}
 }
-
-void dl_640x480(hls::stream<st> &angle, uint32_t of[640*480/4], hls::stream<st> &done)
-{
+// ///////////////////////////////////////////////////////////////////
+// line drawing for 640x480 buffer at a given angle
+// ///////////////////////////////////////////////////////////////////
+void dl_640x480(hls::stream<st> &angle, uint32_t of[640*480/4],
+		hls::stream<st> &done) {
 	double r = 300;
 	int x0 = (640/2)-60;
 	int y0 = 480;
@@ -471,13 +451,19 @@ void dl_640x480(hls::stream<st> &angle, uint32_t of[640*480/4], hls::stream<st> 
 	drawline<480,640>(x0+120, y0 ,x1+100, y1, of);
 	st dd ;
 	dd.data = 1;
-	dd.last = 1; 
+	dd.last = 1;
 	done.write(dd);
 }
 
 #define FC_ROWS (480/2)
 #define FC_COLS (640/2)
-void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_frame[FC_ROWS*FC_COLS/4])
+// ///////////////////////////////////////////////////////////////////
+// vsi_fast_corner : will use fast corner detection and will draw
+//		     small rectangles in the location where the
+//		     corners are detected
+// ///////////////////////////////////////////////////////////////////
+void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done,
+		     uint32_t io_frame[FC_ROWS*FC_COLS/4])
 {
 	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat(FC_ROWS,FC_COLS);
 	xf::Mat<XF_8UC1,FC_ROWS,FC_COLS,XF_NPPC1> cam_mat_i(FC_ROWS,FC_COLS);
@@ -496,7 +482,7 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 		cam_mat.data[j+1]   = 0;
 		cam_mat.data[j+2]   = 0;
 		cam_mat.data[j+3]   = 0;
-	}		
+	}
 	xf::fast<0,XF_8UC1,FC_ROWS, FC_COLS,XF_NPPC1>(cam_mat_i,cam_mat,threshold);
 	int  n_points = 0;
 	for (int j = 0; j < cam_mat.rows; j++) {
@@ -506,7 +492,7 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 			if (value != 0) {
 				int x0 = i;
 				int y0 = j;
-				//printf("(%d,%d),(%d,%d)\n",x0,y0,x0+50,y0-50);
+				// draw the rectangles
 				drawline<FC_ROWS,FC_COLS>(x0-5,y0,x0+5,y0,io_frame);
 				drawline<FC_ROWS,FC_COLS>(x0+5,y0,x0+5,y0+5,io_frame);
 				drawline<FC_ROWS,FC_COLS>(x0+5,y0+5,x0-5,y0+5,io_frame);
@@ -518,20 +504,28 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_
 	printf("npoints %d\n",n_points);
 	st dd ;
 	dd.data = n_points;
-	dd.last = 1; 
+	dd.last = 1;
 	done.write(dd);
 }
 
+// ///////////////////////////////////////////////////////////////////
+// Software version of drawing track lines uses vsi::device
+// ///////////////////////////////////////////////////////////////////
 void vsi_track_lines_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
 {
 	uint32_t io_frame[FC_ROWS*FC_COLS/4];
-        mem.pread(io_frame,sizeof(io_frame),0);
+	mem.pread(io_frame,sizeof(io_frame),0);
 	printf("Got stared\n");
 	vsi_fast_corner(start,done,io_frame);
 	mem.pwrite(io_frame,sizeof(io_frame),0);
 }
 
-void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_frame[FC_ROWS*FC_COLS/4])
+// ///////////////////////////////////////////////////////////////////
+// min_max_shmem : detects the min & max location of the frame and
+// draws rectangles around the min max locations. Uses shared memory
+// ///////////////////////////////////////////////////////////////////
+void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done,
+		   uint32_t io_frame[FC_ROWS*FC_COLS/4])
 {
 
 	uint16_t _min_locx,_min_locy,_max_locx,_max_locy;
@@ -546,22 +540,22 @@ void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_fr
 		cam_mat_i.data[j+1] = (val >> 16) & 0xff;
 		cam_mat_i.data[j+2] = (val >>  8) & 0xff;
 		cam_mat_i.data[j+3] = (val >>  0) & 0xff;
-	}		
+	}
 	// do median_blur and minmax in the same loop
 	for (int idy = 1 ; idy < FC_ROWS-2; idy++) {
 		for (int idx = 1; idx < (FC_COLS-2); idx++) {
 #pragma HLS PIPELINE II=1
 			uint32_t data = 0;
-			
+
 			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
 			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
 			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx];
 			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];
 			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];
-			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];			
-			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
-			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
-			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];			
+			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx+1];
+			data += (uint32_t)cam_mat_i.data[idy*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];
+			data += (uint32_t)cam_mat_i.data[(idy+1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];
+			data += (uint32_t)cam_mat_i.data[(idy-1)*(cam_mat_i.cols>>XF_BITSHIFT(XF_NPPC1))+idx-1];
 			data /= (uint32_t)9;
 			if (data < _min_val) {
 				_min_val = data;
@@ -590,18 +584,155 @@ void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done, uint32_t io_fr
 	printf("%s min(%d,%d) max(%d,%d)\n",__FUNCTION__,_min_locx, _min_locy, _max_locx, _max_locy);
 	st dd ;
 	dd.data = 0;
-	dd.last = 1; 
+	dd.last = 1;
 	done.write(dd);
 
 }
 
+// Software version for testsing
+#ifndef __VSI_HLS_SYN__
 void vsi_min_max_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
 {
 	uint32_t io_frame[FC_COLS*FC_ROWS/4];
-        mem.pread(io_frame,sizeof(io_frame),0);
+	mem.pread(io_frame,sizeof(io_frame),0);
 	min_max_shmem(start,done,io_frame);
 	mem.pwrite(io_frame,sizeof(io_frame),0);
 }
+#endif
+
+#include <math.h>
+#define DEG_INC 10
+double _sin_tab[] = {
+	0.00000000000,   //   0 degrees
+	0.17364817766,   //  10 degrees
+	0.34202014332,   //  20 degrees
+	0.50000000000,   //  30 degrees
+	0.64278760968,   //  40 degrees
+	0.76604444311,   //  50 degrees
+	0.86602540378,   //  60 degrees
+	0.93969262078,   //  70 degrees
+	0.98480775301,   //  80 degrees
+	1.00000000000,   //  90 degrees
+	0.98480775301,   // 100 degrees
+	0.93969262078,   // 110 degrees
+	0.86602540378,   // 120 degrees
+	0.76604444311,   // 130 degrees
+	0.64278760968,   // 140 degrees
+	0.50000000000,   // 150 degrees
+	0.34202014332,   // 160 degrees
+	0.17364817766,   // 170 degrees
+	0.00000000000,   // 180 degrees	
+	-0.17364817766,  // 190 degrees
+	-0.34202014332,  // 200 degrees
+	-0.50000000000,  // 210 degrees
+	-0.64278760968,  // 220 degrees
+	-0.76604444311,  // 230 degrees
+	-0.86602540378,  // 240 degrees
+	-0.93969262078,  // 250 degrees
+	-0.98480775301,  // 260 degrees
+	-1.00000000000,  // 270 degrees
+	-0.98480775301,  // 280 degrees
+	-0.93969262078,  // 290 degrees
+	-0.86602540378,  // 300 degrees
+	-0.76604444311,  // 310 degrees
+	-0.64278760968,  // 320 degrees
+	-0.50000000000,  // 330 degrees
+	-0.34202014332,  // 340 degrees
+	-0.17364817766,  // 350 degrees
+	0.00000000000    // 360 degrees
+};
+
+double _cos_tab[] = {
+	1.00000000000,   //   0 degrees
+	0.98480775301,   //  10 degrees
+	0.93969262078,   //  20 degrees
+	0.86602540378,   //  30 degrees
+	0.76604444311,   //  40 degrees
+	0.64278760968,   //  50 degrees
+	0.50000000000,   //  60 degrees
+	0.34202014332,   //  70 degrees
+	0.17364817766,   //  80 degrees
+	0.00000000000,   //  90 degrees
+	-0.17364817766,  // 100 degrees
+	-0.34202014332,  // 110 degrees
+	-0.50000000000,  // 120 degrees
+	-0.64278760968,  // 130 degrees
+	-0.76604444311,  // 140 degrees
+	-0.86602540378,  // 150 degrees
+	-0.93969262078,  // 160 degrees
+	-0.98480775301,  // 170 degrees
+	-1.00000000000,  // 180 degrees	
+	-0.98480775301,  // 190 degrees
+	-0.93969262078,  // 200 degrees
+	-0.86602540378,  // 210 degrees
+	-0.76604444311,  // 220 degrees
+	-0.64278760968,  // 230 degrees
+	-0.50000000000,  // 240 degrees
+	-0.34202014332,  // 250 degrees
+	-0.17364817766,  // 260 degrees
+	-0.00000000000,  // 270 degrees
+	0.17364817766,   // 280 degrees
+	0.34202014332,   // 290 degrees
+	0.50000000000,   // 300 degrees
+	0.64278760968,   // 310 degrees
+	0.76604444311,   // 320 degrees
+	0.86602540378,   // 330 degrees
+	0.93969262078,   // 340 degrees
+	0.98480775301,   // 350 degrees
+	1.00000000000    // 360 degrees
+};
+
+// ///////////////////////////////////////////////////////////////////
+// Draw a speedometer : i.e. a circle with a line going from the
+// center to at a given angle : uses a shared memory
+// ///////////////////////////////////////////////////////////////////
+void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
+		      uint32_t io_frame[FC_ROWS*FC_COLS/4]) {
+	st ss = start.read(); // wait for start
+	int angle = ss.data;
+	int radius = FC_ROWS/4;
+	int x0 , y0 ;
+	// draw circle as lines with 10 degree increments
+	for (int deg = 0 ; deg <= 360; deg += DEG_INC) {
+#pragma HLS PIPELINE
+		//double theta = (double)deg * (PI/180.0);
+		//int x1 = (FC_COLS/2)+radius*sin(theta);
+		//int y1 = (FC_ROWS/2)+radius*cos(theta);
+		int x1 = (FC_COLS/2)+radius*_sin_tab[deg/10];
+		int y1 = (FC_ROWS/2)+radius*_cos_tab[deg/10];
+		if (deg > 0) 
+			drawline<FC_ROWS,FC_COLS>(x0,y0,x1,y1,io_frame);
+		x0 = x1;
+		y0 = y1;
+	}
+	// draw the speedometer needle
+	// double theta = (double)angle * (PI/180.0);
+	// int x1_a = (FC_COLS/2) + (radius*sin(theta));
+	// int y1_a = (FC_ROWS/2) + (radius*cos(theta));
+	// round to lowest tenth
+	angle /= 10;
+	angle *= 10;
+	int x1 = (FC_COLS/2) + (radius*_sin_tab[angle/10]);
+	int y1 = (FC_ROWS/2) + (radius*_cos_tab[angle/10]);
+	
+	// printf("%s angle = %d (%d,%d) - (%d,%d) (%f,%f)\n",__FUNCTION__,
+	//        angle,x1_a,x1,y1_a,y1,sin(theta),_sin_tab[angle/10]);
+	drawline<FC_ROWS,FC_COLS>(FC_COLS/2, FC_ROWS/2 ,x1, y1, io_frame);
+	st dd;
+	dd.last = 1;
+	dd.data = 1;
+	done.write(dd);
+}
+
+#ifndef __VSI_HLS_SYN__
+void draw_speedometer_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+{
+	uint32_t io_frame[FC_COLS*FC_ROWS/4];
+	mem.pread(io_frame,sizeof(io_frame),0);
+	draw_speedometer(start,done,io_frame);
+	mem.pwrite(io_frame,sizeof(io_frame),0);
+}
+#endif
 
 //
 // image_algos.cc ends here
