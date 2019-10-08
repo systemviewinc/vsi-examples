@@ -1,4 +1,5 @@
-#include <hls_stream.h>
+#include <stream_mux.h>
+#include <hls_stream_types.h>
 #include <stdio.h>
 
 void source_sink(hls::stream<unsigned int> &in, hls::stream<unsigned int> &out) {
@@ -34,20 +35,26 @@ void sink(hls::stream<unsigned int>&in) {
  */
 void pass_thru_ss(int in_arr[1024], int out_arr[1024])
 {
-	printf("%s started\n",__FUNCTION__);
+	printf("%s started\n", __FUNCTION__);
 	for (int i =0 ; i < 1024; i++) {
 		#pragma HLS PIPELINE II=1
 		out_arr[i] = in_arr[i];
 	}
-	printf("%s done\n",__FUNCTION__);
+	printf("%s done\n", __FUNCTION__);
 }
 
-
-void generator(hls::stream<unsigned int> &out) {
-  // sendo out 4 k bytes then exit
-  for (int i = 0 ; i < 1024; i ++ ) {
-// Patern here
+/**
+ * @brief Generate packages sawtooth wave data.
+ *
+ * @param out - output stream.
+ */
+void generator(hls::stream<ap_axis_d <32>> &out) {
+  #define PACKAGE_SIZE 1024
+  ap_axis_d <32> tmp_out;
+  for (int i = 0; i < PACKAGE_SIZE; i++ ) {
+    tmp_out.data = i;
+    tmp_out.last = (i == PACKAGE_SIZE - 1);
 #pragma HLS pipeline II=1
-    out.write(i);
+    out.write(tmp_out);
   }
 }
