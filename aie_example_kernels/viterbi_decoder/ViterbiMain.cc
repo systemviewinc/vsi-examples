@@ -3,8 +3,11 @@
 void ViterbiMain(input_stream_int32 * instream, output_stream_int32 * outstream1, output_stream_int32 * outstream2) {
   int32 i;
   int16 num_parity_bits=2;
+  int16 num_bits;
+  num_bits = readincr(instream);
+  writeincr(outstream2, num_bits);
   //input file contains number of bits plus the bits
-  for (i=0;i<51;i++) {
+  for (i=0;i<num_bits;i++) {
     int32 data = readincr(instream);
     writeincr(outstream2, data);
   }

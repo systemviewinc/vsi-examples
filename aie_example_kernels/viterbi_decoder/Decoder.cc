@@ -8,25 +8,22 @@
 
 void Decoder(input_stream_int32 * init_data,
 			input_stream_int32 * in_bits,
-			output_stream_int32 * out_path_metrics) {
+			output_stream_int32 * decodded_bits) {
 	  int32 j=0;
 	  int32 i,l;
 	  int32 constraint;
 	  int32 polynomials[2];
-	  int32 num_bits = 50;
-	  int32 bits[50];
+	  int32 num_bits;
+	  int32 bits[50]= {0};
 	  int32 outputs_[256];
-	  for (i=0;i<51;i++) {
-		  if (i < 1) {
-			  num_bits = readincr(in_bits);
-		  } else {
-			  bits[i-1] = readincr(in_bits);
-		  }
+	  num_bits = readincr(in_bits);
+	  for (i=0;i<num_bits;i++) {
+		bits[i] = readincr(in_bits);
 	  };
 	  //Initial outputs
   	  for (i=0;i<256;i++) {
   		  outputs_[i] = readincr(init_data);
-//  		  writeincr(out_path_metrics, outputs_[i]);
+//  		  writeincr(decodded_bits, outputs_[i]);
   	  }
   // constant parameters
 	  constraint = 7;
@@ -37,7 +34,7 @@ void Decoder(input_stream_int32 * init_data,
 	  //1 << (constraint_ - 1) is 64 when the constraint_ is 7
 	  int32 path_metrics[64];
 	  int32 trellis_index =0;
-	  int8 trellis_array[64*64];
+	  int8 	trellis_array[64*64];
 	  int32 trellis_array_index=0;
 	  int32 current_bits[2]; //2 bits due to 2 number of parity bits
 	  for (i=0;i<64;i++) {
@@ -94,11 +91,11 @@ void Decoder(input_stream_int32 * init_data,
 				}
 			  ////// end of BranchMetric
 			  if (pm1 <= pm2) {
-//				  writeincr(out_path_metrics, pm1);
+//				  writeincr(decodded_bits, pm1);
 				  new_path_metrics[j] = pm1;
 				  new_trellis_column[j] = source_state1;
 			    } else {
-//			    	writeincr(out_path_metrics, pm2);
+//			    	writeincr(decodded_bits, pm2);
 					new_path_metrics[j] = pm2;
 					new_trellis_column[j] = source_state2;
 			    }
@@ -107,7 +104,7 @@ void Decoder(input_stream_int32 * init_data,
 		  for (l=0;l<64;l++) {
 			path_metrics[l] = new_path_metrics[l];
 //			trellis[trellis_index][l] = new_trellis_column[l];
-//			writeincr(out_path_metrics, trellis[trellis_index][l]);
+//			writeincr(decodded_bits, trellis[trellis_index][l]);
 			trellis_array_index = (trellis_index * 64) + l;
 			trellis_array[trellis_array_index] = new_trellis_column[l];
 		  }
@@ -120,8 +117,8 @@ void Decoder(input_stream_int32 * init_data,
 	  // Traceback.
 	  int32 decoder_state= std::numeric_limits<int32>::max();
 	  for (l=0;l<64;l++) {
-//		  writeincr(out_path_metrics, l);
-//		  writeincr(out_path_metrics, path_metrics[l]);
+//		  writeincr(decodded_bits, l);
+//		  writeincr(decodded_bits, path_metrics[l]);
 		  if (path_metrics[l] < decoder_state) {
 			  decoder_state= l;
 		  }
@@ -144,6 +141,6 @@ void Decoder(input_stream_int32 * init_data,
 	    }
 	  // Write the decoded bits out
 	  for (j=max_iteration-1;j> (constraint-2); j--) {
-		  writeincr(out_path_metrics, decoded[j]);
+		  writeincr(decodded_bits, decoded[j]);
 	  	  }
 };
