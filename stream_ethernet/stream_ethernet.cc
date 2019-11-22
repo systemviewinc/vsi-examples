@@ -2,6 +2,22 @@
 #include "ws_packets.h"
 
 //#define ARB_ON_LAST
+unsigned long int global_run_count = 1;
+
+/**
+ * Helper function to print displayable ASCII characters on screen
+ */
+void displayASCII(uint64_t data) {
+  for(int i = 7;i >= 0;i--) {
+    unsigned char temp = (data >> i*8) & 0xff;
+    if ((temp >= 0x21) && (temp <= 0x7E)) { // make sure ascii character is printable
+      printf("%c", temp);
+    } else {
+      printf("."); // if not printable, just display a dot
+    }
+  }
+}
+
 
 /**
  * @brief generate 1-byte ethernet frames
@@ -65,7 +81,9 @@ void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device &eth
   uint32_t rval = 0;
 
   uint32_t wval = 0x00000000;
-  printf("In %s, ethernet core in NON-loopback (normal) mode..\n",__FUNCTION__);
+  printf("*****************Global run count: %d\n", global_run_count);
+  global_run_count++;
+  printf("****In %s, ethernet core in NON-loopback (normal) mode..\n",__FUNCTION__);
   ethernet_core_control.pwrite(&wval, sizeof(wval), 0);
 
 
@@ -73,24 +91,43 @@ void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device &eth
   while(!(rval &0x01)) {
       ethernet_core_status.pread(&rval, sizeof(rval), 0);
   }
-  printf("stat_rx_status is 1, transmitting frames...\n");
+  printf("stat_rx_status is 1, transmitting frames...\n\n\n");
 
   for (int i = 0; i < NUM_PACKETS; i++) {
     printf("Transmitting packet %d...\n",i+1);
     int pkt_len = (pkt_arr[i].pkt_size)/sizeof(unsigned int);
+    int col_pos = 1;
+    uint64_t packet64 = 0;
     for(int j = 0; j < pkt_len;j++) {
+      printf("0x%02x, ",pkt_arr[i].pkt[j]);
+
+      packet64 <<= 8;
+      packet64 |= pkt_arr[i].pkt[j];
+      // Make sure to display last packets' ASCII representation properly, if not byte aligned
+      if ((j == (pkt_len-1)) && ((pkt_len%8) != 0)) {
+	for(int k = pkt_len; (k%8) != 0; k++) { // pad with spaces before displaying ASCII equivalent
+	  printf("%*c", 6, ' ');
+	}
+	displayASCII(packet64);
+      }
+      if ((col_pos % 8) == 0) {
+	// display printable ASCII
+	displayASCII(packet64);
+	printf("\n");
+	packet64 = 0;
+      }
+      col_pos++;
       ap_axis_dk<8> e;
       e.data = pkt_arr[i].pkt[j];
       e.keep = -1;
       e.last = (j == (pkt_len - 1));      	
       outp.write(e);
     }
+    printf("\n");
   }
-  printf("Done transmitting %d packets..\n", NUM_PACKETS);
+  printf("\nDone transmitting %d packets..\n\n", NUM_PACKETS);
 
-  while(1) {
-    ;
-  }
+  sleep(2); // wait for a bit, then function will be called again
 }
 
 /**
@@ -179,13 +216,42 @@ void pass_thru_last(hls::stream<ap_axis_dk<8> > &ins8,
 
 void display_ethernet_data(hls::stream<ap_axis_dk<DATA_WIDTH> > &ins)
 {
-  printf("%s started\n",__FUNCTION__);
+  printf("\n****%s started\n",__FUNCTION__);
   printf("Data received:\n");
   while(!ins.empty()) {
     ap_axis_dk<DATA_WIDTH> r = ins.read();
-    printf("0x%016lx\n", ((uint64_t) r.data));
+    uint64_t temp = (uint64_t) r.data;
+    for (int i = 7;i >= 0;i--) {
+      printf("0x%02x, ", (temp >> (i*8)) & 0xff);
+    }
+    displayASCII(temp);
+    printf("\n");
     if (r.last == 1)
       break;
   }
+}
+
+/**
+ * @brief Stream pass thru
+ *
+ * @param ins
+ * @param outd
+ */
+void pass_thru_streaming(
+    hls::stream<ap_axis_dk<DATA_WIDTH> > &ins,
+    hls::stream<ap_axis_dk<DATA_WIDTH> > &outd)
+{
+    ap_axis_dk<DATA_WIDTH> in;
+    ap_axis_dk<DATA_WIDTH> out;
+
+    while (!ins.empty()) {
+#pragma HLS PIPELINE II=1
+        in = ins.read();
+
+        out.data = in.data;
+        out.last = in.last;
+        out.keep = in.keep;
+        outd.write(out);
+    }
 }
 
