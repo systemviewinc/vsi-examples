@@ -30,4 +30,5 @@ install(DIRECTORY
 	webcam
 	webcam_opencv
 	xilinx_vlib
+	aie_example_kernels	
 DESTINATION ${TARGET_EXAMPLE_DIR})
