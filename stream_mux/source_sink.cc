@@ -58,3 +58,41 @@ void generator(hls::stream<ap_axis_d <32>> &out) {
     out.write(tmp_out);
   }
 }
+
+/**
+ * @brief Generate data for AIe Viterbi decoder.
+ * 
+ * @param out - output stream.
+ */
+void generator_viterbi_decoder(hls::stream<ap_axis_d <32>> &out) {
+  #define PACKAGE_SIZE 1024
+  int data[] ={28, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1};
+  static int data_poi = 0;
+  ap_axis_d <32> tmp_out;
+  for (int i = 0; i < PACKAGE_SIZE; i++ ) {
+    tmp_out.data = data[data_poi];
+    if (data_poi == 28) {
+      data_poi = 0;
+    } else {
+      data_poi++;
+    }
+    tmp_out.last = (i == PACKAGE_SIZE - 1);
+#pragma HLS pipeline II=1
+    out.write(tmp_out);
+  }
+}
+
+/**
+ * @brief Print out the data coming from AIe Viterbi decoder.
+ * 
+ * @param in - input stream.
+ */
+void sink_viterbi_decoder(hls::stream<unsigned int>&in) {
+  while (1) {
+    for (int i = 0 ; i < 1024; i ++ ) {
+#pragma HLS pipeline II=1
+      buff[i] = in.read();
+      printf("%d \n", buff[i]);
+    }
+  }
+}
