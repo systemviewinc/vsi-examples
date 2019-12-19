@@ -25,6 +25,7 @@ install(DIRECTORY
 	regex_packet
 	regression
 	sort
+	sort_x86
 	stream_ethernet
 	stream_mux
 	univariate_linear_regression
