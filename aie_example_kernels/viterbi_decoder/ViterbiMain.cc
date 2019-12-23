@@ -3,9 +3,10 @@
  * @brief  Viterbi Decoder implemented in 2 kernels of AIe
  *
  * The first kernel (ViterbiMain) receives the input data (instream)
- * and split it to number of data and the data 
- * and send them to the next kernel as outstream2
+ * and split it to number of data and the encoded data 
+ * and send them to the next kernel as data_to_decoder
  * ViterbiMain kernel also initializes the output data
+ * and send them to the next kernel as initialized_output
  * 
  * In this example of Viterbi Decoder:
  *      constrain_length = 7
@@ -27,8 +28,8 @@
 #include <cardano.h>
 
 void ViterbiMain(input_stream_int32 *instream,
-                output_stream_int32 *outstream1,
-                output_stream_int32 *outstream2){
+                output_stream_int32 *initialized_output,
+                output_stream_int32 *data_to_decoder){
   int32 i;
   int16 num_parity_bits = PARITY_BITS;
   int16 num_bits;
@@ -37,10 +38,10 @@ void ViterbiMain(input_stream_int32 *instream,
 
   //input data contains number of bits plus the bits
   num_bits = readincr(instream);
-  writeincr(outstream2, num_bits);
+  writeincr(data_to_decoder, num_bits);
   for (i = 0; i < num_bits; i++){
     int32 data = readincr(instream);
-    writeincr(outstream2, data);
+    writeincr(data_to_decoder, data);
   }
   
   // initializing output
@@ -59,6 +60,6 @@ void ViterbiMain(input_stream_int32 *instream,
     }
   }
   for (i = 0; i < OUTPUT_SIZE; i++){
-    writeincr(outstream1, outputs_[i]);
+    writeincr(initialized_output, outputs_[i]);
   }
 }
