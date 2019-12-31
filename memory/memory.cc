@@ -34,8 +34,8 @@ void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl
 		// time the write
 		auto t_start = std::chrono::high_resolution_clock::now();
 		mem.pwrite(val,sizeof(val),offset); 	// write value at offset
-		printf("Write to memory complete {{{TID}}}\n");
 		auto t_end   = std::chrono::high_resolution_clock::now();
+		printf("Write to memory complete {{{TID}}}\n");
 		w_time  += (t_end - t_start);
 		t_bytes += MEM_SIZE;
 		std::cout << "Writing complete\n";
