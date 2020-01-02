@@ -79,8 +79,6 @@ void generator(hls::stream<ap_axis_d <32>> &out) {
 	printf("%s: sent data\n",__FUNCTION__);
 }
 
-<<<<<<< HEAD
-=======
 /**
  * @brief Generate data for AIe Viterbi decoder.
  * 
@@ -118,4 +116,3 @@ void sink_viterbi_decoder(hls::stream<unsigned int>&in) {
     }
   }
 }
->>>>>>> 3c657f8bad3a536657c57ce993aa597149cf78cf
