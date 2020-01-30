@@ -109,7 +109,7 @@ class webcam {
  public:
 	std::atomic<bool>	       	paused;
 	std::atomic<bool>		running;
-	std::mutex			o_lock;  // lock for overlay image 
+	std::mutex			o_lock;  // lock for overlay image
 	cv::Mat 			o_image; // image to overlay for display
 	double_buffer<cv::Mat> wc_db; // input
 	double_buffer<cv::Mat> wc_ddb;// display
@@ -117,6 +117,7 @@ class webcam {
 	~webcam();
 	void webcam_capture_image();
 	void webcam_display_image();
+	void webcam_display_image_bounces();
 	int xioctl(int fh, int request, void *arg);
 	virtual void webcam_cvt_process_image(hls::stream<uint32_t> &, hls::stream<int> &, hls::stream<int>&,
 					      std::function<void (cv::Mat &, cv::Mat &)> const &cvt =
@@ -144,6 +145,7 @@ class opencv_display {
 		strcpy(window_name,wn);
 	};
 	void opencv_display_image(hls::stream<int> &);
+	void opencv_display_image_bounces(hls::stream<int> &);
 };
 #include "ap_int.h"
 typedef struct {

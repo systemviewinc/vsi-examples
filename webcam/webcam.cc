@@ -169,11 +169,11 @@ void webcam::webcam_capture_image()
 	do {
 		FD_ZERO(&fds);
 		FD_SET(fd, &fds);
-		
+
 		/* Timeout. */
 		tv.tv_sec = 2;
 		tv.tv_usec = 0;
-		
+
 		r = select(fd + 1, &fds, NULL, NULL, &tv);
 	} while ((r == -1 && (errno = EINTR)));
 	if (r == -1) {
@@ -277,7 +277,7 @@ void webcam::webcam_cvt_process_image(uint32_t *oa,
 }
 
 // reads the webcam's double buffer and writes it out into an output
-// vsi_device 
+// vsi_device
 // ///////////////////////////////////////////////////////////////////
 void webcam::webcam_cvt_process_image(vsi::device &mem,
 				      hls::stream<int> &ctl,
@@ -346,9 +346,9 @@ static void gs_mouse_callback(int event, int x, int y, int flags, void *param)
 	static int state = 0;
 	cv::Mat img ;
 	hls::stream<int> *ctrl = (hls::stream<int> *)param;
-	
+
 	if (event != CV_EVENT_LBUTTONDOWN) return;
-	
+
 	// forward then reverse
 	if (state == 0) {
 		state = 1;
@@ -377,6 +377,63 @@ void opencv_display::opencv_display_image(hls::stream<int> &control)
 	}
 }
 
+void bounces(hls::stream<int> &control, int key)
+{
+	//bounce the two signals
+	for(int i = 0; i < 10; i ++){
+		control.write(0x52);
+		//printf("bounce write %d\n", 0x52);
+		control.write(0x54);
+		//printf("bounce write %d\n", 0x54);
+	}
+	//now do the real key
+	control.write(key);
+	//printf("bounce write %d\n", key);
+}
+
+// ///////////////////////////////////////////////////////////////////
+// implementation of the opencv display method: reads from the display
+// double buffer of opencv_display class and call imshow
+// ///////////////////////////////////////////////////////////////////
+void opencv_display::opencv_display_image_bounces(hls::stream<int> &control)
+{
+	cv::namedWindow("User View 0");
+	cv::setMouseCallback("User View 0",gs_mouse_callback,&control);
+	while (1) {
+		// read from doule buffer and display
+		cv::Mat *img_data = wc_db[0].start_reading();
+		if (!img_data->empty()) cv::imshow("User View 0",*img_data);
+		wc_db[0].end_reading();
+		int key = cv::waitKey(1);
+		if (key != -1) bounces(control, key);
+		usleep(10);
+	}
+}
+
+
+#ifndef __VSI_HLS_SYN__
+
+// ///////////////////////////////////////////////////////////////////
+// a "filiter" to remove bounce from the control data
+// ///////////////////////////////////////////////////////////////////
+void debouncer(hls::stream<int> &in, hls::stream<int> &out)
+{
+	int last = -1;
+	int read_val = -1;
+	if(!in.empty()){
+		sleep(.1);
+		while (!in.empty()) {
+			read_val = in.read();
+			last = read_val;
+		}
+		out.write(last);
+	}
+
+}
+#endif
+
+
+
 // ///////////////////////////////////////////////////////////////////
 // instantiate the Open_cv display
 // ///////////////////////////////////////////////////////////////////
@@ -384,11 +441,19 @@ static opencv_display od("User_image0");
 
 
 // ///////////////////////////////////////////////////////////////////
-// Function to display the image 
+// Function to display the image
 // ///////////////////////////////////////////////////////////////////
 void display_image(hls::stream<int> &control) {
 	od.opencv_display_image(control);
 }
+
+// ///////////////////////////////////////////////////////////////////
+// Function to display the bounce image
+// ///////////////////////////////////////////////////////////////////
+void display_image_bounces(hls::stream<int> &control) {
+	od.opencv_display_image_bounces(control);
+}
+
 
 // ///////////////////////////////////////////////////////////////////
 // converts image to Black & white and resizes to required size
@@ -404,7 +469,7 @@ static void make_bw(cv::Mat &in_mat, cv::Mat &out_mat) {
 // capture for it. Call the webcam's convert process image to convert
 // to Black & White  writes the image into the shared buffer. Then sends
 // a start command to the image processing block in (depending on mode)
-// and waits for the processing to complete. When complete it copies the 
+// and waits for the processing to complete. When complete it copies the
 // image into the display double buffer and continues
 // ///////////////////////////////////////////////////////////////////
 void webcam0(hls::stream<int> &control,
@@ -423,13 +488,21 @@ void webcam0(hls::stream<int> &control,
 		int c = control.read();
 		if (c < 0x10) mode = c;
 		p_param = c;
-	} 
+	}
 	st s;
 	s.data = 0;
 	s.last = 1;
 	//printf("%s mode = %d\n",__FUNCTION__,mode);
+
+	// if q then exit
+	if (p_param == 0x71) {
+		//printf("%s: q key presses\n",__FUNCTION__);
+		exit(0);
+	}
+
 	if (mode) {
 		static int threshold = 300;
+		//printf("%s: keypress: %d threshold: %d \n",__FUNCTION__, p_param, threshold);
 		// if up-arrow then increase speed
 		if (p_param == 0x52 && threshold > 100) {
 			//printf("%s: Up Arrow %d\n",__FUNCTION__,threshold);
@@ -448,13 +521,13 @@ void webcam0(hls::stream<int> &control,
 		mem_fc.pread(ib,WC_HIMGSIZE_BW,0); // get the image from shared memory
 	} else {
 		cam0.webcam_cvt_process_image(mem_mm,ctl,make_bw);
-		
+
 		// send start to processing algo
 		start_mm.write(s);
 		st d = done_mm.read(); // wait for processing complete
 		mem_mm.pread(ib,WC_HIMGSIZE_BW,0); // get the image from shared memory
 	}
-	
+
 	cv::Mat im(WC_NROWS/2,WC_NCOLS/2, CV_8UC1,(unsigned char*)ib); // create a cv matrix
 
 	// copy to the display double buffer of the opencv display
