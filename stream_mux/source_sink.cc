@@ -2,8 +2,6 @@
 #include <hls_stream_types.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <chrono>
-#include <time.h>
 void source_sink(hls::stream<unsigned int> &in, hls::stream<unsigned int> &out) {
 	// sendo out 4 k bytes then loop everything coming in
 	for (int i = 0 ; i < 1024; i ++ ) out.write(i);
@@ -92,9 +90,6 @@ void generator_viterbi_decoder(hls::stream<ap_axis_d <32>> &out) {
             1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1};
   static int data_poi = 0;
   ap_axis_d <32> tmp_out;
-  auto t_start = std::chrono::high_resolution_clock::now();
-  std::cout << "********** Generator start time *********** : "
-            << t_start.time_since_epoch().count() << "\n";
   for (int i = 0; i < PACKAGE_SIZE; i++ ) {
     tmp_out.data = data[data_poi];
     if (data_poi == 28) {
@@ -106,9 +101,6 @@ void generator_viterbi_decoder(hls::stream<ap_axis_d <32>> &out) {
 #pragma HLS pipeline II=1
     out.write(tmp_out);
   }
-  auto t_end_gen = std::chrono::high_resolution_clock::now();
-  std::cout << "********** Generator end time *********** : "
-            << t_end_gen.time_since_epoch().count() << "\n";
 }
 
 /**
@@ -122,12 +114,6 @@ void sink_viterbi_decoder(hls::stream<unsigned int>&in) {
 #pragma HLS pipeline II=1
       buff[i] = in.read();
       printf("%d \n", buff[i]);
-      auto t_start = std::chrono::high_resolution_clock::now();
-      std::cout << "********** Sink start time *********** : "
-                << t_start.time_since_epoch().count() << "\n";
     }
-    auto t_end = std::chrono::high_resolution_clock::now();
-    std::cout << "********** Sink end time  ************* : "
-              << t_end.time_since_epoch().count() << "\n";
   }
 }
