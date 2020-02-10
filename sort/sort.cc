@@ -68,12 +68,24 @@ void quickSortIterative (int arr[], int l, int h)
     }
 }
 
-
-void sort (int in_arr[1024], int out_arr[1024])
+// Classic version, operates on out_arr, broken by HLS bug in Vivado 2019.2
+void sort_v1 (int in_arr[1024], int out_arr[1024])
 {
 	for (int i = 0 ; i < 1024; i++)
 		out_arr[i] = in_arr[i];
 	quickSortIterative(out_arr,0, 1023);
+}
+
+// Version of sort developed to work around HLS bug in Vivado 2019.2
+void sort (int in_arr[1024], int out_arr[1024])
+{
+	int i;
+	int inter_arr[1024];
+	for (i = 0; i < 1024; i++)
+		inter_arr[i] = in_arr[i];
+	quickSortIterative(inter_arr,0, 1023);
+	for (i = 0; i < 1024; i++)
+		out_arr[i] = inter_arr[i];
 }
 
 void inverter(int in_arr[1024], int out_arr[1024]) {
