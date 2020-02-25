@@ -228,3 +228,39 @@ void mem_arr(char ar[1024])
 	for (int i = 0 ; i < 1024; i++)
 		ar[i] = i;
 }
+
+/* the following are for testing connection to vsi_mem */
+
+/* create and send some data to the array */
+void mem_write_array(hls::stream<int> &done, 
+		     int mem_array[16][1024]) {
+	static int first = 0;
+	if (first) {
+		done.write(1); // start the read
+		printf("Started read going to sleep\n");
+		while(1) sleep(1); // sleep for ever
+	}
+	for (int i = 0 ; i < 16; i++) {
+		for (int j = 0 ; j < 1024; j++) {
+			mem_array[i][j]= i*j;
+		}
+	}
+	printf("Complete write\n");
+	first = 1;
+}
+
+void mem_read_array(hls::stream<int> &start,
+		    int mem_array[16][1024]) {
+	int s = start.read();
+	printf("Read started\n");
+	for (int i = 0 ; i < 16; i++) {
+		for (int j = 0 ; j < 1024; j++) {
+			if (mem_array[i][j] != i*j) 
+				printf("Error: did not match mem_array[%d][%d] got %d, expected %d\n",
+				       i,j, mem_array[i][j], i*j);
+		}
+	}
+	printf("Matched\n");
+	while(1) sleep(1);
+	
+}
