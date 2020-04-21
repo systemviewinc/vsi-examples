@@ -64,6 +64,28 @@ void strip_stream(hls::stream<ap_axis_dkt<DATA_WIDTH> > &ins,
 	}
 }
 
+void stream_split_64(hls::stream<ap_axis_d<64> > &in_stream,
+		       hls::stream<ap_axis_d<64> > &out_stream_1,
+		       hls::stream<ap_axis_d<64> > &out_stream_2)
+{
+	ap_axis_d<64> idx;
+	idx = in_stream.read();
+	out_stream_1.write(idx);
+	out_stream_2.write(idx);
+}
+
+
+void stream_join_64(hls::stream<ap_axis_d<64> > &in_stream_1,
+		       hls::stream<ap_axis_d<64> > &in_stream_2,
+		       hls::stream<ap_axis_d<64> > &out_stream)
+{
+	ap_axis_d<64> idx;
+	idx = in_stream_1.read();
+	idx = in_stream_2.read();
+	out_stream.write(idx);
+}
+
+
 void stream_split_2_16(hls::stream<ap_axis_dk<16> > &ins,
 		       hls::stream<ap_axis_dk<16> > &o1,
 		       hls::stream<ap_axis_dk<16> > &o2)
