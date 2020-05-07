@@ -30,8 +30,8 @@ public:
     connect< window<128> > net2 (k2.out[0], out);
 
     // specify kernel sources
-    source(k1) = "kernels/weighted_sum.cc";
-    source(k2) = "kernels/average_div.cc";
+    source(k1) = "weighted_sum.cc";
+    source(k2) = "average_div.cc";
 
     // specify kernel run times
     runtime<ratio>(k1) = 0.1;

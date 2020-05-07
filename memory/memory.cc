@@ -143,25 +143,6 @@ void recv_write_file(hls::stream<int> &in_s)
 }
 
 /**
- * @brief process data in batches of 16 integers
- *
- * @param in_s
- * @param out_s
- */
-void process_data(hls::stream<int> & in_s, hls::stream<int> & out_s) {
-	// process in chunks of 16 integers
-	int fdata[16];
-	printf(" gathering 16 integers\n");
-	for (int i = 0 ; i < sizeof(fdata)/sizeof(fdata[0]); i++) {
-		fdata[i] = in_s.read();
-	}
-	printf(" write them to the output\n");
-	for (int i = 0 ; i < sizeof(fdata)/sizeof(fdata[0]); i++) {
-		out_s.write(fdata[i]);
-	}
-}
-
-/**
  * @brief write a patter to memory and tell another process when write is
  * 	  complete and wait for ack from the other process.
  * @param mem 		: memory elemnt to write to
@@ -223,6 +204,25 @@ void mem_write_read(vsi::device &mem, hls::stream<int> &ctl_in)
 }
 #endif
 
+/**
+ * @brief process data in batches of 16 integers
+ *
+ * @param in_s
+ * @param out_s
+ */
+void process_data(hls::stream<int> & in_s, hls::stream<int> & out_s) {
+	// process in chunks of 16 integers
+	int fdata[16];
+	printf(" gathering 16 integers\n");
+	for (int i = 0 ; i < sizeof(fdata)/sizeof(fdata[0]); i++) {
+		fdata[i] = in_s.read();
+	}
+	printf(" write them to the output\n");
+	for (int i = 0 ; i < sizeof(fdata)/sizeof(fdata[0]); i++) {
+		out_s.write(fdata[i]);
+	}
+}
+
 void mem_arr(char ar[1024])
 {
 	for (int i = 0 ; i < 1024; i++)
@@ -232,7 +232,7 @@ void mem_arr(char ar[1024])
 /* the following are for testing connection to vsi_mem */
 
 /* create and send some data to the array */
-void mem_write_array(hls::stream<int> &done, 
+void mem_write_array(hls::stream<int> &done,
 		     int mem_array[16][1024]) {
 	static int first = 0;
 	if (first) {
@@ -255,12 +255,12 @@ void mem_read_array(hls::stream<int> &start,
 	printf("Read started\n");
 	for (int i = 0 ; i < 16; i++) {
 		for (int j = 0 ; j < 1024; j++) {
-			if (mem_array[i][j] != i*j) 
+			if (mem_array[i][j] != i*j)
 				printf("Error: did not match mem_array[%d][%d] got %d, expected %d\n",
 				       i,j, mem_array[i][j], i*j);
 		}
 	}
 	printf("Matched\n");
 	while(1) sleep(1);
-	
+
 }
