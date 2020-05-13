@@ -2,7 +2,7 @@
 #define __GRAPH_H__
 
 #include <cardano.h>
-#include "kernels.h"
+//#include "kernels.h"
 
 extern int32 lut0[6*1024];  // local memory for master
 extern void masterKernel(input_stream_int32 * s1,
