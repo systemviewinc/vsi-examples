@@ -16,6 +16,7 @@ install(DIRECTORY
 	image_algos
 	include
 	led_blinker
+	lab
 	lod_image_algos
 	memory
 	memoryrwtest
