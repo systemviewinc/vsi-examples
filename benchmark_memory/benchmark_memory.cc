@@ -157,6 +157,7 @@ void master(hls::stream<int> &t1en, hls::stream<int> &t1done, hls::stream<int> &
 					t8done.read();
 					break;
 			}
+			sleep(3);
 			printf("done: thread level %d, iteration %d\n", th, i+1);
 		}
 		++th;
