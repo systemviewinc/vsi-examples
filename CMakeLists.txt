@@ -5,6 +5,9 @@ project(vsi_hls_examples)
 set(TARGET_EXAMPLE_DIR ${STAGING_DIR}/target/common/hls_examples)
 
 install(DIRECTORY
+	aie_example_kernels
+	aie_vectorize_tests
+	benchmark_memory
 	blocking_read
 	device
 	example_1
@@ -16,6 +19,7 @@ install(DIRECTORY
 	image_algos
 	include
 	led_blinker
+	lab
 	lod_image_algos
 	memory
 	memoryrwtest
@@ -32,5 +36,4 @@ install(DIRECTORY
 	webcam
 	webcam_opencv
 	xilinx_vlib
-	aie_example_kernels	
 DESTINATION ${TARGET_EXAMPLE_DIR})
