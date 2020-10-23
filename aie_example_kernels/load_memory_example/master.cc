@@ -1,4 +1,4 @@
-#include <cardano.h>
+#include <adf.h>
 #define SZ (6*1024)
 int32 chess_storage(%chess_alignof(v4int32)) lut0[SZ]; 
 

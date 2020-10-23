@@ -1,8 +1,8 @@
 // kernels.h - 
 #ifndef KERNEL_H
 
-#include <cardano/window/types.h>
-#include <cardano/stream/types.h>
+#include <adf/window/types.h>
+#include <adf/stream/types.h>
 
 void compute(
   input_stream_int32 *data,
