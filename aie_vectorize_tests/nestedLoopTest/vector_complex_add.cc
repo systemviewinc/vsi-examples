@@ -1,9 +1,0 @@
-#include <stdint.h>
-void nestedLoopTest(int32_t * __restrict__ A , int32_t * __restrict__ B , int32_t * __restrict__ C) {
-	  #pragma clang loop vectorize(enable)
-   	for (int i = 0; i < 8; ++i) {
-       		    #pragma clang loop vectorize(enable)
-          		for (int k = 0; k < 8; ++k)
-            				C[i*8 + k] = A[i*8 + k] + B[i*8 + k];
-    }
-}
