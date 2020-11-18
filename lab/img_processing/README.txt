@@ -5,7 +5,7 @@
     Place software wizard into AI-e context
         -- name : "img_pracessing"
         -- source directory : "aie_src"
-        -- C++ Function :  "cardano::graph kernel_graph"
+        -- C++ Function :  "adf::graph kernel_graph"
 2.2 Software context:
     Place software wizard into AI-e context
         -- source directory : "cpu_src"

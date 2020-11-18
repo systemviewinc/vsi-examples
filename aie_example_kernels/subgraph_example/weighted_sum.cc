@@ -4,7 +4,7 @@
  * Compute the weighted sum of the last 8 values.
  */
 
-#include <cardano.h>
+#include <adf.h>
 #include <stdio.h>
 #include "include.h"
 

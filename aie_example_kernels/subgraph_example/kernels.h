@@ -2,7 +2,7 @@
 #ifndef FUNCTION_KERNELS_H
 #define FUNCTION_KERNELS_H
 
-#include <cardano.h>
+#include <adf.h>
 
 void weighted_sum(input_window_int32 * in, output_window_int32 * out);
 void weighted_sum_with_margin(input_window_int32 * in, output_window_int32 * out);
