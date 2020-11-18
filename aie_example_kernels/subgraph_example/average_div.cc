@@ -4,7 +4,7 @@
  * Compute the weighted average by dividing each value by 36.
  */
 
-#include <cardano.h>
+#include <adf.h>
 #include <stdio.h>
 #include "include.h"
 

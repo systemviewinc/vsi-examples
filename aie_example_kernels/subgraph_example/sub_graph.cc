@@ -1,22 +1,22 @@
-#include <cardano.h>
+#include <adf.h>
 #include "kernels.h"
 
-using namespace cardano;
+using namespace adf;
 
 /*
- * Cardano dataflow graph to compute weighted moving average of 
+ * adf dataflow graph to compute weighted moving average of 
  * the last 8 samples in a stream of numbers
  */
 
-class simpleGraph : public cardano::graph
+class simpleGraph : public adf::graph
 {
 private:
-  cardano::kernel k1;
-  cardano::kernel k2;
+  adf::kernel k1;
+  adf::kernel k2;
 
 public:
-  cardano::port<input> in;
-  cardano::port<output> out;
+  adf::port<input> in;
+  adf::port<output> out;
   
   simpleGraph()
   {

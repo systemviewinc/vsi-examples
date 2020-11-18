@@ -1,19 +1,19 @@
 // Memory Distributor
 #include <stdio.h>
 #include <stdlib.h>
-#include <cardano.h>
+#include <adf.h>
 
 #include "example_processing_graph.cpp"
 
-cardano::simulation::platform<1, 1 > platform(
+adf::simulation::platform<1, 1 > platform(
 	"data/input.txt"
 	,"data/output_0.txt"
 );
 
 kernel_graph bp_graph;
 
-cardano::connect<> input_net(platform.src[0], bp_graph.in);
-cardano::connect<> output_net_0(bp_graph.out_0, platform.sink[0]);
+adf::connect<> input_net(platform.src[0], bp_graph.in);
+adf::connect<> output_net_0(bp_graph.out_0, platform.sink[0]);
 
 int main(int argc, char ** argv) { 
 	printf("\n");
