@@ -254,11 +254,11 @@ void array_to_mem(int in_arr[1024], int *out_mem)
  * @param outd
  */
 void pass_thru_streaming(
-    hls::stream<ap_axis_dk<DATA_WIDTH> > &ins,
-    hls::stream<ap_axis_dk<DATA_WIDTH> > &outd)
+    hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &ins,
+    hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &outd)
 {
-    ap_axis_dk<DATA_WIDTH> in;
-    ap_axis_dk<DATA_WIDTH> out;
+    ap_axis<DATA_WIDTH, 0, 0, 0> in;
+    ap_axis<DATA_WIDTH, 0, 0, 0> out;
 
     while (!ins.empty()) {
         in = ins.read();
