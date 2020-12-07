@@ -25,7 +25,7 @@
 #define PARITY_BITS 2
 
 
-#include <cardano.h>
+#include <adf.h>
 
 void ViterbiMain(input_stream_int32 *instream,
                 output_stream_int32 *initialized_output,

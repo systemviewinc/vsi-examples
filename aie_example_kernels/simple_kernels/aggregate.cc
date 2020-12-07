@@ -1,4 +1,4 @@
-#include <cardano.h>
+#include <adf.h>
 
 void aggregate(input_stream_int32 * instream0, input_stream_int32 * instream1, output_stream_int32 * outstream) {
   int32 i;
