@@ -13,9 +13,14 @@ class __attribute__((packed)) _complex {
 
  public:
 	_complex() {}
+	
 	_complex(T r, T i) {
+	#ifdef _VSI_LLVM_
+		u.d = __builtin_vsi_cfconstructor(r,i);
+    #else
 		u.s.re = r;
 		u.s.im = i;
+	#endif
 	}
 	_complex(T r) {
 		u.s.re = r;
@@ -209,4 +214,5 @@ inline int32_t cnorm(const _complex<int32_t> x)
 	return x.real()*x.real() + x.imag()*x.imag();
 #endif	
 }
+
 
