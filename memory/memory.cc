@@ -252,15 +252,22 @@ void mem_write_array(hls::stream<int> &done,
 void mem_read_array(hls::stream<int> &start,
 		    int mem_array[16][1024]) {
 	int s = start.read();
+	int fail = 0;
 	printf("Read started\n");
 	for (int i = 0 ; i < 16; i++) {
 		for (int j = 0 ; j < 1024; j++) {
-			if (mem_array[i][j] != i*j)
+			if (mem_array[i][j] != i*j){
 				printf("Error: did not match mem_array[%d][%d] got %d, expected %d\n",
-				       i,j, mem_array[i][j], i*j);
+					i,j, mem_array[i][j], i*j);
+				if(!fail){
+					fail = 1;
+				}
+			}
 		}
 	}
-	printf("Matched\n");
+	if(!fail){
+		printf("Matched\n");
+	}
 	while(1) sleep(1);
 
 }
