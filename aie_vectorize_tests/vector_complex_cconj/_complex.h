@@ -13,9 +13,14 @@ class __attribute__((packed)) _complex {
 
  public:
 	_complex() {}
+
 	_complex(T r, T i) {
+	#ifdef _VSI_LLVM_
+		u.d = __builtin_vsi_cfconstructor(r,i);
+    #else
 		u.s.re = r;
 		u.s.im = i;
+	#endif
 	}
 	_complex(T r) {
 		u.s.re = r;
@@ -27,11 +32,11 @@ class __attribute__((packed)) _complex {
 	T &real()  { return u.s.re; };
 	T &imag()  { return u.s.im; };
 	double to_d() const { return u.d ; };
-	
+
 	void operator=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = x.u.d;
-#else		
+#else
 		u.s.re = x.u.s.re;
 		u.s.im = x.u.s.im;
 #endif
@@ -39,7 +44,7 @@ class __attribute__((packed)) _complex {
 	void operator+=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_cfadd(u.d,x.u.d);
-#else		
+#else
 		u.s.re += x.u.s.re;
 		u.s.im += x.u.s.im;
 #endif
@@ -48,7 +53,7 @@ class __attribute__((packed)) _complex {
 	void operator-=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_cfsub(u.d,x.u.d);
-#else		
+#else
 		u.s.re -= x.u.s.re;
 		u.s.im -= x.u.s.im;
 #endif
@@ -57,7 +62,7 @@ class __attribute__((packed)) _complex {
 	void operator*=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_cfmult(u.d,x.u.d);
-#else		
+#else
 		u.s.re += x.u.s.re;
 		u.s.im += x.u.s.im;
 #endif
@@ -77,8 +82,12 @@ class __attribute__((packed)) _complex <int32_t> {
  public:
 	_complex() {}
 	_complex(int32_t r, int32_t i) {
+	#ifdef _VSI_LLVM_
+		u.d = __builtin_vsi_cconstructor(r,i);
+    #else
 		u.s.re = r;
 		u.s.im = i;
+	#endif
 	}
 	_complex(int32_t r) {
 		u.s.re = r;
@@ -90,11 +99,11 @@ class __attribute__((packed)) _complex <int32_t> {
 	int32_t &real() { return u.s.re; };
 	int32_t &imag() { return u.s.im; };
 	int64_t to_d() const { return u.d ; };
-	
+
 	void operator=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = x.u.d;
-#else		
+#else
 		u.s.re = x.u.s.re;
 		u.s.im = x.u.s.im;
 #endif
@@ -102,7 +111,7 @@ class __attribute__((packed)) _complex <int32_t> {
 	void operator+=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_cadd(u.d,x.u.d);
-#else		
+#else
 		u.s.re += x.u.s.re;
 		u.s.im += x.u.s.im;
 #endif
@@ -111,7 +120,7 @@ class __attribute__((packed)) _complex <int32_t> {
 	void operator-=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_csub(u.d,x.u.d);
-#else		
+#else
 		u.s.re -= x.u.s.re;
 		u.s.im -= x.u.s.im;
 #endif
@@ -120,7 +129,7 @@ class __attribute__((packed)) _complex <int32_t> {
 	void operator*=(const _complex x)  {
 #ifdef _VSI_LLVM_
 		u.d = __builtin_vsi_cmult(u.d,x.u.d);
-#else		
+#else
 		u.s.re += x.u.s.re;
 		u.s.im += x.u.s.im;
 #endif
@@ -154,7 +163,7 @@ static inline _complex<T> cconj(const _complex<T> x) {
 	_complex<T> xconj((double)__builtin_vsi_cfconj(x.to_d()));
 #else
 	_complex xconj( x.real(),-1.0f*x.imag());
-#endif   
+#endif
 	return xconj;
 }
 
@@ -164,7 +173,7 @@ inline _complex<int32_t> cconj(const _complex<int32_t> x) {
 	_complex<int32_t> xconj((int64_t)__builtin_vsi_cconj(x.to_d()));
 #else
 	_complex xconj( x.real(),-1.0f*x.imag());
-#endif   
+#endif
 	return xconj;
 }
 
@@ -173,9 +182,9 @@ static inline _complex<T> operator*(_complex<T> lhs, T rhs)
 {
 #ifdef _VSI_LLVM_
 	_complex<T> prod((double)__builtin_vsi_cfmultf(lhs.to_d(),rhs));
-#else   
+#else
 	_complex prod(lhs.real() * rhs, lhs.imag() * rhs);
-#endif   
+#endif
 	return prod;
 }
 
@@ -184,9 +193,9 @@ inline _complex<int32_t> operator*(_complex<int32_t> lhs, int32_t rhs)
 {
 #ifdef _VSI_LLVM_
 	_complex<int32_t> prod((int64_t)__builtin_vsi_cmultf(lhs.to_d(),rhs));
-#else   
+#else
 	_complex prod(lhs.real() * rhs, lhs.imag() * rhs);
-#endif   
+#endif
 	return prod;
 }
 
@@ -195,9 +204,9 @@ static inline T cnorm(const _complex<T> x)
 {
 #ifdef _VSI_LLVM_
 	return (T)__builtin_vsi_cfnorm(x.to_d());
-#else       
+#else
 	return x.real()*x.real() + x.imag()*x.imag();
-#endif	
+#endif
 }
 
 template<>
@@ -205,8 +214,7 @@ inline int32_t cnorm(const _complex<int32_t> x)
 {
 #ifdef _VSI_LLVM_
 	return (int32_t)__builtin_vsi_cnorm(x.to_d());
-#else       
+#else
 	return x.real()*x.real() + x.imag()*x.imag();
-#endif	
+#endif
 }
-
