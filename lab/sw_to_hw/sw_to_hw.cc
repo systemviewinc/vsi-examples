@@ -1,7 +1,29 @@
 #include "sw_to_hw.h"
 #define ARRAY_SIZE 32
+#define DATA_WIDTH 32
+#define BIG_ARRAY_SIZE 4096
+
+//#define ARB_ON_LAST
+void send_4k_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data) //
+ {
+	ap_axis<DATA_WIDTH, 0, 0, 0> out;
+	int counter = 0;
 
 
+	printf("Sending data %i bytes now!\n", (sizeof(ap_uint<32>) * BIG_ARRAY_SIZE));
+	for(int i = 0; i < BIG_ARRAY_SIZE; i++){
+		out.data = counter++;
+		if(i == BIG_ARRAY_SIZE-1){
+			out.last = 1;
+		}
+		else {
+			out.last = 0;
+		}
+		out_data.write(out);
+
+	}
+	printf("Done!\n");
+}
 
 //#define ARB_ON_LAST
 void send_data_stream(hls::stream<ap_axis_d<32> > &out_data,
