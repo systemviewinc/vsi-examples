@@ -26,6 +26,7 @@ install(DIRECTORY
 	microphone
 	pass_thru_r5
 	preset_yaml_files
+	rdma_helper
 	regex_packet
 	regression
 	sort
