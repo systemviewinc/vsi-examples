@@ -15,7 +15,7 @@ using namespace std;
 #include <unistd.h>
 #endif
 
-#define DATA_WIDTH 32
+#define DATA_WIDTH 64
 
 template<int D>
 struct ap_axis_dk {
