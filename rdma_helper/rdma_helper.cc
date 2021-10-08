@@ -159,24 +159,30 @@ int run_rdma_grp(int grp_id)
 		}
 
 		/* Set the prog request for each RDMA. */
+		bool found_grp = false;
 		for(it = rdma_table.begin(); it != rdma_table.end(); it++){
-			if(!((it->second).prog_table.count(grp_id))){
-				return ERR_NO_GRP;
-			}
-			(it->second).curr_prog_rqst = grp_id;
+			if((it->second).prog_table.count(grp_id)){
+				(it->second).curr_prog_rqst = grp_id;
+				found_grp = true;
+			}	
+		}
+		if(!found_grp){
+			return ERR_NO_GRP;
 		}
 		cv_wait_rqst.notify_all();
 		it = rdma_table.begin();
 	}
 
-	/* Wait for each RDMA to trasistion to busy */
+	/* Wait for each RDMA in the group to trasistion to busy */
 	//printf("%s: waitBusy grp_id=%d\n", __FUNCTION__, grp_id);
 	while(1){
 		{
 			std::unique_lock<std::mutex> lock(m_rdma_table);
-			if((it->second).prog_table[grp_id].prog != NULL){
-				while((it->second).curr_rdma_state != busy){
-					cv_wait_busy.wait(lock);
+			if((it->second).prog_table.count(grp_id)){
+				if((it->second).prog_table[grp_id].prog != NULL){
+					while((it->second).curr_rdma_state != busy){
+						cv_wait_busy.wait(lock);
+					}
 				}
 			}
 			it++;
@@ -187,13 +193,15 @@ int run_rdma_grp(int grp_id)
 		}
 	}
 
-	/* Wait for each RDMA to trasistion to complete */
+	/* Wait for each RDMA in the group to trasistion to complete */
 	//printf("%s: waitComplete grp_id=%d\n", __FUNCTION__, grp_id);
 	while(1){
 		{
 			std::unique_lock<std::mutex> lock(m_rdma_table);
-			while((it->second).curr_rdma_state != complete){
-				cv_wait_complete.wait(lock);
+			if((it->second).prog_table.count(grp_id)){
+				while((it->second).curr_rdma_state != complete){
+					cv_wait_complete.wait(lock);
+				}
 			}
 			it++;
 			if(it == rdma_table.end()){
