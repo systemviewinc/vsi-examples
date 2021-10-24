@@ -10,14 +10,14 @@ std::mutex m_prog_regis;
 std::condition_variable cv_wait_tot_regis;
 std::condition_variable cv_wait_regis_count;
 
-/* Global resources. Only accessed using functions below with mutexs for thread safety.
+/* Semi-global resources. Only accessed using functions below with mutexs for thread safety.
  Defined static to confine scope to this file only. */
 static std::map<std::string, struct rdma_config> rdma_table;
 static int total_registrations = 0;
 static int registration_count = 0;
 
 /**
- * @brief Sets the global variable total_registrations. The user should call this with
+ * @brief Sets the semi-global variable total_registrations. The user should call this with
  * the number rdma programs they intend to register in their app. It should be called
  * before any calls to run_rdma_grp. run_rdma_grp will make sure the total number
  * actively registered programs is equal to what the user requested before running.
@@ -89,7 +89,7 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
 	size_t prog_sz;
 	while(1){
 		{
-			/* Access the global table to find run reqests. */
+			/* Access the semi-global table to find run reqests. */
 			std::unique_lock<std::mutex> lock(m_rdma_table);
 			while(rdma_table[rdma_name].curr_prog_rqst == -1){
 				//printf("%s: waitRqst curr_prog_rqst=%d\n", rdma_name.c_str(), rdma_table[rdma_name].curr_prog_rqst);
@@ -131,7 +131,7 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
 			} while ((status & 4) == 0); // wait for idle
 			if(do_programming){
 				{
-					/* Access the global table. */
+					/* Access the semi-global table. */
 					std::lock_guard<std::mutex> lock(m_rdma_table);
 					prog = rdma_table[rdma_name].prog_table[rdma_table[rdma_name].curr_prog_rqst].prog;
 					prog_sz = rdma_table[rdma_name].prog_table[rdma_table[rdma_name].curr_prog_rqst].prog_sz;
@@ -153,7 +153,7 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
 		}
 		printf("%s: completed\n", rdma_name.c_str());
 		{
-			/* Access the global table. */
+			/* Access the semi-global table. */
 			std::lock_guard<std::mutex> lock(m_rdma_table);
 			rdma_table[rdma_name].curr_rdma_state = complete;
 			rdma_table[rdma_name].curr_grp_id = rdma_table[rdma_name].curr_prog_rqst;
