@@ -1,14 +1,40 @@
 #include "rdma_helper.h"
 
-/* Objects used to give atomicity to rdma_table. */
+/* Synchronization objects for rdma_table. */
 std::mutex m_rdma_table;
 std::condition_variable cv_wait_rqst;
 std::condition_variable cv_wait_busy;
 std::condition_variable cv_wait_complete;
+/* Synchronization objects for prog registration accounting. */
+std::mutex m_prog_regis;
+std::condition_variable cv_wait_tot_regis;
+std::condition_variable cv_wait_regis_count;
 
-/* RDMA hash table only accessed using functions below with mutex for thread safety.
+/* Global resources. Only accessed using functions below with mutexs for thread safety.
  Defined static to confine scope to this file only. */
 static std::map<std::string, struct rdma_config> rdma_table;
+static int total_registrations = 0;
+static int registration_count = 0;
+
+/**
+ * @brief Sets the global variable total_registrations. The user should call this with
+ * the number rdma programs they intend to register in their app. It should be called
+ * before any calls to run_rdma_grp. run_rdma_grp will make sure the total number
+ * actively registered programs is equal to what the user requested before running.
+ * This way, if register_rdma_prog is called from a different thread then run_rdma_grp,
+ * run_rdma_grp will still know if the programs it will run have been registered.
+ *
+ * @param tot_regis_arg The number rdma programs the user intends to register in their app.
+ * @return error code
+ */
+int set_tot_rdma_registrations(int tot_regis_arg)
+{
+	std::lock_guard<std::mutex> lock(m_prog_regis);
+	total_registrations = tot_regis_arg;
+	cv_wait_tot_regis.notify_all();
+
+	return 0; // todo: error checking
+}
 
 /**
  * @brief Registers an RDMA program in the master lookup table.
@@ -16,7 +42,6 @@ static std::map<std::string, struct rdma_config> rdma_table;
  * @param rdma_name Each RDMA IP in FPGA should get a unique name, then prog is associated with this name.
  * @param grp_id RDMA programs can come in groups. This is a unique id for the group this prog belongs to.
  * Specifically, a group is a set of programs running on a set of RDMA IPs that fulfil a desired data movement.
- * For non load-on-demand applications, this can just be 0.
  * @param prog Pointer to compiled RDMA program. Will be associated with rdma_name.
  * @param prog_sz Size of prog.
  * @return error code
@@ -27,7 +52,7 @@ int register_rdma_prog(std::string rdma_name, int grp_id, unsigned int* prog, si
 	new_prog.prog = prog;
 	new_prog.prog_sz = prog_sz;
 	struct rdma_config new_config;
-	std::lock_guard<std::mutex> lock(m_rdma_table);
+	std::lock_guard<std::mutex> lock1(m_rdma_table);
 	/* Check if rdma_name entry already exists in table. */
 	if(rdma_table.count(rdma_name)){
 		rdma_table[rdma_name].prog_table[grp_id] = new_prog;
@@ -38,6 +63,11 @@ int register_rdma_prog(std::string rdma_name, int grp_id, unsigned int* prog, si
 	}
 	//printf("%s: rdma_name=%s grp_id=%d prog_sz=%d\n", __FUNCTION__, rdma_name.c_str(),
 	//	grp_id, rdma_table[rdma_name].prog_table[grp_id].prog_sz);
+
+	std::lock_guard<std::mutex> lock2(m_prog_regis);
+	++registration_count;
+	cv_wait_regis_count.notify_all();
+
 	return 0; // todo: error checking
 }
 
@@ -135,8 +165,8 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
 }
 
 /**
- * @brief Runs RDMA program group passed as int argument. If using for load on demand (LOD)
- * it's best if the LOD group id matches the RDMA program group id (grp_id).
+ * @brief Runs RDMA program group passed as int argument. If using for load-on-demand (LOD)
+ * the LOD group id can match the RDMA program group id (grp_id).
  * RDMAs must not be busy when called. Blocks until RDMAs complete.
  *
  * @param grp_id ID of program group to run.
@@ -144,6 +174,21 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
  */
 int run_rdma_grp(int grp_id)
 {
+	/* Wait for total_registrations to be set. */
+	{
+		std::unique_lock<std::mutex> lock(m_prog_regis);
+		while(total_registrations < 1){
+			cv_wait_tot_regis.wait(lock);
+		}
+	}
+	/* Wait for registration_count to equal total_registrations. */
+	{
+		std::unique_lock<std::mutex> lock(m_prog_regis);
+		while(registration_count < total_registrations){
+			cv_wait_regis_count.wait(lock);
+		}
+	}
+
 	//printf("%s: funcBegin grp_id=%d\n", __FUNCTION__, grp_id);
 	std::map<std::string, struct rdma_config>::iterator it;
 	/* it->first is key, it->second is val */
@@ -164,7 +209,7 @@ int run_rdma_grp(int grp_id)
 			if((it->second).prog_table.count(grp_id)){
 				(it->second).curr_prog_rqst = grp_id;
 				found_grp = true;
-			}	
+			}
 		}
 		if(!found_grp){
 			return ERR_NO_GRP;

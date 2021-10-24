@@ -28,6 +28,7 @@ struct rdma_config{
 	std::map<int, struct rdma_prog> prog_table; // key = grp_id, val = prog
 };
 
+int set_tot_rdma_registrations(int tot_regis_arg);
 int register_rdma_prog(std::string rdma_name, int grp_id, unsigned int* prog, size_t prog_sz);
 int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::device &program_mem);
 int run_rdma_grp(int grp_id);
