@@ -147,8 +147,8 @@ int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::de
 			printf("%s: program started\n", rdma_name.c_str());
 			do {
 				rdma_control.pread(&status,sizeof(status),0);
-				printf("%s: status 0x%x\n", rdma_name.c_str(), status);
-				sleep(1);
+				//printf("%s: status 0x%x\n", rdma_name.c_str(), status);
+				usleep(10000);
 			} while ((status & 4) == 0); // wait for idle
 		}
 		printf("%s: completed\n", rdma_name.c_str());
