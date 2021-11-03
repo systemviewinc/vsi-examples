@@ -26,11 +26,11 @@ void send_4k_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data) //
 }
 
 //#define ARB_ON_LAST
-void send_data_stream(hls::stream<ap_axis_d<32> > &out_data,
-		 hls::stream<ap_axis_d<32> > &in_data)
+void send_data_stream(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data,
+		 hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &in_data)
  {
-	ap_axis_d<32> out;
-	ap_axis_d<32> in;
+	ap_axis<DATA_WIDTH, 0, 0, 0> out;
+	ap_axis<DATA_WIDTH, 0, 0, 0> in;
 	int recieved_bytes = 0;
 
 	//data to send
@@ -81,12 +81,12 @@ void send_data_stream(hls::stream<ap_axis_d<32> > &out_data,
  * @param mem
  * @param sdone
  */
-void process_data_stream(hls::stream<ap_axis_d<32> > &input,
-		      hls::stream<ap_axis_d<32> > &output)
+void process_data_stream(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &input,
+		      hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &output)
 {
-	ap_axis_d<32> in;
-	ap_axis_d<32> out;
-	ap_uint<32> last_data = 0;
+	ap_axis<DATA_WIDTH, 0, 0, 0> in;
+	ap_axis<DATA_WIDTH, 0, 0, 0> out;
+	int last_data = 0;
 
 	int i = 0;
 	//blocking wait for first data to come in
