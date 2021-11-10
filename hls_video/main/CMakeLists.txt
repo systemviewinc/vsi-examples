@@ -33,10 +33,10 @@ include_directories(
 	$ENV{PROJECT_PATH}/vsi_auto_gen/sw/system_1/zynq_ps/include
 	$ENV{PROJECT_PATH}/vsi_auto_gen/sw/system_1/zynq_ps/public
 	$ENV{VSI_INSTALL}/target/common/include
-	$ENV{XILINX_DIR}/Vivado/2020.2/lnx64/tools/fpo_v7_0/
-	$ENV{XILINX_DIR}/Vivado/2020.2/include
-	/tools/Xilinx/Vivado/2020.2/lnx64/tools/fpo_v7_0/
-	/tools/Xilinx/Vivado/2020.2/include
+	$ENV{XILINX_DIR}/Vivado/2021.1/lnx64/tools/fpo_v7_0/
+	$ENV{XILINX_DIR}/Vivado/2021.1/include
+	/tools/Xilinx/Vivado/2021.1/lnx64/tools/fpo_v7_0/
+	/tools/Xilinx/Vivado/2021.1/include
 )
 
 link_directories(
