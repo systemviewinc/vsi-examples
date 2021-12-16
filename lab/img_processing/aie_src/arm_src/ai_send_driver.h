@@ -17,10 +17,10 @@ using namespace std;
 #endif
 
 void printbuf(ofstream *logfile, int *buf, int len);
-void blocked_write (vsi::device &mem_out, int* buf, int size, int addr);
-void blocked_read (vsi::device &mem_out, int* buf, int size, int addr);
+void blocked_write (vsi::device<int> &mem_out, int* buf, int size, int addr);
+void blocked_read (vsi::device<int> &mem_out, int* buf, int size, int addr);
 void hash_compute(int *buf, int size);
-void aximm_to_streams (vsi::device &mem_out);
-void streams_to_aximm (vsi::device &mem_out);
+void aximm_to_streams (vsi::device<int> &mem_out);
+void streams_to_aximm (vsi::device<int> &mem_out);
 
 #endif

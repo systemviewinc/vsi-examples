@@ -12,7 +12,7 @@
 
 using namespace std::chrono;
 
-void dev_read_write (vsi::device &dev)
+void dev_read_write (vsi::device<int> &dev)
 {
 	unsigned int val = 0;
 	unsigned int rv ;
@@ -31,7 +31,7 @@ void dev_read_write (vsi::device &dev)
 	}
 }
 
-void mem_read_write(vsi::device &mem)
+void mem_read_write(vsi::device<int> &mem)
 {
 	static char buff[4096];
 	static char rbuff[4096];
@@ -53,7 +53,7 @@ void mem_read_write(vsi::device &mem)
 
 
 static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_angle,
-				  int init_pw, int &max_tlr, int &min_tlr, vsi::device &atm)
+				  int init_pw, int &max_tlr, int &min_tlr, vsi::device<int> &atm)
 {
 	// calibrate
 	// start timer in counter mode and check
@@ -120,7 +120,7 @@ static float initialize_servo(int min_pw,  int max_pw,   int pc,       int max_a
 }
 
 template<int min_pw,int max_pw,int pc,int max_deg, int init_pw, int ia, bool rev,bool m_debug>
-void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
+void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device<int> &atm)
 {
 	int c_angle, m_c_angle;
 	float c_p_a;
@@ -193,27 +193,27 @@ void servo_motor(hls::stream<servo_command> &s_cmd, vsi::device &atm)
 	}
 }
 
-void servo_BASE(hls::stream<servo_command> &s_cmd, vsi::device &mot)
+void servo_BASE(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot)
 {
 	servo_motor<500,2500,20000,180,1500,90,false,false>(s_cmd,mot);
 }
 
-void servo_SHOULDER(hls::stream<servo_command> &s_cmd, vsi::device &mot)
+void servo_SHOULDER(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot)
 {
 	servo_motor<500,2500,20000,180,1500,90,true,false>(s_cmd,mot);
 }
 
-void servo_ELBOW(hls::stream<servo_command> &s_cmd, vsi::device &mot)
+void servo_ELBOW(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot)
 {
 	servo_motor<500,2500,20000,110,1500,110,true,false>(s_cmd,mot);
 }
 
-void servo_WRIST(hls::stream<servo_command> &s_cmd, vsi::device &mot)
+void servo_WRIST(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot)
 {
 	servo_motor<500,2500,20000,180,1500,90,false,false>(s_cmd,mot);
 }
 
-static void spi_send_recv_bytes(char *s_bytes, char *r_bytes, int num, vsi::device &spi)
+static void spi_send_recv_bytes(char *s_bytes, char *r_bytes, int num, vsi::device<int> &spi)
 {
 	// set ss=0
 	int wv = 0;
@@ -233,7 +233,7 @@ static void spi_send_recv_bytes(char *s_bytes, char *r_bytes, int num, vsi::devi
 	spi.pwrite(&wv,sizeof(wv),0x70);
 }
 
-void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
+void SPI_JoyStick(vsi::device<int> &spi, hls::stream<js_data> &jsd)
 {
 	unsigned int wv = 0x000a;
 	unsigned int led = 0x1;
@@ -271,7 +271,7 @@ void SPI_JoyStick(vsi::device &spi, hls::stream<js_data> &jsd)
 	}
 }
 
-void pump_control(hls::stream<int> &pump_c,vsi::device &pump)
+void pump_control(hls::stream<int> &pump_c,vsi::device<int> &pump)
 {
 	unsigned int PVAL = 0;
 
@@ -473,7 +473,7 @@ void trajectory_generator(hls::stream<js_data> &jsd,
 	}
 }
 
-void led_controller(int in_arr[1024], vsi::device &led)
+void led_controller(int in_arr[1024], vsi::device<int> &led)
 {
 	for(int i = 0; i < 1024; i++){
 		led.pwrite(&in_arr[i],sizeof(int),0);

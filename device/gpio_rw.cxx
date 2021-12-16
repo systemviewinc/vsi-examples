@@ -10,7 +10,7 @@
 #include "ap_axi_sdata.h"
 
 
-void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
+void gpio_loop_back(vsi::device<int> &gpio_out, vsi::device<int> &gpio_in)
 {
 	unsigned int rval, wval = 0xdeadbeef;
 	while (1) {
@@ -29,7 +29,7 @@ void gpio_loop_back(vsi::device &gpio_out, vsi::device &gpio_in)
 	}
 }
 
-void led_8bit (vsi::device &led)
+void led_8bit (vsi::device<int> &led)
 {
 	unsigned int val = 1;
 	while (1) {
@@ -41,7 +41,7 @@ void led_8bit (vsi::device &led)
 }
 
 //This function will toggle a gpio high to reset a system at start
-void device_reset (vsi::device &rst)
+void device_reset (vsi::device<int> &rst)
 {
 	unsigned int val = 1;
 	rst.pwrite(&val,sizeof(val),0);
@@ -52,7 +52,7 @@ void device_reset (vsi::device &rst)
 	while (1) sleep(100);
 }
 
-void device_control(vsi::device &dev)
+void device_control(vsi::device<int> &dev)
 {
 	while (1) sleep(10);
 }

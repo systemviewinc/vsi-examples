@@ -10,14 +10,14 @@ enum modes {
 	NORMAL   = 0,
 	RELATIVE = 1,
 	MEM_POS  = 2,
-	POS_MEM  = 3	
+	POS_MEM  = 3
 };
 
 typedef struct servo_command {
 	int 	mode;  	   // command contains relative changes to the angle
 	int 	angle;     // destination angle
 	int 	incr;      // angle increment
-	int 	delay;     // delay uS between each	
+	int 	delay;     // delay uS between each
 } servo_command ;
 
 // joystick entry to angle increment table
@@ -35,7 +35,7 @@ class angle_table {
 		i_angle = new float [n_entries];
 		min     = new short [n_entries];
 		max     = new short [n_entries];
-		
+
 		for (int i = 0 ; i < n_entries; i++) {
 			min[i]     = c_min;
 			max[i]     = c_max;
@@ -47,7 +47,7 @@ class angle_table {
 	}
 	float get_ainc(short val, int sens) {
 		int a_size = n_entries;
-		for (int i = 0 ; i < a_size; i++) {		
+		for (int i = 0 ; i < a_size; i++) {
 			if (val >= min[i] && val <= max[i]) {
 				// de-sensitize the center of the joy stick
 				if (i >= (a_size/2) - sens &&
@@ -66,7 +66,7 @@ class angle_table {
 };
 
 template<int min_pw,int max_pw,int pc,int max_deg> void servo_motor(hls::stream<servo_command> &s_cmd,
-								    vsi::device &atm);
+								    vsi::device<int> &atm);
 
 typedef struct __attribute__ ((packed)) joy_stick {
 	short X;
@@ -74,6 +74,6 @@ typedef struct __attribute__ ((packed)) joy_stick {
 	char  Btn_Led;
 } js_data;
 
-void servo_HS55(hls::stream<servo_command> &s_cmd, vsi::device &mot);
+void servo_HS55(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot);
 
 #endif

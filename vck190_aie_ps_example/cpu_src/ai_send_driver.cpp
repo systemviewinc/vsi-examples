@@ -7,7 +7,7 @@
  * @param channel_number The number of channels.
  */
 void mem_stream_init (
-    vsi::device &mem,
+    vsi::device<int> &mem,
     unsigned int channel_number ) {
 
     int low_range;
@@ -30,7 +30,7 @@ void mem_stream_init (
  * @param channelThe channel number.
  */
 void get_channel_level (
-    vsi::device &mem,
+    vsi::device<int> &mem,
     unsigned int *empty_full,
     unsigned int *level,
     unsigned int channel)
@@ -49,7 +49,7 @@ void get_channel_level (
  *
  * @returns a number of bytes written.
  */
-int channel_write (vsi::device &mem, int* buf, int n, int channel) {
+int channel_write (vsi::device<int> &mem, int* buf, int n, int channel) {
     // Check if number of bytese set correct
     if (n < 0) {
         return 0;
@@ -84,7 +84,7 @@ int channel_write (vsi::device &mem, int* buf, int n, int channel) {
  *
  * @returns number of read bytes.
  */
-int channel_read (vsi::device &mem, int* buf, int n, int channel) {
+int channel_read (vsi::device<int> &mem, int* buf, int n, int channel) {
     // Check if number of bytese set correct
     if (n < 0) {
         return 0;
@@ -104,6 +104,6 @@ int channel_read (vsi::device &mem, int* buf, int n, int channel) {
     return read_bytes;
 }
 
-void pull_remain(vsi::device &mem, int stream_numbers) {
+void pull_remain(vsi::device<int> &mem, int stream_numbers) {
     //  TODO: add pulling of any data from the channel
 }

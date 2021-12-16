@@ -279,7 +279,7 @@ void webcam::webcam_cvt_process_image(uint32_t *oa,
 // reads the webcam's double buffer and writes it out into an output
 // vsi_device
 // ///////////////////////////////////////////////////////////////////
-void webcam::webcam_cvt_process_image(vsi::device &mem,
+void webcam::webcam_cvt_process_image(vsi::device<int> &mem,
 				      hls::stream<int> &ctl,
 				      std::function<void (cv::Mat &,cv::Mat &)>const &cvt)
 {
@@ -473,8 +473,8 @@ static void make_bw(cv::Mat &in_mat, cv::Mat &out_mat) {
 // image into the display double buffer and continues
 // ///////////////////////////////////////////////////////////////////
 void webcam0(hls::stream<int> &control,
-	     vsi::device &mem_mm, hls::stream<st> &start_mm, hls::stream<st> &done_mm,
-	     vsi::device &mem_fc, hls::stream<st> &start_fc, hls::stream<st> &done_fc
+	     vsi::device<int> &mem_mm, hls::stream<st> &start_mm, hls::stream<st> &done_mm,
+	     vsi::device<int> &mem_fc, hls::stream<st> &start_fc, hls::stream<st> &done_fc
 	     ) {
   	//printf("Webcam0 started\n");
 	static uint8_t ib [WC_HIMGSIZE_BW];

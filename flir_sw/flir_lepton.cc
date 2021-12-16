@@ -9,7 +9,7 @@
 typedef struct frb { uint16_t fb [NCOLS*NROWS + 1]; int32_t min_max[6]; } frame_buffer;
 static ProducerConsumerDoubleBuffer<frame_buffer> flir_db;
 
-void flir_dev_init(vsi::device &flir_control)
+void flir_dev_init(vsi::device<int> &flir_control)
 {
 	static bool inited = false;
 	sleep(5); // delay startup
@@ -28,7 +28,7 @@ void flir_lepton (hls::stream<ap_axis_dk<16> > &cam_s)
 	int loc = 0 , min = 0xffff, max = 0;
 	ap_axis_dk<16> vsd;
 
-	frame_buffer *frame = flir_db.start_writing();	
+	frame_buffer *frame = flir_db.start_writing();
 	do {
 		vsd = cam_s.read();
 		if (vsd.last) {
@@ -37,9 +37,9 @@ void flir_lepton (hls::stream<ap_axis_dk<16> > &cam_s)
 			min = 0xffff; max = 0;
 			flir_db.end_writing();
 			loc = 0;
-			frame = flir_db.start_writing();			
+			frame = flir_db.start_writing();
 			if (fc++ == 100) {
-				printf("%s: Got 100 more packets in q %d\n",__FUNCTION__,cam_s.size());				
+				printf("%s: Got 100 more packets in q %d\n",__FUNCTION__,cam_s.size());
 				fc = 0;
 			}
 		}
@@ -60,7 +60,7 @@ void flir_send_image(hls::stream<uint16_t> &outs, hls::stream<int> &cont)
 {
 	while (1) {
 		frame_buffer *rf = flir_db.start_reading();
-		cv::Mat s_img (NROWS,NCOLS,CV_16UC1,rf->fb);		
+		cv::Mat s_img (NROWS,NCOLS,CV_16UC1,rf->fb);
 		flir_db.end_reading();
 		if (s_img.isContinuous()) {
 			outs.write(s_img.data,s_img.total()*s_img.elemSize());
@@ -102,22 +102,22 @@ void flir_opencv_display()
 	int fc = 0;
 	while(1) {
 		frame_buffer *rf = flir_db.start_reading();
-		cv::Mat simg (NROWS,NCOLS,CV_16UC1,rf->fb);		
+		cv::Mat simg (NROWS,NCOLS,CV_16UC1,rf->fb);
 		flir_db.end_reading();
 		cv::Mat nimg;
 		cv::Mat dimg;
 		cv::Mat cimg;
-		
-		cv::normalize(simg,nimg,0,255,cv::NORM_MINMAX,CV_8UC1); 
+
+		cv::normalize(simg,nimg,0,255,cv::NORM_MINMAX,CV_8UC1);
 		cv::applyColorMap(nimg, cimg, cv::COLORMAP_HOT);
 		cv::resize(cimg,dimg,cv::Size(8*simg.cols,8*simg.rows));
-		
+
 		// mark the max location
 		uint16_t max_x = g_minmax[4]*8;
 		uint16_t max_y = g_minmax[5]*8;
 		//cv::Rect rect_max(max_x-25,max_y-25,50,50);
 		cv::circle(dimg,cv::Point(max_x,max_y),25,cv::Scalar(0,255,0),2,8);
-		
+
 		cv::Mat *d_img = flir_ddb.start_writing();
 		*d_img = dimg.clone();
 		flir_ddb.end_writing();

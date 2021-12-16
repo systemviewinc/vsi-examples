@@ -4,7 +4,7 @@
 #include <vsi_device.h>
 void blink_led(char command[128]) {
 	static int led = 0;
-	
+
 	switch (led) {
 	case 0:
 		strcpy(command,"LED_0");
@@ -41,7 +41,7 @@ void blink_led(char command[128]) {
 	}
 }
 
-void drive_led(char command[128], vsi::device &led)
+void drive_led(char command[128], vsi::device<int> &led)
 {
 	unsigned int led_val = 0;
 	if (strcmp(command,"LED_0") == 0) {

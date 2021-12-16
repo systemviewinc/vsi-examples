@@ -134,7 +134,7 @@ void stream_to_mem (hls::stream<ap_axis_d<32> > &in_stream, int *out_mem)
  * @param resp 		- receive response
  */
 void vsi_memory_ctl(int in_arr[1024],
-		    vsi::device &out_mem,
+		    vsi::device<int> &out_mem,
 		    hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &start,
 		    hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &resp)
 {

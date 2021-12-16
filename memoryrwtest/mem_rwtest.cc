@@ -23,7 +23,7 @@ char shareMemTet[CHUNK_SIZE * MAX_CHUNK];
 void controller__(mutex *thrm, struct benchTestData *thrData)
 {
 	srand(1); // initialize random seed
-	
+
 	while(thrData->bufSize <= MAX_CHUNK * CHUNK_SIZE)    // stay in a loop until r/w bufSize not reach maximal size
 	{
 		int attempt  = TEST_NUM;
@@ -35,15 +35,15 @@ void controller__(mutex *thrm, struct benchTestData *thrData)
 		while(attempt)
 		{
 			thrm->lock();
-			
-			if(thrData->writeID == thrData->readID) // enable write process just if r/w ID's is equal 
+
+			if(thrData->writeID == thrData->readID) // enable write process just if r/w ID's is equal
 			{
 				thrData->writeProc = true;
 			}
-			
+
 			if((thrData->readtime > -1) && (thrData->writetime > -1))   // start data analyze when r/w time present
 			{
-				speeddatahnd(thrData->writeID, thrData->writetime, thrData->readtime, thrData->bufSize); 
+				speeddatahnd(thrData->writeID, thrData->writetime, thrData->readtime, thrData->bufSize);
 				thrData->writetime = -1; // time mesure reset
 				thrData->readtime = -1;
 				datavalidcheck(attempt, thrData->readBuf, thrData->writeBuf, thrData->bufSize); // Data validation
@@ -63,12 +63,12 @@ void controller__(mutex *thrm, struct benchTestData *thrData)
 	thrData->inprocess = false;    // out of process
 }
 
-void read__(mutex *thrm, struct benchTestData *thrData, vsi::device *mem)
+void read__(mutex *thrm, struct benchTestData *thrData, vsi::device<int> *mem)
 {
 	while(1){
 		thrm->lock();
 		if(thrData->readProc){
-#ifdef WAIT_PRESS_KEY			
+#ifdef WAIT_PRESS_KEY
 			cout << "Ready to read? " << endl;
 			getchar();
 #endif
@@ -86,7 +86,7 @@ void read__(mutex *thrm, struct benchTestData *thrData, vsi::device *mem)
 #else
 			mem->pread(thrData->readBuf, thrData->bufSize, 0); // read from offset
 #endif
-			
+
 			high_resolution_clock::time_point endtime = high_resolution_clock::now(); // set end time point
 			thrData->readtime = duration_cast<microseconds>( endtime - startime ).count();
 			thrData->readProc = false; // disabel read process
@@ -100,7 +100,7 @@ void read__(mutex *thrm, struct benchTestData *thrData, vsi::device *mem)
 	}
 }
 
-void write__(mutex *thrm, struct benchTestData *thrData, vsi::device *mem)
+void write__(mutex *thrm, struct benchTestData *thrData, vsi::device<int> *mem)
 {
 	while(1) {
 		thrm->lock();
@@ -138,7 +138,7 @@ void write__(mutex *thrm, struct benchTestData *thrData, vsi::device *mem)
 }
 
 // Memory benchmark
-void memoryBenchmark(vsi::device &mem)
+void memoryBenchmark(vsi::device<int> &mem)
 {
 
 	struct benchTestData thrData;// Initialization structure ....

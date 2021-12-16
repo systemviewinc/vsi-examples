@@ -7,7 +7,7 @@
 std::chrono::duration<double,std::nano> r_time;
 float samples_p_sec = 10.0;
 
-void get_micsample(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+void get_micsample(vsi::device<int> &mic, hls::stream<fft_data_s> &os, hls::stream<int> &cont)
 {
 	uint32_t wv = 0;
 	uint32_t cr = 0;
@@ -20,7 +20,7 @@ void get_micsample(vsi::device &mic, hls::stream<fft_data_s> &os, hls::stream<in
 		auto t_start = std::chrono::high_resolution_clock::now();
 		for (int i = 1 ; i <= SAMPLES; i++) {
 			fft_data_s fft_d;
-			wv = 0;	
+			wv = 0;
 			mic.pwrite(&wv,sizeof(wv),0x68); // dummy write
 			do {
 				mic.pread(&wv,sizeof(wv),0x64);
@@ -74,7 +74,7 @@ void get_mic_fft(float *amplitude, float *frequency)
 	ampl_db.end_reading();
 }
 
-void control_qspi(vsi::device &ctrl)
+void control_qspi(vsi::device<int> &ctrl)
 {
 	do {
 		std::cout << "\n" << "Press eny key to continue ..";
@@ -90,10 +90,10 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 	int sc = 1 ;
 	while (1) {
 		fft_data_s data_s = fft_ds.read();
-#pragma HLS PIPELINE II=1		
+#pragma HLS PIPELINE II=1
 		if (sc <= SAMPLES/2) {
 			fft_amp aout;
-			
+
 			float d = sqrt((data_s.data.re * data_s.data.re) + (data_s.data.im * data_s.data.im));
 			aout.data = *((ap_uint<32> *)&d);
 			aout.last = (sc == SAMPLES/2);
@@ -104,7 +104,7 @@ void recv_fft_process_data (hls::stream<fft_data_s> &fft_ds, hls::stream<fft_amp
 	}
 }
 
-void get_micsample_hw(vsi::device mic, unsigned int *control)// hls::stream<fft_data_s> &os, hls::stream<int> &cont)
+void get_micsample_hw(vsi::device<int> mic, unsigned int *control)// hls::stream<fft_data_s> &os, hls::stream<int> &cont)
 {
 	static int state  = 0;
 	uint32_t wv = 0;
@@ -171,7 +171,7 @@ void recv_mic_raw_data(hls::stream<fft_data_s> &os, hls::stream<int> &cont)
 // ProducerConsumerDoubleBuffer<cv::Mat> mic_ddb;
 // void mic_opencv_display()
 // {
-// 	printf("%s: started\n",__FUNCTION__); 
+// 	printf("%s: started\n",__FUNCTION__);
 // 	while (1) {
 // 		ampl *ampl_buff = ampl_db.start_reading();
 // 		std::vector<double> dataX, dataY;

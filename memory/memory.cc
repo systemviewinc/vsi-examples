@@ -21,7 +21,7 @@
  * @param ctl_in 	: control in
  * @param ctl_out 	: control out
  */
-void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
+void mem_write(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
 {
 	char val[MEM_SIZE] ;
 	char wval = 'a';
@@ -62,7 +62,7 @@ void mem_write(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl
  * @param ctl_in
  * @param ctl_out
  */
-void mem_read(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
+void mem_read(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out)
 {
 	char val[MEM_SIZE] ;
 	char wval = 'a';
@@ -148,7 +148,7 @@ void recv_write_file(hls::stream<int> &in_s)
  * @param mem 		: memory elemnt to write to
  * @param ctl_in 	: control in to start testing
  */
-void mem_write_read(vsi::device &mem, hls::stream<int> &ctl_in)
+void mem_write_read(vsi::device<int> &mem, hls::stream<int> &ctl_in)
 {
 	char val[MEM_SIZE] ;
 	char wval = 'a';

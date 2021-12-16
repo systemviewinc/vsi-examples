@@ -11,7 +11,7 @@
 // read is done
 bool rd_done = false;
 
-void ints_to_streams (vsi::device &mem_out) {
+void ints_to_streams (vsi::device<int> &mem_out) {
 
 	int data[NUM_INTS];
 	int i;
@@ -47,7 +47,7 @@ void ints_to_streams (vsi::device &mem_out) {
 	} while(1);
 }
 
-void streams_to_ints (vsi::device &mem_input) {
+void streams_to_ints (vsi::device<int> &mem_input) {
 	while( !rd_done ) { };
 	int data[NUM_INTS];
 	int i, j;
@@ -108,7 +108,7 @@ void streams_to_ints (vsi::device &mem_input) {
 	} // stall forever
 }
 
-void float_to_streams (vsi::device &mem_out) {
+void float_to_streams (vsi::device<int> &mem_out) {
 
 	float data[]={4207837.000000, 4207839.500000, 4207841.500000, 4207844.000000,
 			   4207846.000000, 4207848.500000, 4207850.500000, 4207852.500000,
@@ -145,7 +145,7 @@ void float_to_streams (vsi::device &mem_out) {
 	} while(1);
 }
 
-void streams_to_floats (vsi::device &mem_input) {
+void streams_to_floats (vsi::device<int> &mem_input) {
 	while( !rd_done ) { };
 	int data[NUM_FLOATS];
 	int i, j;

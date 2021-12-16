@@ -66,7 +66,7 @@ class angle_table {
 };
 
 template<int min_pw,int max_pw,int pc,int max_deg> void servo_motor(hls::stream<servo_command> &s_cmd,
-								vsi::device &atm);
+								vsi::device<int> &atm);
 
 typedef struct __attribute__ ((packed)) joy_stick {
 	short X;
@@ -74,7 +74,7 @@ typedef struct __attribute__ ((packed)) joy_stick {
 	char  Btn_Led;
 } js_data;
 
-void servo_HS55(hls::stream<servo_command> &s_cmd, vsi::device &mot);
+void servo_HS55(hls::stream<servo_command> &s_cmd, vsi::device<int> &mot);
 
 typedef struct char32 { char x[32]; } char32;
 

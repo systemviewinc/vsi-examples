@@ -130,7 +130,7 @@ class webcam {
 						      out = in.clone();
 					      });
 
-	virtual void webcam_cvt_process_image(vsi::device &mem, hls::stream<int>&,
+	virtual void webcam_cvt_process_image(vsi::device<int> &mem, hls::stream<int>&,
 					      std::function<void (cv::Mat &, cv::Mat &)> const &cvt =
 					      [] (cv::Mat &in, cv::Mat &out) {
 						      out = in.clone();

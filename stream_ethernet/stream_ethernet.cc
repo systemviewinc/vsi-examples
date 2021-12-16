@@ -25,17 +25,17 @@ void displayASCII(uint64_t data) {
  * @param outp  byte stream frame output
  */
 
-void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device &ethernet_core_control, vsi::device &ethernet_core_status)
-{ 
+void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device<int> &ethernet_core_control, vsi::device<int> &ethernet_core_status)
+{
   struct packet_array {
     unsigned int *pkt;
     int pkt_size;
   };
   const int MAX_PACKETS = 42;
   struct packet_array pkt_arr[MAX_PACKETS] = {
-    {pkt1, sizeof(pkt1)}, 
+    {pkt1, sizeof(pkt1)},
     {pkt2, sizeof(pkt2)},
-    {pkt3, sizeof(pkt3)}, 
+    {pkt3, sizeof(pkt3)},
     {pkt4, sizeof(pkt4)},
     {pkt5, sizeof(pkt5)},
     {pkt6, sizeof(pkt6)},
@@ -75,7 +75,7 @@ void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device &eth
     {pkt40, sizeof(pkt40)},
     {pkt41, sizeof(pkt41)},
     {pkt42, sizeof(pkt42)}};
-    
+
   const int NUM_PACKETS = 2; // change this to transmit required number of packets, NUM_PACKES maximum is MAX_PACKETS
 
   uint32_t rval = 0;
@@ -120,7 +120,7 @@ void ethernet_frame_generator(hls::stream<ap_axis_dk<8>> &outp, vsi::device &eth
       ap_axis_dk<8> e;
       e.data = pkt_arr[i].pkt[j];
       e.keep = -1;
-      e.last = (j == (pkt_len - 1));      	
+      e.last = (j == (pkt_len - 1));
       outp.write(e);
     }
     printf("\n");
@@ -149,7 +149,7 @@ void pass_thru_last(hls::stream<ap_axis_dk<8> > &ins8,
     buffer[i] = 0;
     buffer64[i] = 0;
   }
-  
+
   // read in 8-bit data into an 8-bit buffer
   while(!(ins8.empty())) {
     ap_axis_dk<8> e;
@@ -173,7 +173,7 @@ void pass_thru_last(hls::stream<ap_axis_dk<8> > &ins8,
      * Note that the code below has the correct behavior in traditional C
      */
     /*
- #pragma HLS PIPELINE II=1        
+ #pragma HLS PIPELINE II=1
     packet64 = 0;
     for(int k = buf_pos;k < (buf_pos+8);k++) {
       packet64 <<= 8;
@@ -192,12 +192,12 @@ void pass_thru_last(hls::stream<ap_axis_dk<8> > &ins8,
     int byte6pos = buf_pos+6;
     int byte7pos = buf_pos+7;
     packet64 = ((uint64_t) buffer[byte7pos]) |
-      (((uint64_t) buffer[byte6pos]) << 8) | 
+      (((uint64_t) buffer[byte6pos]) << 8) |
       (((uint64_t) buffer[byte5pos]) << 16) |
       (((uint64_t) buffer[byte4pos]) << 24) |
-      (((uint64_t) buffer[byte3pos]) << 32) | 
-      (((uint64_t) buffer[byte2pos]) << 40) | 
-      (((uint64_t) buffer[byte1pos]) << 48) | 
+      (((uint64_t) buffer[byte3pos]) << 32) |
+      (((uint64_t) buffer[byte2pos]) << 40) |
+      (((uint64_t) buffer[byte1pos]) << 48) |
       (((uint64_t) buffer[byte0pos]) << 56);
 
     buffer64[buf64_pos++] = packet64;
@@ -206,7 +206,7 @@ void pass_thru_last(hls::stream<ap_axis_dk<8> > &ins8,
   // transmit
   ap_axis_dk<DATA_WIDTH> f;
   for(int i = 0; i < buf64_pos;i++) {
- #pragma HLS PIPELINE II=1    
+ #pragma HLS PIPELINE II=1
     f.data = buffer64[i];
     f.keep = -1;
     f.last = (i == (buf64_pos-1));
@@ -254,4 +254,3 @@ void pass_thru_streaming(
         outd.write(out);
     }
 }
-

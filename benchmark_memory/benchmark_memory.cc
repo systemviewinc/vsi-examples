@@ -165,7 +165,7 @@ void master(hls::stream<int> &t1en, hls::stream<int> &t1done, hls::stream<int> &
 }
 
 /* Core benchmark memory write function. */
-void _bnchmrk_mem_wr(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out,
+void _bnchmrk_mem_wr(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out,
 											int threadNum, hls::stream<int> &en)
 {
 	en.read(); // wait until an enable signal is received from master
@@ -246,7 +246,7 @@ void _bnchmrk_mem_wr(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int
 }
 
 /* Core benchmark memory read function. */
-void _bnchmrk_mem_rd(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out,
+void _bnchmrk_mem_rd(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out,
 											int threadNum, hls::stream<int> &done)
 {
 	/* Get and check environment variables. */
@@ -332,82 +332,82 @@ void _bnchmrk_mem_rd(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int
 /* Wrapper functions. Each execute the same core write/read code but are passed
 specific thread identifier numbers so that they can be enabled/monitored. */
 
-void bnchmrk_mem_wr_thread1(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread1(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 1, en);
 }
 
-void bnchmrk_mem_wr_thread2(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread2(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 2, en);
 }
 
-void bnchmrk_mem_wr_thread3(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread3(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 3, en);
 }
 
-void bnchmrk_mem_wr_thread4(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread4(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 4, en);
 }
 
-void bnchmrk_mem_wr_thread5(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread5(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 5, en);
 }
 
-void bnchmrk_mem_wr_thread6(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread6(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 6, en);
 }
 
-void bnchmrk_mem_wr_thread7(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread7(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 7, en);
 }
 
-void bnchmrk_mem_wr_thread8(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+void bnchmrk_mem_wr_thread8(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
 {
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 8, en);
 }
 
-void bnchmrk_mem_rd_thread1(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread1(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 1, dn);
 }
 
-void bnchmrk_mem_rd_thread2(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread2(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 2, dn);
 }
 
-void bnchmrk_mem_rd_thread3(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread3(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 3, dn);
 }
 
-void bnchmrk_mem_rd_thread4(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread4(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 4, dn);
 }
 
-void bnchmrk_mem_rd_thread5(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread5(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 5, dn);
 }
 
-void bnchmrk_mem_rd_thread6(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread6(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 6, dn);
 }
 
-void bnchmrk_mem_rd_thread7(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread7(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 7, dn);
 }
 
-void bnchmrk_mem_rd_thread8(vsi::device &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+void bnchmrk_mem_rd_thread8(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 8, dn);
 }

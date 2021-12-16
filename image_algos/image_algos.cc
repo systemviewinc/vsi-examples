@@ -509,9 +509,9 @@ void vsi_fast_corner(hls::stream<st> &start, hls::stream<st> &done,
 }
 
 // ///////////////////////////////////////////////////////////////////
-// Software version of drawing track lines uses vsi::device
+// Software version of drawing track lines uses vsi::device<int>
 // ///////////////////////////////////////////////////////////////////
-void vsi_track_lines_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+void vsi_track_lines_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device<int> &mem)
 {
 	uint32_t io_frame[FC_ROWS*FC_COLS/4];
 	mem.pread(io_frame,sizeof(io_frame),0);
@@ -591,7 +591,7 @@ void min_max_shmem(hls::stream<st> &start, hls::stream<st> &done,
 
 // Software version for testsing
 #ifndef __VSI_HLS_SYN__
-void vsi_min_max_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+void vsi_min_max_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device<int> &mem)
 {
 	uint32_t io_frame[FC_COLS*FC_ROWS/4];
 	mem.pread(io_frame,sizeof(io_frame),0);
@@ -621,7 +621,7 @@ double _sin_tab[] = {
 	0.50000000000,   // 150 degrees
 	0.34202014332,   // 160 degrees
 	0.17364817766,   // 170 degrees
-	0.00000000000,   // 180 degrees	
+	0.00000000000,   // 180 degrees
 	-0.17364817766,  // 190 degrees
 	-0.34202014332,  // 200 degrees
 	-0.50000000000,  // 210 degrees
@@ -661,7 +661,7 @@ double _cos_tab[] = {
 	-0.86602540378,  // 150 degrees
 	-0.93969262078,  // 160 degrees
 	-0.98480775301,  // 170 degrees
-	-1.00000000000,  // 180 degrees	
+	-1.00000000000,  // 180 degrees
 	-0.98480775301,  // 190 degrees
 	-0.93969262078,  // 200 degrees
 	-0.86602540378,  // 210 degrees
@@ -700,7 +700,7 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 		//int y1 = (FC_ROWS/2)+radius*cos(theta);
 		int x1 = (FC_COLS/2)+radius*_sin_tab[deg/10];
 		int y1 = (FC_ROWS/2)+radius*_cos_tab[deg/10];
-		if (deg > 0) 
+		if (deg > 0)
 			drawline<FC_ROWS,FC_COLS>(x0,y0,x1,y1,io_frame);
 		x0 = x1;
 		y0 = y1;
@@ -714,7 +714,7 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 	angle *= 10;
 	int x1 = (FC_COLS/2) + (radius*_sin_tab[angle/10]);
 	int y1 = (FC_ROWS/2) + (radius*_cos_tab[angle/10]);
-	
+
 	// printf("%s angle = %d (%d,%d) - (%d,%d) (%f,%f)\n",__FUNCTION__,
 	//        angle,x1_a,x1,y1_a,y1,sin(theta),_sin_tab[angle/10]);
 	drawline<FC_ROWS,FC_COLS>(FC_COLS/2, FC_ROWS/2 ,x1, y1, io_frame);
@@ -725,7 +725,7 @@ void draw_speedometer(hls::stream<st> &start, hls::stream<st> &done,
 }
 
 #ifndef __VSI_HLS_SYN__
-void draw_speedometer_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device &mem)
+void draw_speedometer_sw (hls::stream<st> &start, hls::stream<st> &done, vsi::device<int> &mem)
 {
 	uint32_t io_frame[FC_COLS*FC_ROWS/4];
 	mem.pread(io_frame,sizeof(io_frame),0);

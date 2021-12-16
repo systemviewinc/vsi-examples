@@ -67,8 +67,8 @@ void fill_arrays(int array_one[], int size) {
 void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
                     hls::stream<test_last_type<DATA_WIDTH> > &out_stream_last, hls::stream<test_last_type<DATA_WIDTH> > &in_stream_last,
 					hls::stream<test_user_last_type<DATA_WIDTH> > &out_stream_user, hls::stream<test_user_last_type<DATA_WIDTH> > &in_stream_user,
-                    vsi::device &out_sort_mem, vsi::device &in_sort_mem, vsi::device &bram_memory,
-                    vsi::device &GPIO_0, vsi::device &GPIO_1)
+                    vsi::device<int> &out_sort_mem, vsi::device<int> &in_sort_mem, vsi::device<int> &bram_memory,
+                    vsi::device<int> &GPIO_0, vsi::device<int> &GPIO_1)
 {
     int out_arr[1024];
     int in_arr[1024];
@@ -319,7 +319,7 @@ void random_data_send(hls::stream<int> &out_stream, hls::stream<int> &in_stream,
 }
 
 
-void gpio_test_controller(vsi::device &GPIO_0, vsi::device &GPIO_1)
+void gpio_test_controller(vsi::device<int> &GPIO_0, vsi::device<int> &GPIO_1)
 {
 	char* test;
 	char* num_tests;
@@ -371,7 +371,7 @@ void gpio_test_controller(vsi::device &GPIO_0, vsi::device &GPIO_1)
 	sleep(1000);
 }
 
-void mem_test_controller(vsi::device &bram_memory)
+void mem_test_controller(vsi::device<int> &bram_memory)
 {
 	int out_arr[1024];
 	int in_arr[1024];
@@ -555,7 +555,7 @@ void streaming_wo_last_test_controller(hls::stream<int> &out_stream, hls::stream
 	sleep(1000);
 }
 
-void sort_control_test_controller(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
+void sort_control_test_controller(vsi::device<int> &out_sort_mem, vsi::device<int> &in_sort_mem)
 {
 	int write_arr[1024];
 	int read_arr[1024];
@@ -677,7 +677,7 @@ void sort_array_test_controller(int out_arr[1024], int in_arr[1024])
 
 
 
-void run_sort(vsi::device &out_sort_mem, vsi::device &in_sort_mem)
+void run_sort(vsi::device<int> &out_sort_mem, vsi::device<int> &in_sort_mem)
 {
     int write_arr[1024];
     int read_arr[1024];

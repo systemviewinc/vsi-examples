@@ -80,7 +80,7 @@ int register_rdma_prog(std::string rdma_name, int grp_id, unsigned int* prog, si
  * @param program_mem Interface with program port on RDMA IP.
  * @return error code
  */
-int process_rdma_state(std::string rdma_name, vsi::device &rdma_control, vsi::device &program_mem)
+int process_rdma_state(std::string rdma_name, vsi::device<int> &rdma_control, vsi::device<int> &program_mem)
 {
 	bool do_programming, do_run;
 	unsigned int status;

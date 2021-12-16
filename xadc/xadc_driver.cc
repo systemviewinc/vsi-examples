@@ -9,7 +9,7 @@
 #include <ctime>
 #endif
 //#define BULK_READ
-void xadc_control (vsi::device &adc_ctrl)
+void xadc_control (vsi::device<int> &adc_ctrl)
 {
 	unsigned int reset=XSM_SRR_IPRST_MASK;
 	sleep(3); // wait for things to settle
@@ -22,9 +22,9 @@ void xadc_data (hls::stream<xadc_t<16> > &adc_data)
 {
 #ifdef  BULK_READ
 	static uint8_t  buff[3000000];
-#else		
+#else
 	static uint16_t buff[1000000];
-#endif	
+#endif
 	bool err_exit = false;
 	std::chrono::microseconds w_time ;
 	while (1) {
@@ -39,7 +39,7 @@ void xadc_data (hls::stream<xadc_t<16> > &adc_data)
 			len += rlen;
 			bp  += rlen;
 		}
-#else		
+#else
 		for (int i = 0 ; i < 1000000; i++) {
 			xadc_t<16> d = adc_data.read();
 			buff[i] = d.data;
@@ -47,7 +47,7 @@ void xadc_data (hls::stream<xadc_t<16> > &adc_data)
 				err_exit = true;
 			}
 		}
-#endif		
+#endif
 		auto t_end   = std::chrono::high_resolution_clock::now();
 		w_time  = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start);
 		if (err_exit) exit(-1);
@@ -56,7 +56,7 @@ void xadc_data (hls::stream<xadc_t<16> > &adc_data)
 }
 
 
-void timer_rate_check(vsi::device &atm)
+void timer_rate_check(vsi::device<int> &atm)
 {
 	// calibrate
 	// start timer in counter mode and check

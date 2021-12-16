@@ -40,7 +40,7 @@ img_struct * read_img ( std::string img_path ) {
     if (sizeof(img_struct) != size) {
         std::cerr  << "Aspectet structure not match with a file size.";
     }
-    
+
     if (file.read((char *)input_img, sizeof(img_struct))) {
         file.close();
         return input_img;
@@ -66,18 +66,18 @@ void write_img ( std::string img_path ,img_struct * img ) {
     } else {
         std::cerr  << "File writing failed: " << img_path << "\n";
     }
-    
+
     file.close();
-    
+
 }
 
 void aximm_to_streams_init (
-    vsi::device &mem,
+    vsi::device<int> &mem,
     unsigned int data_offset,
     unsigned int channel_number ) {
 
 	for (int i = 0 ; i < channel_number*4; i++) {
-#pragma HLS pipeline II=1		
+#pragma HLS pipeline II=1
 		int addr = i*4;
 		// val = 0x20000 + (i << 12) ;
 		int val = data_offset + (i << 12) ;
@@ -86,7 +86,7 @@ void aximm_to_streams_init (
 		case 1:
 			// high range
 			val |= 0xfff;
-			
+
 		case 0:
 			// low range
 			blocked_write(mem, &val, sizeof(val), addr);
@@ -97,19 +97,19 @@ void aximm_to_streams_init (
 			break;
 		}
 	}
-    
+
 }
 
 void streams_to_aximm_init (
-    vsi::device &mem,
+    vsi::device<int> &mem,
     unsigned int base_adr,
     unsigned int channel_number)
 {
     aximm_to_streams_init(mem, base_adr, channel_number);
 };
-    
+
 void get_channel_level (
-    vsi::device &mem,
+    vsi::device<int> &mem,
     int *efull,
     int *level,
     unsigned int channel_number)
@@ -124,19 +124,19 @@ void get_channel_level (
 
 
 
-// Hardware requires it to be a struct 
-void img_to_streams (vsi::device &mem_out) {
+// Hardware requires it to be a struct
+void img_to_streams (vsi::device<int> &mem_out) {
     //Test
 //std::ofstream file("raw", std::ios::binary | std::ios::out);
 
 //
-    
+
     /*
    write_img
     */
     img = read_img ( "lena512color.tiff" );
     rd_done = true;
- 
+
 	int len = sizeof(shared_buf)/sizeof(int);
     unsigned int val;
     unsigned int data_offset = 0x20000;
@@ -157,7 +157,7 @@ void img_to_streams (vsi::device &mem_out) {
 		int addr = data_offset + (i << 14);
         get_channel_level(mem_out, &efull, &level, i);
         // printf("img_to_streams: efull = %d, level = %d\n", efull, level);
-        // while (1){}; 
+        // while (1){};
 
 		if (level < pack_size) {
 		 	// send data to the stream
@@ -174,9 +174,9 @@ void img_to_streams (vsi::device &mem_out) {
 // Test to see wat do I send to AI
 //  file.write((char *)shared_buf_pois[i],  (send_bytes) );
 
-            // 
-			shared_buf_pois[i] = remain_bytes > pack_size ? 
-                shared_buf_pois[i] + send_bytes/4 : 
+            //
+			shared_buf_pois[i] = remain_bytes > pack_size ?
+                shared_buf_pois[i] + send_bytes/4 :
                 shared_buf;
 		}
 
@@ -189,7 +189,7 @@ void img_to_streams (vsi::device &mem_out) {
 	} while(1);
 }
 
-void streams_to_img (vsi::device &mem_input) {
+void streams_to_img (vsi::device<int> &mem_input) {
 
 
 
@@ -197,7 +197,7 @@ void streams_to_img (vsi::device &mem_input) {
     while( !rd_done ) { };
 
     // img_struct *process_img = new img_struct;
-    
+
     // std::memcpy((void* ) process_img->head, (const void* ) img->head, sizeof (img->head));
     // std::memcpy((void* ) process_img->tail, (const void* ) img->tail, sizeof (img->tail));
     // for(int x = 0; x < HEIGHT; x++){
@@ -225,7 +225,7 @@ void streams_to_img (vsi::device &mem_input) {
     std::vector <std::string *> process_img_name;
     std::vector <int> img_remain_bytes;
     std::vector <int *> img_poi;
-    
+
     // std::memcpy((void* ) process_img->head, (const void* ) img->head, sizeof (img->head));
     // std::memcpy((void* ) process_img->tail, (const void* ) img->tail, sizeof (img->tail));
 
@@ -253,7 +253,7 @@ void streams_to_img (vsi::device &mem_input) {
     int total_reads = 0;
 	do {
         get_channel_level(mem_input, &efull, &level, 0);
-        // 
+        //
 		if ( ((efull & 1) == 0) && img_remain_bytes[i] ) {
             // Number of integers in fifo
             // ints_in_fifo = level * (sizeof(int)/sizeof(char));
@@ -277,7 +277,7 @@ void streams_to_img (vsi::device &mem_input) {
 //                 printf( " rdpoi: 0x%08X", rdpoi);
 //                 printf( " img_poi: 0x%08X\n",  img_poi[i]);
 //                 printf( "    diff: %d\n",   ( ( (long) img_poi[i] - (long ) ppp )) );
-                
+
 			}
 
             if( img_remain_bytes[i] == 0) {
@@ -311,13 +311,13 @@ void streams_to_img (vsi::device &mem_input) {
 	} while(1); // stall forever
 }
 
-void pull_remain(vsi::device &mem_input, int stream_number) {
+void pull_remain(vsi::device<int> &mem_input, int stream_number) {
 
 }
 
 // Print buffer to file
 void printbuf(ofstream *logfile, int *buf, int len) {
-	
+
   while ( len-- ) {
 		*logfile << std::setfill('0') << std::setw(8) << std::hex << *buf << "\n";
 		buf++;
@@ -325,11 +325,11 @@ void printbuf(ofstream *logfile, int *buf, int len) {
 	logfile->flush();
 }
 
-void blocked_write (vsi::device &mem_out, int* buf, int size, int addr) {
+void blocked_write (vsi::device<int> &mem_out, int* buf, int size, int addr) {
 	mem_out.pwrite(buf, size, addr);
 }
 
-void blocked_read (vsi::device &mem_out, int* buf, int size, int addr) {
+void blocked_read (vsi::device<int> &mem_out, int* buf, int size, int addr) {
 	mem_out.pread(buf, size, addr);
 }
 

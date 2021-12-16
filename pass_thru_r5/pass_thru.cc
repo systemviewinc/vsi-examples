@@ -20,7 +20,7 @@ void pass_thru_r5(int in_arr[1024], int out_arr[1024])
 }
 
 
-void pass_thru_device(int in_arr[1024], vsi::device &dev_out)
+void pass_thru_device(int in_arr[1024], vsi::device<int> &dev_out)
 {
 	printf("%s started\n",__FUNCTION__);
 #pragma HLS PIPELINE II=1
@@ -28,7 +28,7 @@ void pass_thru_device(int in_arr[1024], vsi::device &dev_out)
 	printf("%s done\n",__FUNCTION__);
 }
 
-void echo_pass_thru_device(int in_arr[1024], vsi::device &dev_out)
+void echo_pass_thru_device(int in_arr[1024], vsi::device<int> &dev_out)
 {
 	printf("%s started\n",__FUNCTION__);
 #pragma HLS PIPELINE II=1

@@ -15,10 +15,10 @@ void send_control (unsigned int *control)
 		printf("going to sleep\n");
 		while (1) sleep(10);
 	}
-	
+
 }
 #endif
-static void wait_dr_low(vsi::device &adc_ctrl)
+static void wait_dr_low(vsi::device<int> &adc_ctrl)
 {
 	uint32_t cr = 0, cr_p = 0;
 	// wait for /DR
@@ -30,7 +30,7 @@ static void wait_dr_low(vsi::device &adc_ctrl)
 	}
 }
 
-static void enable_slave(vsi::device &adc, unsigned int slave)
+static void enable_slave(vsi::device<int> &adc, unsigned int slave)
 {
 	uint32_t wv;
 	adc.pread(&wv,sizeof(wv),0x70);
@@ -38,7 +38,7 @@ static void enable_slave(vsi::device &adc, unsigned int slave)
 	adc.pwrite(&wv,sizeof(wv),0x70);
 }
 
-static void disable_slave(vsi::device &adc, unsigned int slave)
+static void disable_slave(vsi::device<int> &adc, unsigned int slave)
 {
 	uint32_t wv;
 	adc.pread(&wv,sizeof(wv),0x70);
@@ -46,14 +46,14 @@ static void disable_slave(vsi::device &adc, unsigned int slave)
 	adc.pwrite(&wv,sizeof(wv),0x70);
 }
 
-static void enable_master(vsi::device &adc)
+static void enable_master(vsi::device<int> &adc)
 {
 	uint32_t wv;
 	adc.pread(&wv,sizeof(wv),0x60);
 	wv &= ~(1 << 8); // enable master
 	adc.pwrite(&wv,sizeof(wv),0x60);
 }
-static void disable_master(vsi::device &adc)
+static void disable_master(vsi::device<int> &adc)
 {
 	uint32_t wv;
 	adc.pread(&wv,sizeof(wv),0x60);
@@ -61,10 +61,10 @@ static void disable_master(vsi::device &adc)
 	adc.pwrite(&wv,sizeof(wv),0x60);
 }
 
-static void send_command(unsigned int cmds[], int ncommands, vsi::device &adc)
+static void send_command(unsigned int cmds[], int ncommands, vsi::device<int> &adc)
 {
 	uint32_t wv;
-	
+
 	for (int i = 0 ; i < ncommands ; i++) {
 		adc.pwrite(&cmds[i],sizeof(cmds[i]),0x68); // write command into FIFO
 	}
@@ -79,20 +79,20 @@ static void send_command(unsigned int cmds[], int ncommands, vsi::device &adc)
 	disable_slave(adc,1);
 }
 
-static void read_registers(unsigned int reg, int nregs, unsigned int reg_vals[], vsi::device &adc )
+static void read_registers(unsigned int reg, int nregs, unsigned int reg_vals[], vsi::device<int> &adc )
 {
 	uint32_t wv;
 
 	// put commands into fifo
 	wv = reg | (1 << 4);
 	adc.pwrite(&wv,sizeof(wv),0x68); // RREG & starting reg
-	wv = nregs-1; 
+	wv = nregs-1;
 	adc.pwrite(&wv,sizeof(wv),0x68); // number of regs
 
 	enable_slave(adc,1);
 	usleep(5); // wait a little
 	for (int i = 0 ; i < nregs; i++) {
-		wv = 0; 		
+		wv = 0;
 		adc.pwrite(&wv,sizeof(wv),0x68); // nop
 	}
 	enable_master(adc);
@@ -107,15 +107,15 @@ static void read_registers(unsigned int reg, int nregs, unsigned int reg_vals[],
 	disable_slave(adc,1);
 }
 
-void get_adcsample_hw(vsi::device adc, vsi::device adc_ctrl, unsigned int *control)
+void get_adcsample_hw(vsi::device<int> adc, vsi::device<int> adc_ctrl, unsigned int *control)
 {
 	static int state  = 0;
 	uint32_t wv = 0;
 	uint32_t cr = 0, cr_p = 0;
 	unsigned int cmd_arr[16];
-	
+
 	int internal_control = *control;
-	
+
 	printf("internal control = %d\n",internal_control);
 	switch (state) {
 	case 0:
@@ -136,7 +136,7 @@ void get_adcsample_hw(vsi::device adc, vsi::device adc_ctrl, unsigned int *contr
 		send_command(cmd_arr,1,adc);
 		break;
 
-	case 2:		
+	case 2:
 		if (internal_control == 2) {// start reading
 			read_registers(0,8,cmd_arr,adc);
 			for(int i = 0 ; i < 8; i++) {
@@ -153,7 +153,7 @@ void get_adcsample_hw(vsi::device adc, vsi::device adc_ctrl, unsigned int *contr
 		// send RDATAC command
 		cmd_arr[0] = 0x3;
 		send_command(cmd_arr,1, adc);
-		
+
 		printf("Reading samples\n");
 		for (int i = 1 ; i <= SAMPLES; i++) {
 			unsigned int sample = 0;
@@ -182,7 +182,7 @@ void get_adcsample_hw(vsi::device adc, vsi::device adc_ctrl, unsigned int *contr
 		// send SDATAC command
 		cmd_arr[0] = 0xf;
 		send_command(cmd_arr,1, adc);
-		
+
 		if (internal_control == 3) state = 4; // pause
 		printf("Done\n");
 		break;

@@ -57,7 +57,7 @@ int count = 0;
  * @param data_in direction=input access=stream
  * @param mem direction=output access=memory
  */
-void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
+void mem_test(hls::stream<int> &data_in, vsi::device<int> &mem) {
 	int offset = 0;
 	printf("entered func\n");
 	data_in.wait_if_empty();
@@ -86,7 +86,7 @@ void mem_test(hls::stream<int> &data_in, vsi::device &mem) {
  * @param data_out direction=output access=stream
  * @param mem direction=output access=memory
  */
-void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::device &mem) {
+void mem_test_write(hls::stream<int> &data_in, hls::stream<int> &data_out, vsi::device<int> &mem) {
 	int offset = 0;
 	printf("entered func\n");
 	data_in.wait_if_empty();

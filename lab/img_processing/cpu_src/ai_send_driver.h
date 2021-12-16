@@ -38,16 +38,16 @@ using namespace std;
 #define CH_DATA_ADDR(CH_NUM)       ( DATA_BASE_OFFSET + (CH_NUM*CHANNEL_SPAN << 2) )
 
 // Function to initialize mm2stream & stream2mm IP
-void mem_stream_init(vsi::device &mem, unsigned int channel_number);
-void get_channel_level( vsi::device &mem,
+void mem_stream_init(vsi::device<int> &mem, unsigned int channel_number);
+void get_channel_level( vsi::device<int> &mem,
                         unsigned int *efull,
                         unsigned int *level,
                         unsigned int channel_number);
-void pull_remain(vsi::device &mem, int stream_number);
+void pull_remain(vsi::device<int> &mem, int stream_number);
 
-// void full(vsi::device &mem_out, int channel){};
-// void empty(vsi::device &mem_out, int channel){};
-int channel_read(vsi::device &mem, int *buf, int size, int channel);
-int channel_write(vsi::device &mem, int *buf, int size, int channel);
+// void full(vsi::device<int> &mem_out, int channel){};
+// void empty(vsi::device<int> &mem_out, int channel){};
+int channel_read(vsi::device<int> &mem, int *buf, int size, int channel);
+int channel_write(vsi::device<int> &mem, int *buf, int size, int channel);
 
 #endif

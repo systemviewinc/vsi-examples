@@ -14,9 +14,9 @@ bool rd_done = false;
 /**
  * Reads an image file into the internal structure.
  *   *Supported tiff RGB 512x512 image format.
- * 
+ *
  * @param img_path Path to the file.
- * 
+ *
  * @returns Pointer into image structure;
  */
 img_struct * read_img ( std::string img_path ) {
@@ -39,7 +39,7 @@ img_struct * read_img ( std::string img_path ) {
         file.close();
         exit(255);
     }
-    
+
     if (file.read((char *)input_img, sizeof(img_struct))) {
         file.close();
         return input_img;
@@ -54,7 +54,7 @@ img_struct * read_img ( std::string img_path ) {
 /**
  * Writes the internal structure into the image file.
  *   *Supported tiff RGB 512x512 image format.
- * 
+ *
  * @param img_path Path to output the file.
  * @param img Pointer into the image structure.
  */
@@ -72,18 +72,18 @@ void write_img ( std::string img_path, img_struct * img ) {
     } else {
         std::cerr  << "File writing failed: " << img_path << "\n";
     }
-    
+
     file.close();
-    
+
 }
 
 /**
  * Reads an image file and send it to all channels through mm_to_ai IP.
- * 
+ *
  * @param mem_out interface connected to the mm_to_ai IP.
- * 
+ *
  */
-void img_to_streams (vsi::device &mem_out) {
+void img_to_streams (vsi::device<int> &mem_out) {
 
     img = read_img ( INPUT_IMAGE_PATH  );
     rd_done = true;
@@ -113,11 +113,11 @@ void img_to_streams (vsi::device &mem_out) {
 
 /**
  * Reads streams of the ai_to_mm IP and write content into image files.
- * 
+ *
  * @param mem_out interface connected to the mm_to_ai IP.
- * 
+ *
  */
-void streams_to_img (vsi::device &mem_input) {
+void streams_to_img (vsi::device<int> &mem_input) {
     // Wait when image will be read
     while( !rd_done ) { };
 
@@ -156,7 +156,7 @@ void streams_to_img (vsi::device &mem_input) {
                                           channel);
             img_poi[channel] += read_bytes/sizeof(int);
             img_remain_bytes[channel] -= read_bytes;
-            
+
             // Flush the image into the file if data completed.
             if( img_remain_bytes[channel] == 0) {
                 printf("Channel %d read done! \n", channel);
