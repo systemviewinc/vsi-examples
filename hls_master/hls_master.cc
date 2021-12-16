@@ -27,32 +27,34 @@ int rand_int (void)
     return rnd_seed;
 }
 
-void hls_master_random (vsi::device mem)
+void hls_master_random (vsi::device<int> mem)
 {
 	int buff[10*4];
 	for (int i = 0 ; i < 10*4; i++) buff[i] = rand_int();
 	mem.pwrite(buff,sizeof(buff),0);
 }
 
-void hls_master(vsi::device mem)
+void hls_master(vsi::device<int> mem)
 {
 	int buff[10*4];
-	for (int i = 0 ; i < 10*4; i++) buff[i] = i;
-	mem.pwrite(buff,sizeof(buff),0);
+	for (int i = 0 ; i < 10*4; i++) {
+    buff[i] = i;
+  }
+	mem.pwrite(buff, sizeof(buff), 0);
 }
 
-void hls_master_adder(vsi::device mem)
+void hls_master_adder(vsi::device<int> mem)
 {
 	int buff[10*4];
-	mem.pread(buff,sizeof(buff),0);
-	for (int i = 0 ; i < 10*4; i++) {
+	mem.pread(buff, sizeof(buff), 0);
+	for (int i = 0; i < 10*4; i++) {
 		buff[i] += 10;
 	}
-	mem.pwrite(buff,sizeof(buff),sizeof(buff));
+	mem.pwrite(buff, sizeof(buff), sizeof(buff));
 }
 
 
-void hls_reader(vsi::device mem)
+void hls_reader(vsi::device<int> mem)
 {
 	int buff[10*4];
 	mem.pread(buff,sizeof(buff),0);
@@ -63,7 +65,7 @@ void hls_reader(vsi::device mem)
 
 }
 
-void hls_reader_writer(vsi::device mem)
+void hls_reader_writer(vsi::device<int> mem)
 {
 	int write_buff[40];
 	int read_buff[40];
@@ -72,10 +74,10 @@ void hls_reader_writer(vsi::device mem)
 		write_buff[i] = count++;
 		printf("[read/write]%d : %d \n", i, write_buff[i]);
 	}
-	mem.pwrite(&write_buff,sizeof(write_buff),0);
+	mem.pwrite(write_buff,sizeof(write_buff),0);
 	printf("[read/write]---------------------\n");
 
-	mem.pread(&read_buff,sizeof(read_buff),sizeof(write_buff));
+	mem.pread(read_buff,sizeof(read_buff),sizeof(write_buff));
 	printf("[read/write]-----READ BUFFER-----\n");
 	for (int i = 0 ; i < 40; i++)
 		printf("[read/write]%d : %d \n", i, read_buff[i]);
@@ -117,7 +119,7 @@ void system_controller(hls::stream<int> &out_1, hls::stream<int> &out_2, hls::st
 
 
 //different print to see
-void hls_reader_controlled(hls::stream<int> &input, vsi::device mem, hls::stream<int> &output)
+void hls_reader_controlled(hls::stream<int> &input, vsi::device<int> mem, hls::stream<int> &output)
 {
     int num = input.read();
 	int buff[10*4];
@@ -142,29 +144,29 @@ void hls_reader_controlled(hls::stream<int> &input, vsi::device mem, hls::stream
     }
 }
 
-void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device mem, hls::stream<int> &output)
+void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device<int> mem, hls::stream<int> &output)
 {
-    int num = input.read();
+  int num = input.read();
 	int write_buff[40];
 	int read_buff[40];
-    bool failed = false;
+  bool failed = false;
 
 	printf("[read/write_%i]-----WRITE BUFFER-----\n", num);
 	for (int i = 0 ; i < 40; i++) {
 		write_buff[i] = 5*count++;
 		printf("[read/write_%i]%d : %d \n", num, i, write_buff[i]);
 	}
-	mem.pwrite(&write_buff,sizeof(write_buff),0);
+	mem.pwrite(write_buff,sizeof(write_buff),0);
 	printf("[read/write_%i]---------------------\n", num);
     //wait some time for hls block to be able to process
     sleep(1);
-	mem.pread(&read_buff,sizeof(read_buff),sizeof(write_buff));
+	mem.pread(read_buff,sizeof(read_buff),sizeof(write_buff));
 	printf("[read/write_%i]-----READ BUFFER-----\n", num);
 	for (int i = 0 ; i < 40; i++){
 		printf("[read/write_%i]%d : %d \n", num, i, read_buff[i]);
         if(read_buff[i] != write_buff[i]+10) {
             failed = true;
-            printf("[read/write_%i]\tFail! \n", num);
+            printf("24[read/write_%i]\tFail! %d\n", num, write_buff[i]);
         }
     }
 	printf("[read/write_%i]---------------------\n", num);
@@ -217,7 +219,7 @@ void shmem_array_add (hls::stream<axis_dl> &start,
 #include <unistd.h>
 // software portion of the test
 void shmem_array_sw (hls::stream<axis_dl> &start,
-		     vsi::device &sh_mem_dev,
+		     vsi::device<int> &sh_mem_dev,
 		     hls::stream<axis_dl> &done) {
 	static int sh_mem[256][256];
 	axis_dl ds ;
@@ -241,7 +243,7 @@ void shmem_array_sw (hls::stream<axis_dl> &start,
 
 void shmem_array_sw_add (hls::stream<axis_dl> &begin,
 			 hls::stream<axis_dl> &start,
-			 vsi::device &sh_mem_dev,
+			 vsi::device<int> &sh_mem_dev,
 			 hls::stream<axis_dl> &done) {
 	static int sh_mem[256][256];
 	axis_dl ds, bs ;
@@ -276,7 +278,7 @@ void broadcast (hls::stream<axis_dl> &in,
 	} while (!in.empty());
 }
 
-void five_memories(vsi::device &mem1, vsi::device &mem2, vsi::device &mem3,vsi::device &mem4,vsi::device &mem5 ,vsi::device &dev, vsi::device &dev1, vsi::device &dev2)
+void five_memories(vsi::device<int> &mem1, vsi::device<int> &mem2, vsi::device<int> &mem3,vsi::device<int> &mem4,vsi::device<int> &mem5 ,vsi::device<int> &dev, vsi::device<int> &dev1, vsi::device<int> &dev2)
 {
 	static int buff[1024];
 
