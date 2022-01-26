@@ -88,14 +88,6 @@ void tx_rx_4k_data_no_last(hls::stream<ap_int<DATA_WIDTH > > &out_data, hls::str
 		//recieve_data[i] = in.data;
 		recieved_bytes += sizeof(ap_uint<32>);
 		printf("Recieved %i bytes!\n", recieved_bytes);
-		if(in.last == 1 && i != ARRAY_SIZE-1){
-			printf("Last came before we expected!\n");
-			break;
-		}
-		else if(in.last != 1 && i == ARRAY_SIZE-1){
-			printf("Last is late!\n");
-			break;
-		}
 	}
 	printf("Recieved %i bytes!\n", recieved_bytes);
 	exit(0);
