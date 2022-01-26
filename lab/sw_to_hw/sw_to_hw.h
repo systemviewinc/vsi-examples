@@ -17,9 +17,4 @@ using namespace std;
 
 #define DATA_WIDTH 32
 
-template<int D>
-struct ap_axis_d {
-	ap_uint<D> data;
-	ap_uint<1> last;
-};
 #endif

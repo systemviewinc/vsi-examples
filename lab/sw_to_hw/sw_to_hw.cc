@@ -26,6 +26,82 @@ void send_4k_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data) //
 }
 
 //#define ARB_ON_LAST
+void tx_rx_4k_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data, hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &in_data) //
+ {
+	ap_axis<DATA_WIDTH, 0, 0, 0> out;
+    ap_axis<DATA_WIDTH, 0, 0, 0> in;
+
+	int counter = 0;
+    int recieved_bytes = 0;
+
+
+	printf("Sending data %i bytes now!\n", (sizeof(ap_uint<32>) * BIG_ARRAY_SIZE));
+	for(int i = 0; i < BIG_ARRAY_SIZE; i++){
+		out.data = counter++;
+		if(i == BIG_ARRAY_SIZE-1){
+			out.last = 1;
+		}
+		else {
+			out.last = 0;
+		}
+		out_data.write(out);
+
+	}
+    printf("Waiting for data!\n");
+
+	for(int i = 0; i < BIG_ARRAY_SIZE; i++){
+		in = in_data.read();
+		//recieve_data[i] = in.data;
+		recieved_bytes += sizeof(ap_uint<32>);
+		printf("Recieved %i bytes!\n", recieved_bytes);
+		if(in.last == 1 && i != ARRAY_SIZE-1){
+			printf("Last came before we expected!\n");
+			break;
+		}
+		else if(in.last != 1 && i == ARRAY_SIZE-1){
+			printf("Last is late!\n");
+			break;
+		}
+	}
+	printf("Recieved %i bytes!\n", recieved_bytes);
+	exit(0);
+}
+
+void tx_rx_4k_data_no_last(hls::stream<ap_int<DATA_WIDTH > > &out_data, hls::stream<ap_int<DATA_WIDTH > > &in_data) //
+ {
+	ap_int<DATA_WIDTH > out = 0;
+    ap_int<DATA_WIDTH > in;
+
+	int counter = 0;
+    int recieved_bytes = 0;
+
+
+	printf("Sending data %i bytes now!\n", (sizeof(ap_uint<32>) * BIG_ARRAY_SIZE));
+	for(int i = 0; i < BIG_ARRAY_SIZE; i++){
+		out++;
+		out_data.write(out);
+	}
+    printf("Waiting for data!\n");
+
+	for(int i = 0; i < BIG_ARRAY_SIZE; i++){
+		in = in_data.read();
+		//recieve_data[i] = in.data;
+		recieved_bytes += sizeof(ap_uint<32>);
+		printf("Recieved %i bytes!\n", recieved_bytes);
+		if(in.last == 1 && i != ARRAY_SIZE-1){
+			printf("Last came before we expected!\n");
+			break;
+		}
+		else if(in.last != 1 && i == ARRAY_SIZE-1){
+			printf("Last is late!\n");
+			break;
+		}
+	}
+	printf("Recieved %i bytes!\n", recieved_bytes);
+	exit(0);
+}
+
+//#define ARB_ON_LAST
 void send_data_stream(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &out_data,
 		 hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &in_data)
  {
