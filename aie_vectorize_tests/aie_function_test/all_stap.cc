@@ -184,53 +184,43 @@ void forward_and_back_substitution(
 	 */
 
 	int i, j, k;
-	_complex<float> accum;
 
 	/* First apply forward substitution */
 	for (i = 0; i < N_CHAN*TDOF; ++i) {
 		const float Rii_inv = 1.0f / cholesky_factors[i*N_CHAN*TDOF+i].real();
-		accum.real() = 0.0f;
-		accum.imag() = 0.0f;
+		_complex<float> accum1(0.0f,0.0f);
 		for (j = 0; j < N_CHAN*TDOF;  ++j) {
 			/*
 			 * Use the conjugate of the upper triangular entries
 			 * of cholesky_factors as the lower triangular entries.
 			 */
-			_complex<float> zero(0.0f, 0.0f);
 
-			_complex<float> prod = zero;
+			_complex<float> prod(0.0f, 0.0f);
 			if(j<i)
 				prod = cconj(cholesky_factors[j*N_CHAN*TDOF+i]) * adaptive_weights[j];
 			
-			accum += prod;
-			// accum.im += prod.im;
+			accum1 += prod;
 		}
-		adaptive_weights[i] = (steering_vectors[i] - accum) * Rii_inv;
-		// adaptive_weights[i].im = (steering_vectors[i].im - accum.im) * Rii_inv;
+		adaptive_weights[i] = (steering_vectors[i] - accum1) * Rii_inv;
 	}
 
 	/* And now apply back substitution */
 	for (j = N_CHAN*TDOF-1; j >= 0; --j) {
 		const float Rjj_inv = 1.0f / cholesky_factors[j*N_CHAN*TDOF+j].real();
-		accum.real() = 0.0f;
-		accum.imag() = 0.0f;
+		_complex<float> accum2(0.0f,0.0f);
 		for (k = j+1; k < N_CHAN*TDOF; ++k) {
 			const _complex<float> prod = cholesky_factors[j*N_CHAN*TDOF+k] * adaptive_weights[k];
-			accum += prod;
-			// accum.im += prod.im;
+			accum2 += prod;
 		}
-		adaptive_weights[j] = (adaptive_weights[j] - accum) * Rjj_inv;
-		// adaptive_weights[j].im = (adaptive_weights[j].im - accum.im) * Rjj_inv;
+		adaptive_weights[j] = (adaptive_weights[j] - accum2) * Rjj_inv;
 	}
 	/*
      * calculating the gama in forward_and_back_substitution
 	 * to reduce the number of AIEs
      */
 
-    _complex<float> accum_gamma;
+    _complex<float> accum_gamma(0.0f,0.0f);
 
-    accum_gamma.real() = 0.0f;
-	accum_gamma.imag() = 0.0f;
     for (i = 0; i < N_CHAN*TDOF; ++i)
 	    {
 		    const _complex<float> prod = 
