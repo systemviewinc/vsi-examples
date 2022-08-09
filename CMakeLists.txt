@@ -38,4 +38,5 @@ install(DIRECTORY
 	webcam_opencv
 	xilinx_vlib
 	aie_emulation
+	streamdecoder
 DESTINATION ${TARGET_EXAMPLE_DIR})
