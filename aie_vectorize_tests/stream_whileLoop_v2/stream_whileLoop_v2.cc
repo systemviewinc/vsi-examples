@@ -15,11 +15,15 @@ void stream_whileLoop_v2(int32_t * __restrict__ A, float * __restrict__ B,
    _complex<int32_t> * __restrict complex_coeff_0 = (_complex<int32_t> * __restrict__)coeff_0;
    _complex<float> * __restrict complex_coeff_1 = (_complex<float> * __restrict__)coeff_1;
 
+	int counter = 0;
 	while(1) {
     #pragma clang loop vectorize(enable)
 		for (int i=0 ; i < 8; i++) {
 			*C0o++ = (*Ai++ * complex_coeff_0[i]) ;
 			*C1o++ = (*Bi++ * complex_coeff_1[i]);
 		}
+		counter++;
+		if (counter == 16)
+			break;
 	}
 }
