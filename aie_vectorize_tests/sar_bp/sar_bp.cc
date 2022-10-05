@@ -162,8 +162,8 @@ void inner_function(const BpParam  * __restrict__ param,
 				result.re += prod.re;
 				result.im += prod.im;
 			}
-			g_result[iy*16 + ix].re = result.re;
-			g_result[iy*16 + ix].im = result.im;
+			g_result[iy*8 + ix].re = result.re;
+			g_result[iy*8 + ix].im = result.im;
 		}
  	 }
 }

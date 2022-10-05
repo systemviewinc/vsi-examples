@@ -64,7 +64,7 @@ void sar_interp1(
     int p, r, k, rmin, rmax, window_offset, data_index;
     _complex<float> zero_complex(0.0f, 0.0f), result(0.0f, 0.0f);
     float sinc_arg, sinc_val, win_val;
-    float input_spacing, input_start, input_spacing_inv;
+    float  input_start, input_spacing_inv;
     float scale_factor;
 
     const int PFA_N_TSINC_POINTS_PER_SIDE = (T_PFA - 1)/2;
@@ -74,21 +74,22 @@ void sar_interp1(
     // 8 AIEs is enough, we use 64 AIEs
     // that is 8 times of each set ( 8sets)
     // that ends the outerloop be 128/8= 16 iteration
+    float arr_input_spacing_inv[16];
+    for (p = 0; p < 16; ++p){
+        arr_input_spacing_inv[p]= 1.0f / input_coords_spacing[p];
+    }
     for (p = 0; p < 16; ++p)
     {
         input_start = input_coords_start[p];
-        input_spacing = input_coords_spacing[p];
-        input_spacing_inv = 1.0f / input_spacing;
 
-        scale_factor = FABS_OUTPUT_COORDS * input_spacing_inv;
-        _complex<float> accum;
+        scale_factor = FABS_OUTPUT_COORDS * arr_input_spacing_inv[p];
         /* for (r = 0; r < PFA_NOUT_RANGE; ++r) */
         for (r = 0; r < 16; ++r)
         { 
             bool write_zero = false;  
             const float out_coord = output_coords[r];
             int nearest = find_nearest_range_coord(
-                output_coords[r], input_start, input_spacing, input_spacing_inv);
+                output_coords[r], input_start, input_coords_spacing[p], arr_input_spacing_inv[p]);
             if (nearest < 0)
             {
                 write_zero = true;
@@ -102,8 +103,8 @@ void sar_interp1(
              * which of the two input coordinates is closest.
              */
             int write_incr = 0;
-            if (fabs(out_coord - (input_start + (nearest+1)*input_spacing)) <
-                fabs(out_coord - (input_start + (nearest)*input_spacing)))
+            if (fabs(out_coord - (input_start + (nearest+1)*input_coords_spacing[p])) <
+                fabs(out_coord - (input_start + (nearest)*input_coords_spacing[p])))
             {
                 write_incr = 1;
             }
@@ -126,7 +127,7 @@ void sar_interp1(
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
             {
                 win_val = window[window_offset+(k-rmin)];
-                sinc_arg = (out_coord - (input_start+k*input_spacing)) * input_spacing_inv;
+                sinc_arg = (out_coord - (input_start+k*input_coords_spacing[p])) * input_spacing_inv;
                 sinc_val = sinc(sinc_arg);
                 data = data_i_0;
 
@@ -145,14 +146,11 @@ void sar_interp1(
                 accum_arr[k] = new_accum;
                 
             }
-            // accum = zero_complex;
-            accum.real() = 0.0f;
-            accum.imag() = 0.0f;
+            _complex<float> accum(0.0f,0.0f);
             #pragma clang loop vectorize(enable)            
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
             {
-                accum.real() += accum_arr[k].real();
-                accum.imag() += accum_arr[k].imag();
+                accum += accum_arr[k];
             }
             
            result = accum * scale_factor;

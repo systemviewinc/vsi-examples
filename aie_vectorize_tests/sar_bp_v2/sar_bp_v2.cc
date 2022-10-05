@@ -143,7 +143,7 @@ void inner_function(const BpParam  * __restrict__ param,
 				}
 				result += prod;
 			}
-			g_result[iy*16 + ix] = result;
+			g_result[iy*8 + ix] = result;
 			//  g_result_re = result.real();
 			//  g_result_im = result.imag();
 		}
