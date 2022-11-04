@@ -145,14 +145,12 @@ void sar_interp1(
                 accum_arr[k] = new_accum;
                 
             }
-            // accum = zero_complex;
-            accum.real() = 0.0f;
-            accum.imag() = 0.0f;
+            _complex<float> accum(0.0f,0.0f);
+
             #pragma clang loop vectorize(enable)            
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
             {
-                accum.real() += accum_arr[k].real();
-                accum.imag() += accum_arr[k].imag();
+                accum += accum_arr[k];
             }
             
            result = accum * scale_factor;
