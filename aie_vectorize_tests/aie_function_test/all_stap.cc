@@ -314,10 +314,10 @@ void stap_kernel
 			covariance_buffer[i] = 0.0f;
 		}
 
-		struct class__complex* covariance_complex = (struct class__complex*)covariance_buffer;
-		struct class__complex* snapshot_complex_in = (struct class__complex*)snapshot_in_buffer;
-		struct class__complex* cholesky_factor_complex = (struct class__complex*)cholesky_factor_buffer;
-		// struct class__complex* covariance_complex = (struct class__complex*)covariance_in_buffer;
+		cfloat* covariance_complex = (cfloat*)covariance_buffer;
+		cfloat* snapshot_complex_in = (cfloat*)snapshot_in_buffer;
+		cfloat* cholesky_factor_complex = (cfloat*)cholesky_factor_buffer;
+		// cfloat* covariance_complex = (cfloat*)covariance_in_buffer;
 
 		// calling the vectorized stap_compute_covariance_estimate
 		stap_compute_covariance_estimate(
@@ -328,11 +328,11 @@ void stap_kernel
 		for (int sv=0; sv<N_STEERING; sv++ ) {
 			window_acquire(final_out_data_window_out);
 			// ---------------------------------------------------------------------
-			struct class__complex* final_data_complex_out = (struct class__complex*)final_data_out_buffer;
-			struct class__complex* adaptive_weights_complex_out = (struct class__complex*)adaptive_weights_out_buffer;
-			// struct class__complex* cholesky_factor_complex = (struct class__complex*)cholesky_factor_buffer;
-			struct class__complex* steering_vectors_complex_in = (struct class__complex*)(&steering_vector_in_buffer[sv*SV_SIZE]);
-			// struct class__complex* snapshot_complex_in = (struct class__complex*)snapshot_in_buffer;
+			cfloat* final_data_complex_out = (cfloat*)final_data_out_buffer;
+			cfloat* adaptive_weights_complex_out = (cfloat*)adaptive_weights_out_buffer;
+			// cfloat* cholesky_factor_complex = (cfloat*)cholesky_factor_buffer;
+			cfloat* steering_vectors_complex_in = (cfloat*)(&steering_vector_in_buffer[sv*SV_SIZE]);
+			// cfloat* snapshot_complex_in = (cfloat*)snapshot_in_buffer;
 			// calling the vectorized FB_Substitude
 			forward_and_back_substitution(
 					adaptive_weights_complex_out,
