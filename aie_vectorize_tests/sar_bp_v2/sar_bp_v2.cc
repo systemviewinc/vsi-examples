@@ -106,8 +106,9 @@ void inner_function(const BpParam  * __restrict__ param,
 				const float twice_ku_r = 2.0f * ku * R;
 				_complex<float> sample, matched_filter, prod;
 				/* compute the complex exponential for the matched filter */
-				matched_filter.real() = cosf(twice_ku_r);
-				matched_filter.imag() = sinf(twice_ku_r);
+				// matched_filter.real() = cosf(twice_ku_r);
+				// matched_filter.imag() = sinf(twice_ku_r);
+				matched_filter = _complex<float>(cosf(twice_ku_r), sinf(twice_ku_r));
 				/* convert to a range bin index */
 				const float bin = (R - R0) * dR_inv;				
 				const int bin_floor = bin;
