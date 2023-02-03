@@ -17,7 +17,7 @@ void top_func(_complex<float> * __restrict__ a, float *__restrict__ b, _complex<
         for (k = 0; k < N_RANGE; k++)
         {
             const _complex<float> prod =
-                cconj(a[k])* sinf(b[k]);
+                conj(a[k+i*N_RANGE]) * sinf(b[k+i*N_RANGE]);
             accum += prod;
         }
         result[i] = accum;
