@@ -6,6 +6,6 @@ void scalar_i16complex_muli(int16_t * __restrict__ A, int16_t * __restrict__ B, 
 	_complex<int16_t> * __restrict Co = (_complex<int16_t> * __restrict__)C;
 
     #pragma clang loop vectorize(disable)
-	for (int i = 0 ; i < 64; i++) 
+	for (int i = 0 ; i < 32; i++) 
     		Co[i] =  Ai[i] * B[i];
 } 

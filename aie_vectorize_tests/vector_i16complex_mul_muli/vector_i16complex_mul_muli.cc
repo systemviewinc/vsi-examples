@@ -8,11 +8,11 @@ void vector_i16complex_mul_muli(int16_t * __restrict__ A, int16_t * __restrict__
 	_complex<int16_t> * __restrict C1o = (_complex<int16_t> * __restrict__)C1;
 
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
+	for (int i = 0 ; i < 32; i++)
 		C0o[i] = Ai[i] * Bi[i];
 
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
+	for (int i = 0 ; i < 32; i++)
 		C1o[i] = Ai[i] * B[i];
 
 }
