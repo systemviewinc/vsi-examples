@@ -49,7 +49,7 @@ file_name = 'data_in'
 def create_file(file_name):
     if not os.path.exists(file_name):
         i = 256
-        f = open(file_name, "wb")
+        f = open(file_name, "w")
         try:
             while i:
                 f.write("ABCDEFGH12345678")
@@ -64,7 +64,7 @@ def process_device_file(dev):
     buf_in = vsi_runtime.Buffer(256)
     buf_out = vsi_runtime.Buffer(256)
     file_size = os.stat(file_name).st_size
-    f = open(file_name, "rb")
+    f = open(file_name, "r")
     try:
         buf_in.set(f.read(256))
         while file_size > (256 * COUNT):
