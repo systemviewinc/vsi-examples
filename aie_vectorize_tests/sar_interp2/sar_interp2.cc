@@ -98,10 +98,10 @@ void sar_interp2(
         input_spacing_avg /= (N_PULSES-1);
         input_spacing_avg_inv = 1.0f / input_spacing_avg;
         scale_factor = fabs(output_coords[1] - output_coords[0]) * input_spacing_avg_inv;
-        bool write_zero = false;
         // for (p = 0; p < PFA_NOUT_AZIMUTH; ++p)
         for (p = 0; p < 8; ++p)
         {
+            bool write_zero = false;
             const float out_coord = output_coords[p];
             // after converting input_coord[r][p] to 1 dimention
             // now to send the address of the second dimention (input_coord[r])
