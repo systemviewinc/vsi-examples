@@ -1,11 +1,11 @@
-#include "_complex.h"
+#include "complex.h"
 
 
 void stream_cfloat(float * __restrict__ A, float * __restrict__ B,  float * __restrict__ C0, float * __restrict__ C1) {
-        _complex<float> * __restrict Ai = (_complex<float> * __restrict__)A;
-        _complex<float> * __restrict Bi = (_complex<float> * __restrict__)B;
-        _complex<float> * __restrict C0o = (_complex<float> * __restrict__)C0;
-        _complex<float> * __restrict C1o = (_complex<float> * __restrict__)C1;
+        complex<float> * __restrict Ai = (complex<float> * __restrict__)A;
+        complex<float> * __restrict Bi = (complex<float> * __restrict__)B;
+        complex<float> * __restrict C0o = (complex<float> * __restrict__)C0;
+        complex<float> * __restrict C1o = (complex<float> * __restrict__)C1;
 
 
         #pragma clang loop vectorize(disable)

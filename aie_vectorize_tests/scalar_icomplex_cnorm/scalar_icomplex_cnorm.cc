@@ -1,9 +1,9 @@
-#include "_complex.h"
+#include "complex.h"
 
 
 void scalar_icomplex_cnorm(int32_t * __restrict__ A, int32_t * __restrict__ C) {
 
-	_complex<int32_t> * __restrict Ai = (_complex<int32_t> * __restrict__)A;
+	complex<int32_t> * __restrict Ai = (complex<int32_t> * __restrict__)A;
 
         #pragma clang loop vectorize(disable)
 	for (int i = 0 ; i < 64; i++)

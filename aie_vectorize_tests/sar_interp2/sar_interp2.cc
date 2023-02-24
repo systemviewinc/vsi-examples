@@ -27,17 +27,17 @@
 #define INPUT_COORDS_SIZE NUMBER_PULSES_FOR_EACH_AIE*PFA_NOUT_RANGE
 # define PI		3.14159265358979323846f
 
-typedef struct  { float re, im; } _complex;
+typedef struct  { float re, im; } complex;
 
 typedef struct {
-	_complex data_i [INPUT_DATA_I_SIZE];
+	complex data_i [INPUT_DATA_I_SIZE];
 	float window [PFA_NOUT_RANGE];
 	float input_coord[INPUT_COORDS_SIZE];
 	float output_coords[PFA_NOUT_RANGE];
 } Interp2DataIn;
 
 typedef struct {
-	_complex resampled[NUMBER_PULSES_FOR_EACH_AIE*PFA_NOUT_RANGE];
+	complex resampled[NUMBER_PULSES_FOR_EACH_AIE*PFA_NOUT_RANGE];
 } Interp2DataOut;
 
 static inline int find_nearest_azimuth_coord(
@@ -67,15 +67,15 @@ static inline float sinc(float x)
 /**************************************************************************************************/
 
 void sar_interp2(
-    // _complex        * __restrict__ resampled,
-    const _complex  * __restrict__ data,
+    // complex        * __restrict__ resampled,
+    const complex  * __restrict__ data,
     const float     * __restrict__ window,
 	const float     * __restrict__ input_coord,
 	const float     * __restrict__ output_coords,
-    _complex * __restrict__ g_result
+    complex * __restrict__ g_result
 ) {
     int p, r, k, pmin, pmax, window_offset, data_index, input_coords_index;
-    _complex  result;
+    complex  result;
     float sinc_arg, sinc_val, win_val;
     float input_spacing_avg, input_spacing_avg_inv, scale_factor;
 
@@ -144,7 +144,7 @@ void sar_interp2(
             {
                 window_offset = PFA_N_TSINC_POINTS_PER_SIDE - nearest;
             }
-            _complex accum;
+            complex accum;
             accum.re = 0.0f;
             accum.im = 0.0f;
             #pragma clang loop vectorize(enable)
@@ -162,7 +162,7 @@ void sar_interp2(
                 sinc_val = sinc(sinc_arg);
                 // accum.re += sinc_val * win_val * data[(k * N_RANGE) + r].re;
                 // accum.im += sinc_val * win_val * data[(k * N_RANGE) + r].im;
-                 _complex new_accum;
+                 complex new_accum;
                  float one_time_mul;
                  one_time_mul = sinc_val * win_val;
                 new_accum.re = data[data_index].re * one_time_mul;
@@ -240,7 +240,7 @@ static inline int find_nearest_azimuth_coord(
 void sar_interp2_top(float * __restrict__ in_data_0,
 		            float * __restrict__ out_data) {
 	Interp2DataIn * __restrict__ interp2datain = (Interp2DataIn * __restrict__)in_data_0;
-    _complex * __restrict out_data_complex = (_complex * __restrict__)out_data;
+    complex * __restrict out_datacomplex = (complex * __restrict__)out_data;
 	// Interp2DataOut * __restrict__ interp2dataout = (Interp2DataOut * __restrict__)out_data;
     sar_interp2 (
 			// interp2dataout->resampled,
@@ -248,6 +248,6 @@ void sar_interp2_top(float * __restrict__ in_data_0,
 			interp2datain->window,
 			interp2datain->input_coord,
 			interp2datain->output_coords,
-            out_data_complex);
+            out_datacomplex);
 
 }

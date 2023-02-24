@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include "_complex.h"
+#include "complex.h"
 
 #define N_CHAN (4)
 #define N_RANGE (512)
@@ -25,8 +25,8 @@
 
 
 void stap_compute_covariance_estimate(
-	_complex<float> * __restrict__ covariance,
-	_complex<float> * __restrict__ snapshot )
+	complex<float> * __restrict__ covariance,
+	complex<float> * __restrict__ snapshot )
 {
     int cell;
     const size_t num_cov_elements = (TDOF*N_CHAN) * (TDOF*N_CHAN) * N_DOP * N_BLOCKS;
@@ -49,7 +49,7 @@ void stap_compute_covariance_estimate(
 			#pragma clang loop vectorize(disable)
 			for (j = 0; /*j <N_CHAN*TDOF*/j <= i; ++j)
 				{
-					/*const*/ _complex<float> x = snapshot[k*N_CHAN*TDOF+i] * cconj(snapshot[k*N_CHAN*TDOF+j]);
+					/*const*/ complex<float> x = snapshot[k*N_CHAN*TDOF+i] * cconj(snapshot[k*N_CHAN*TDOF+j]);
 					conv_index = i*N_CHAN*TDOF + j;
 					covariance[conv_index] += (x);
 				}
@@ -65,7 +65,7 @@ void stap_compute_covariance_estimate(
             {
 		    for (j = i+1; j < N_CHAN*TDOF; ++j)
 			    {
-				    const _complex<float> x = covariance[j*N_CHAN*TDOF+i];
+				    const complex<float> x = covariance[j*N_CHAN*TDOF+i];
 				    conv_index = i*N_CHAN*TDOF + j;
 				    covariance[conv_index]= cconj(x);
 				    // covariance[conv_index].im = -1.0f * x.im;
@@ -93,8 +93,8 @@ void stap_compute_covariance_estimate(
  * Kernel 2: Weight Generation (Linear System Solver)
  */
 
-void cholesky_factorization(_complex<float> * __restrict__ cholesky_factors,
-			     _complex<float> * __restrict__ covariance)
+void cholesky_factorization(complex<float> * __restrict__ cholesky_factors,
+			     complex<float> * __restrict__ covariance)
 
 {
     int i, j, k, chol_index;
@@ -107,7 +107,7 @@ void cholesky_factorization(_complex<float> * __restrict__ cholesky_factors,
      * name R for a more succinct inner loop below.
      */
      memcpy(cholesky_factors, covariance,
-	    sizeof(_complex<float>)*N_CHAN*TDOF*N_CHAN*TDOF);
+	    sizeof(complex<float>)*N_CHAN*TDOF*N_CHAN*TDOF);
     /*
      * The following Cholesky factorization notation is based
      * upon the presentation in "Numerical Linear Algebra" by
@@ -125,12 +125,12 @@ void cholesky_factorization(_complex<float> * __restrict__ cholesky_factors,
 	    Rkk_inv_sqrt = sqrtf(Rkk_inv);
 
 	    for (j = k+1; j < N_CHAN*TDOF; ++j) {
-		    const _complex<float> Rkj_conj = cconj(cholesky_factors[k*N_CHAN*TDOF+j]);
+		    const complex<float> Rkj_conj = cconj(cholesky_factors[k*N_CHAN*TDOF+j]);
 		    for (i = 0; i < N_CHAN*TDOF; ++i) {
-					_complex<float> zero(0.0f,0.0f);
-					_complex<float> tmp;
+					complex<float> zero(0.0f,0.0f);
+					complex<float> tmp;
 
-			    const _complex<float> Rki_Rkj_conj = cholesky_factors[k*N_CHAN*TDOF+i] * Rkj_conj;
+			    const complex<float> Rki_Rkj_conj = cholesky_factors[k*N_CHAN*TDOF+i] * Rkj_conj;
 					tmp = Rki_Rkj_conj * Rkk_inv;
 					if(i<j)
 							tmp = zero;
@@ -161,7 +161,7 @@ void cholesky_factorization(_complex<float> * __restrict__ cholesky_factors,
     for (i = 0; i < N_CHAN*TDOF; ++i) {
 	    for (j = i+1; j < N_CHAN*TDOF; ++j) {
 		    chol_index = j*N_CHAN*TDOF+i;
-		    const _complex<float> x = cholesky_factors[i*N_CHAN*TDOF+j];
+		    const complex<float> x = cholesky_factors[i*N_CHAN*TDOF+j];
 		    cholesky_factors[chol_index] = cconj(x);
 		    // cholesky_factors[chol_index].im = -1.0f * x.im;
 	    }
@@ -169,9 +169,9 @@ void cholesky_factorization(_complex<float> * __restrict__ cholesky_factors,
 }
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 void forward_and_back_substitution(
-				   _complex<float> * __restrict__ adaptive_weights,
-				    _complex<float> * __restrict__ cholesky_factors,
-					_complex<float> * __restrict__ steering_vectors,
+				   complex<float> * __restrict__ adaptive_weights,
+				    complex<float> * __restrict__ cholesky_factors,
+					complex<float> * __restrict__ steering_vectors,
 				   float * __restrict__ gamma)
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 {
@@ -188,14 +188,14 @@ void forward_and_back_substitution(
 	/* First apply forward substitution */
 	for (i = 0; i < N_CHAN*TDOF; ++i) {
 		const float Rii_inv = 1.0f / cholesky_factors[i*N_CHAN*TDOF+i].real();
-		_complex<float> accum1(0.0f,0.0f);
+		complex<float> accum1(0.0f,0.0f);
 		for (j = 0; j < N_CHAN*TDOF;  ++j) {
 			/*
 			 * Use the conjugate of the upper triangular entries
 			 * of cholesky_factors as the lower triangular entries.
 			 */
 
-			_complex<float> prod(0.0f, 0.0f);
+			complex<float> prod(0.0f, 0.0f);
 			if(j<i)
 				prod = cconj(cholesky_factors[j*N_CHAN*TDOF+i]) * adaptive_weights[j];
 			
@@ -207,9 +207,9 @@ void forward_and_back_substitution(
 	/* And now apply back substitution */
 	for (j = N_CHAN*TDOF-1; j >= 0; --j) {
 		const float Rjj_inv = 1.0f / cholesky_factors[j*N_CHAN*TDOF+j].real();
-		_complex<float> accum2(0.0f,0.0f);
+		complex<float> accum2(0.0f,0.0f);
 		for (k = j+1; k < N_CHAN*TDOF; ++k) {
-			const _complex<float> prod = cholesky_factors[j*N_CHAN*TDOF+k] * adaptive_weights[k];
+			const complex<float> prod = cholesky_factors[j*N_CHAN*TDOF+k] * adaptive_weights[k];
 			accum2 += prod;
 		}
 		adaptive_weights[j] = (adaptive_weights[j] - accum2) * Rjj_inv;
@@ -219,11 +219,11 @@ void forward_and_back_substitution(
 	 * to reduce the number of AIEs
      */
 
-    _complex<float> accum_gamma(0.0f,0.0f);
+    complex<float> accum_gamma(0.0f,0.0f);
 
     for (i = 0; i < N_CHAN*TDOF; ++i)
 	    {
-		    const _complex<float> prod = 
+		    const complex<float> prod = 
 					       cconj(adaptive_weights[i]) *
 					       steering_vectors[i];
 		    accum_gamma += prod;
@@ -251,9 +251,9 @@ void forward_and_back_substitution(
 }
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 void complex_inner_product(
-    _complex<float> *outvalue,
-     _complex<float> *lhs,
-     _complex<float> *rhs,
+    complex<float> *outvalue,
+     complex<float> *lhs,
+     complex<float> *rhs,
      float  *gamma
     )
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
@@ -261,8 +261,8 @@ void complex_inner_product(
     int length = TDOF*N_CHAN;
     // for the first set of 18 kernels (all STAP kernels) block is 0 , for the next set of 18 kernels the block should become 1 and so on till end of all 16 block: block = 0; block < N_BLOCKS; ++block
     int block = 0; 
-    _complex<float> accum(0.0f,0.0f);
-    _complex<float> zero(0.0f,0.0f);
+    complex<float> accum(0.0f,0.0f);
+    complex<float> zero(0.0f,0.0f);
     int i,cell, ci;
     const int first_cell = block*TRAINING_BLOCK_SIZE;
     const int last_cell = (block+1)*TRAINING_BLOCK_SIZE-1;
@@ -270,7 +270,7 @@ void complex_inner_product(
         accum = zero;
         for (i = 0; i < length; ++i)
         {
-            const _complex<float> prod = 
+            const complex<float> prod = 
                 cconj(lhs[i])* rhs[ci*length +i];
             accum += prod;
         }
@@ -314,33 +314,33 @@ void stap_kernel
 			covariance_buffer[i] = 0.0f;
 		}
 
-		cfloat* covariance_complex = (cfloat*)covariance_buffer;
-		cfloat* snapshot_complex_in = (cfloat*)snapshot_in_buffer;
-		cfloat* cholesky_factor_complex = (cfloat*)cholesky_factor_buffer;
-		// cfloat* covariance_complex = (cfloat*)covariance_in_buffer;
+		cfloat* covariancecomplex = (cfloat*)covariance_buffer;
+		cfloat* snapshotcomplex_in = (cfloat*)snapshot_in_buffer;
+		cfloat* cholesky_factorcomplex = (cfloat*)cholesky_factor_buffer;
+		// cfloat* covariancecomplex = (cfloat*)covariance_in_buffer;
 
 		// calling the vectorized stap_compute_covariance_estimate
 		stap_compute_covariance_estimate(
-					covariance_complex, snapshot_complex_in);
+					covariancecomplex, snapshotcomplex_in);
 		// calling the vectorized cholesky_factorization
 		cholesky_factorization(
-					cholesky_factor_complex, covariance_complex);
+					cholesky_factorcomplex, covariancecomplex);
 		for (int sv=0; sv<N_STEERING; sv++ ) {
 			window_acquire(final_out_data_window_out);
 			// ---------------------------------------------------------------------
-			cfloat* final_data_complex_out = (cfloat*)final_data_out_buffer;
-			cfloat* adaptive_weights_complex_out = (cfloat*)adaptive_weights_out_buffer;
-			// cfloat* cholesky_factor_complex = (cfloat*)cholesky_factor_buffer;
-			cfloat* steering_vectors_complex_in = (cfloat*)(&steering_vector_in_buffer[sv*SV_SIZE]);
-			// cfloat* snapshot_complex_in = (cfloat*)snapshot_in_buffer;
+			cfloat* final_datacomplex_out = (cfloat*)final_data_out_buffer;
+			cfloat* adaptive_weightscomplex_out = (cfloat*)adaptive_weights_out_buffer;
+			// cfloat* cholesky_factorcomplex = (cfloat*)cholesky_factor_buffer;
+			cfloat* steering_vectorscomplex_in = (cfloat*)(&steering_vector_in_buffer[sv*SV_SIZE]);
+			// cfloat* snapshotcomplex_in = (cfloat*)snapshot_in_buffer;
 			// calling the vectorized FB_Substitude
 			forward_and_back_substitution(
-					adaptive_weights_complex_out,
-					cholesky_factor_complex,
-					steering_vectors_complex_in,
+					adaptive_weightscomplex_out,
+					cholesky_factorcomplex,
+					steering_vectorscomplex_in,
 					&gamma_buf);
-			// calling the vectorized inner_complex_product function
-			complex_inner_product(final_data_complex_out, adaptive_weights_complex_out, snapshot_complex_in, &gamma_buf);
+			// calling the vectorized innercomplex_product function
+			complex_inner_product(final_datacomplex_out, adaptive_weightscomplex_out, snapshotcomplex_in, &gamma_buf);
 			// ---------------------------------------------------------------------
 
 			// Send final data out

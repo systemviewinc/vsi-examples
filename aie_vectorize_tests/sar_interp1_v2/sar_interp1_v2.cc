@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-// #include "_complex.h"
+// #include "complex.h"
 
 #define N_RANGE 128
 #define N_PULSES 128
@@ -14,9 +14,9 @@
 #define INPUT_DATA_I_SIZE NUMBER_RANGES_FOR_EACH_AIE*N_PULSES/2
 # define PI		3.14159265358979323846f
 
-typedef struct  { float re, im; } _complex;
+typedef struct  { float re, im; } complex;
 typedef struct {
-	_complex data_i [INPUT_DATA_I_SIZE];
+	complex data_i [INPUT_DATA_I_SIZE];
 	float window [PFA_NOUT_RANGE];
 	float input_coords_start[N_PULSES];
 	float input_coords_spacing[N_PULSES];
@@ -24,7 +24,7 @@ typedef struct {
 } Interp1DataIn;
 
 typedef struct {
-	_complex resampled[NUMBER_RANGES_FOR_EACH_AIE*PFA_NOUT_RANGE];
+	complex resampled[NUMBER_RANGES_FOR_EACH_AIE*PFA_NOUT_RANGE];
 } Interp1DataOut;
 
 static inline int find_nearest_range_coord(
@@ -44,29 +44,29 @@ static inline float sinc(float x)
 	}
 }
 
-// volatile _complex g_resampled;
+// volatile complex g_resampled;
 // volatile float g_resampled_re, g_resampled_im;
 /**************************************************************************************************/
 /************************************ START OF KERNEL ***************************************/
 /**************************************************************************************************/
 
 void sar_interp1(
-			// _complex 		* __restrict__ resampled,
-        	 _complex 	* __restrict__ data_i_0,
+			// complex 		* __restrict__ resampled,
+        	 complex 	* __restrict__ data_i_0,
 		    const float    			* __restrict__ window,
 		    const float    			* __restrict__ input_coords_start,
 		    const float    			* __restrict__ input_coords_spacing,
 		    const float    			* __restrict__ output_coords,
-			  _complex * __restrict__ g_result
+			  complex * __restrict__ g_result
 			) {
     int p, r, k, rmin, rmax, window_offset, data_index;
-    //_complex result;
+    //complex result;
     float sinc_arg, sinc_val, win_val[NUMBER_RANGES_FOR_EACH_AIE];
     float input_spacing, input_start, input_spacing_inv;
     float scale_factor;
 
     const int PFA_N_TSINC_POINTS_PER_SIDE = (T_PFA - 1)/2;
-    _complex * __restrict__ data ;
+    complex * __restrict__ data ;
 
     /* for (p = 0; p < N_PULSES; ++p) */
     for (p = 0; p < 16; ++p)
@@ -76,7 +76,7 @@ void sar_interp1(
         input_spacing_inv = 1.0f / input_spacing;
 
         scale_factor = FABS_OUTPUT_COORDS * input_spacing_inv;
-        _complex accum;
+        complex accum;
 
         /* for (r = 0; r < PFA_NOUT_RANGE; ++r) */
         for (r = 0; r < 16; ++r)
@@ -112,7 +112,7 @@ void sar_interp1(
                 window_offset = PFA_N_TSINC_POINTS_PER_SIDE - nearest;
             }
 
-            // _complex accum_arr[NUMBER_RANGES_FOR_EACH_AIE];
+            // complex accum_arr[NUMBER_RANGES_FOR_EACH_AIE];
             #pragma clang loop vectorize(disable)
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
             {
@@ -138,7 +138,7 @@ void sar_interp1(
                     /* to not accessing wrong memory */
                     data_index = 0;
                 }
-                _complex new_accum;
+                complex new_accum;
                 // new_accum =  data[data_index] * (sinc_val * win_val);
                 float one_time_mul;
                  one_time_mul = sinc_val * win_val[k];
@@ -198,7 +198,7 @@ void sar_interp1_top(float * __restrict__ in_data_0,
 					// float * __restrict__ in_data_1,
 		            float * __restrict__ out_data) {
 	Interp1DataIn * __restrict__ interp1datain = (Interp1DataIn * __restrict__)in_data_0;
-	_complex * __restrict out_data_complex = (_complex * __restrict__)out_data;
+	complex * __restrict out_datacomplex = (complex * __restrict__)out_data;
 	// Interp1DataIn * __restrict__ interp1datain1 = (Interp1DataIn * __restrict__)in_data_1;
 	// Interp1DataOut * __restrict__ interp1dataout = (Interp1DataOut * __restrict__)out_data;
     sar_interp1 (
@@ -208,7 +208,7 @@ void sar_interp1_top(float * __restrict__ in_data_0,
 			interp1datain->input_coords_start,
 			interp1datain->input_coords_spacing,
 			interp1datain->output_coords,
-			out_data_complex
+			out_datacomplex
 			// interp1datain1->data_i
              );
     //*out_data = 1;

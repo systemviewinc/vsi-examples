@@ -35,7 +35,7 @@
 #define WHOLE_DATA_SIZE  (8 + (24) + (NUMBER_PULSES_FOR_EACH_AIE*NEW_N_RANGE_UPSAMPLED))
 
 #include <math.h>
-#include "_complex.h"
+#include "complex.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -47,7 +47,7 @@ typedef struct _position
 	float x, y, z;
 } position;
 
-// typedef struct  { float re, im; } _complex;
+// typedef struct  { float re, im; } complex;
 
 typedef struct {
 	float ku;
@@ -66,7 +66,7 @@ typedef struct {
 	float platpos_y[NUMBER_PULSES_FOR_EACH_AIE];
 	float platpos_z[NUMBER_PULSES_FOR_EACH_AIE];
 	// each data has information for 8 pulses
-	_complex<float> data[8*NEW_N_RANGE_UPSAMPLED];
+	complex<float> data[8*NEW_N_RANGE_UPSAMPLED];
 } BpData;
 
 
@@ -80,8 +80,8 @@ void inner_function(const BpParam  * __restrict__ param,
 		    const float    * __restrict__ platpos_x,
 		    const float    * __restrict__ platpos_y,
 		    const float    * __restrict__ platpos_z,
-		    const _complex<float> * __restrict__ data,
-			_complex<float> * __restrict__ g_result) {
+		    const complex<float> * __restrict__ data,
+			complex<float> * __restrict__ g_result) {
 
 	float px = -64.125f;
 	float py = -64.125f;
@@ -92,8 +92,8 @@ void inner_function(const BpParam  * __restrict__ param,
 		py = py + 0.25f;
 		px = -64.125f;
 		for (unsigned ix = 0; ix < 8; ++ix){
-			_complex<float> result(0.0f, 0.0f);	
-			_complex<float> zero(0.0f, 0.0f);		
+			complex<float> result(0.0f, 0.0f);	
+			complex<float> zero(0.0f, 0.0f);		
 			px = px + 0.25f;
 #pragma clang loop vectorize(enable)
 			for (unsigned int num_pulse_per_aie=0;
@@ -104,11 +104,11 @@ void inner_function(const BpParam  * __restrict__ param,
 				const float zdiff_sq = powf(platpos_z[num_pulse_per_aie],2.0f);
 				const float R = sqrtf(xdiff_sq + ydiff_sq + zdiff_sq);
 				const float twice_ku_r = 2.0f * ku * R;
-				_complex<float> sample, matched_filter, prod;
+				complex<float> sample, matched_filter, prod;
 				/* compute the complex exponential for the matched filter */
 				// matched_filter.real() = cosf(twice_ku_r);
 				// matched_filter.imag() = sinf(twice_ku_r);
-				matched_filter = _complex<float>(cosf(twice_ku_r), sinf(twice_ku_r));
+				matched_filter = complex<float>(cosf(twice_ku_r), sinf(twice_ku_r));
 				/* convert to a range bin index */
 				const float bin = (R - R0) * dR_inv;				
 				const int bin_floor = bin;
@@ -133,7 +133,7 @@ void inner_function(const BpParam  * __restrict__ param,
 				const float w = bin - bin_floor;
 				/* linearly interpolate to obtain a sample at bin */
 				const float new_w = 1.0f - w;
-				const _complex<float> *ldata = const_cast<_complex<float> *>(&data[new_bin]);
+				const complex<float> *ldata = const_cast<complex<float> *>(&data[new_bin]);
 
 				sample = ldata[1] * w + ldata[0] * new_w;
 				
@@ -157,12 +157,12 @@ void inner_function(const BpParam  * __restrict__ param,
 void sar_bp_top(float * __restrict__ in_data,
 		float * __restrict__ out_data) {
 	BpData * __restrict__ bpdata = (BpData * __restrict__)in_data;
-	_complex<float> * __restrict out_data_complex = (_complex<float> * __restrict__)out_data;
+	complex<float> * __restrict out_datacomplex = (complex<float> * __restrict__)out_data;
 	inner_function (&bpdata->parameters,
 			bpdata->platpos_x,
 			bpdata->platpos_y,
 			bpdata->platpos_z,
 			bpdata->data,
-			out_data_complex);
+			out_datacomplex);
 	//*out_data = 1;
 }

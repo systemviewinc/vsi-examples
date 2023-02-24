@@ -1,7 +1,7 @@
-#include "_complex.h"
+#include "complex.h"
 
 
-void tf_cfloat_window(_complex<float> * __restrict__ A, _complex<float> * __restrict__ B, _complex<float> * __restrict__ C0, _complex<float> * __restrict__ C1) {
+void tf_cfloat_window(complex<float> * __restrict__ A, complex<float> * __restrict__ B, complex<float> * __restrict__ C0, complex<float> * __restrict__ C1) {
 
 
         #pragma clang loop vectorize(disable) //interleave_count(1)

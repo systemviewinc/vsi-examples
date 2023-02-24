@@ -1,7 +1,7 @@
-#include "_complex.h"
+#include "complex.h"
 
 
-void tf_cint32_stream(_complex<int32_t> * __restrict__ A, _complex<int32_t> * __restrict__ B, _complex<int32_t> * __restrict__ C0, _complex<int32_t> * __restrict__ C1) {
+void tf_cint32_stream(complex<int32_t> * __restrict__ A, complex<int32_t> * __restrict__ B, complex<int32_t> * __restrict__ C0, complex<int32_t> * __restrict__ C1) {
 
 
         #pragma clang loop vectorize(disable) //interleave_count(1)

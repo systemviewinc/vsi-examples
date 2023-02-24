@@ -1,6 +1,6 @@
-#include "_complex.h"
+#include "complex.h"
 
-void rtp_array_cint16(const _complex<int16_t> (&A)[64], _complex<int16_t> * __restrict__ B0,  _complex<int16_t> * __restrict__ B1, _complex<int16_t> * __restrict__ C,  _complex<int16_t> * __restrict__ D) {
+void rtp_array_cint16(const complex<int16_t> (&A)[64], complex<int16_t> * __restrict__ B0,  complex<int16_t> * __restrict__ B1, complex<int16_t> * __restrict__ C,  complex<int16_t> * __restrict__ D) {
 
 #pragma clang loop vectorize(enable)
  	for (int i = 0 ; i < 64; i++) {

@@ -1,6 +1,6 @@
-#include "_complex.h"
+#include "complex.h"
 
-void rtp_array_cfloat(const _complex<float> (&A)[64], _complex<float> * __restrict__ B0,  _complex<float> * __restrict__ B1, _complex<float> * __restrict__ C,  _complex<float> * __restrict__ D) {
+void rtp_array_cfloat(const complex<float> (&A)[64], complex<float> * __restrict__ B0,  complex<float> * __restrict__ B1, complex<float> * __restrict__ C,  complex<float> * __restrict__ D) {
 
 #pragma clang loop vectorize(enable)
  	for (int i = 0 ; i < 64; i++) {

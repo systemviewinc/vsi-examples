@@ -1,10 +1,10 @@
-#include "_complex.h"
+#include "complex.h"
 
 
-void unalignLoad_complexInt16(_complex<int16_t> * __restrict__ A, _complex<int16_t> * __restrict__ B, _complex<int16_t> * __restrict__ C) {
+void unalignLoad_complexInt16(complex<int16_t> * __restrict__ A, complex<int16_t> * __restrict__ B, complex<int16_t> * __restrict__ C) {
 
 	 int countB=0;
-	_complex<int16_t> tmp_1 = B[countB++];
+	complex<int16_t> tmp_1 = B[countB++];
 
 	#pragma clang loop vectorize(enable) interleave_count(1)
 	for (int i = 0 ; i < 64; i++) {

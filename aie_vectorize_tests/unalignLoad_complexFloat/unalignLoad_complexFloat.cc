@@ -1,10 +1,10 @@
-#include "_complex.h"
+#include "complex.h"
 
 
-void unalignLoad_complexFloat(_complex<float> * __restrict__ A, _complex<float> * __restrict__ B, _complex<float> * __restrict__ C) {
+void unalignLoad_complexFloat(complex<float> * __restrict__ A, complex<float> * __restrict__ B, complex<float> * __restrict__ C) {
 
 	 int countB=0;
-	_complex<float> tmp_1 = B[countB++];
+	complex<float> tmp_1 = B[countB++];
 
 	#pragma clang loop vectorize(enable) interleave_count(1)
 	for (int i = 0 ; i < 64; i++) {

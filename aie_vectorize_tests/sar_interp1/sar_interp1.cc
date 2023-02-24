@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include "_complex.h"
+#include "complex.h"
 
 
 #define N_RANGE 128
@@ -17,7 +17,7 @@
 
 
 typedef struct {
-	_complex<float> data_i [INPUT_DATA_I_SIZE];
+	complex<float> data_i [INPUT_DATA_I_SIZE];
 	float window [PFA_NOUT_RANGE];
 	float input_coords_start[N_PULSES];
 	float input_coords_spacing[N_PULSES];
@@ -25,7 +25,7 @@ typedef struct {
 } Interp1DataIn;
 
 typedef struct {
-	_complex<float> resampled[NUMBER_RANGES_FOR_EACH_AIE*PFA_NOUT_RANGE];
+	complex<float> resampled[NUMBER_RANGES_FOR_EACH_AIE*PFA_NOUT_RANGE];
 } Interp1DataOut;
 
 static inline int find_nearest_range_coord(
@@ -45,30 +45,30 @@ static inline float sinc(float x)
 	}
 }
 
-//volatile _complex<float> g_resampled;
+//volatile complex<float> g_resampled;
 //volatile float g_resampled_re, g_resampled_im;
 /**************************************************************************************************/
 /************************************ START OF KERNEL ***************************************/
 /**************************************************************************************************/
 
 void sar_interp1(
-			// _complex<float> 		* __restrict__ resampled,
-        	const _complex<float> 	* __restrict__ data_i_0,
+			// complex<float> 		* __restrict__ resampled,
+        	const complex<float> 	* __restrict__ data_i_0,
 		    const float    			* __restrict__ window,
 		    const float    			* __restrict__ input_coords_start,
 		    const float    			* __restrict__ input_coords_spacing,
 		    const float    			* __restrict__ output_coords,
-			// const _complex<float> * __restrict__ data_i_1 
-            _complex<float> * __restrict__ g_result
+			// const complex<float> * __restrict__ data_i_1 
+            complex<float> * __restrict__ g_result
 			) {
     int p, r, k, rmin, rmax, window_offset, data_index;
-    _complex<float> zero_complex(0.0f, 0.0f), result(0.0f, 0.0f);
+    complex<float> zerocomplex(0.0f, 0.0f), result(0.0f, 0.0f);
     float sinc_arg, sinc_val, win_val;
     float input_spacing, input_start, input_spacing_inv;
     float scale_factor;
 
     const int PFA_N_TSINC_POINTS_PER_SIDE = (T_PFA - 1)/2;
-    const _complex<float> * __restrict__ data ;
+    const complex<float> * __restrict__ data ;
 
     /* for (p = 0; p < N_PULSES; ++p) */
     // 8 AIEs is enough, we use 64 AIEs
@@ -81,7 +81,7 @@ void sar_interp1(
         input_spacing_inv = 1.0f / input_spacing;
 
         scale_factor = FABS_OUTPUT_COORDS * input_spacing_inv;
-        _complex<float> accum;
+        complex<float> accum;
         /* for (r = 0; r < PFA_NOUT_RANGE; ++r) */
         for (r = 0; r < 16; ++r)
         { 
@@ -92,7 +92,7 @@ void sar_interp1(
             if (nearest < 0)
             {
                 write_zero = true;
-                g_result[p*16+r] = zero_complex;
+                g_result[p*16+r] = zerocomplex;
                  continue;
 
             } 
@@ -120,7 +120,7 @@ void sar_interp1(
             }
             
             
-            _complex<float> accum_arr[NUMBER_RANGES_FOR_EACH_AIE];
+            complex<float> accum_arr[NUMBER_RANGES_FOR_EACH_AIE];
             
             #pragma clang loop vectorize(enable)            
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
@@ -136,16 +136,16 @@ void sar_interp1(
                     /* to not accessing wrong memory */
                     data_index = 0;
                 }
-                _complex<float> new_accum;
+                complex<float> new_accum;
                 new_accum =  data[data_index] * (sinc_val * win_val);
                 if (k<rmin || k> rmax) {
-                    new_accum = zero_complex;
+                    new_accum = zerocomplex;
 				}
 
                 accum_arr[k] = new_accum;
                 
             }
-            _complex<float> accum(0.0f,0.0f);
+            complex<float> accum(0.0f,0.0f);
 
             #pragma clang loop vectorize(enable)            
             for (k = 0; k < NUMBER_RANGES_FOR_EACH_AIE; ++k)
@@ -197,7 +197,7 @@ int find_nearest_range_coord(
 void sar_interp1_top(float * __restrict__ in_data_0,
 		            float * __restrict__ out_data) {
 	Interp1DataIn * __restrict__ interp1datain = (Interp1DataIn * __restrict__)in_data_0;
-    _complex<float> * __restrict out_data_complex = (_complex<float> * __restrict__)out_data;
+    complex<float> * __restrict out_datacomplex = (complex<float> * __restrict__)out_data;
 
     sar_interp1 (
 			interp1datain->data_i,
@@ -205,7 +205,7 @@ void sar_interp1_top(float * __restrict__ in_data_0,
 			interp1datain->input_coords_start,
 			interp1datain->input_coords_spacing,
 			interp1datain->output_coords,
-            out_data_complex
+            out_datacomplex
              );
 }
 
