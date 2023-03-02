@@ -1,0 +1,7 @@
+#ifdef _RDMA_DRIVER_
+/* PGM_MODE */ 0xf1000000,
+/* PGM_MODE */ 0xf7000000,
+/* SYNC READ */ 0xfc000000,0,0,// PC 0x2
+/* AIE MEMORY */ 0x40001500,0x0,0x0, // PC 0x5:0x1
+/* PROGRAM END */ 0xe1000000
+#endif

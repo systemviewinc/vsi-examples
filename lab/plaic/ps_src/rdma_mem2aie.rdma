@@ -1,0 +1,8 @@
+init_aie;
+aie_write_program;
+
+# wait for start sig from PLAIC
+sync_read;
+
+aie(0),mem_master,5376,address(0,0x0);
+
