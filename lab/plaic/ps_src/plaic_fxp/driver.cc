@@ -134,5 +134,6 @@ void load_validate_memory(vsi::device<int> &mem)
 		printf("%s SUCCESS: valid data read back from DDR!\n",__FUNCTION__);
 	}
 
-	exit(0); // Exit sw application.
+	while(1) sleep(10); // Permanently put thread (sw block) to sleep.
+	//exit(0); // Exit sw application.
 }
