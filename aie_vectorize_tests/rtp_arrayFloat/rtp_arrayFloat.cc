@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 void rtp_arrayFloat(const float (&A)[64], float* __restrict__ B0,  float* __restrict__ B1, float * __restrict__ C,  float * __restrict__ D) {
 
 #pragma clang loop vectorize(enable)

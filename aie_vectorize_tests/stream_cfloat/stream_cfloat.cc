@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void stream_cfloat(float * __restrict__ A, float * __restrict__ B,  float * __restrict__ C0, float * __restrict__ C1) {
         complex<float> * __restrict Ai = (complex<float> * __restrict__)A;

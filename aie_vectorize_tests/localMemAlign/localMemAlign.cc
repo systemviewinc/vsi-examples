@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 
 void localMemAlign(float * __restrict__ A, float * __restrict__ B,  float * __restrict__ C0, float * __restrict__ C1) {
 

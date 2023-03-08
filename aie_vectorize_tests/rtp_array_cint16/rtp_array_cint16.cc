@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 void rtp_array_cint16(const complex<int16_t> (&A)[64], complex<int16_t> * __restrict__ B0,  complex<int16_t> * __restrict__ B1, complex<int16_t> * __restrict__ C,  complex<int16_t> * __restrict__ D) {
 
 #pragma clang loop vectorize(enable)

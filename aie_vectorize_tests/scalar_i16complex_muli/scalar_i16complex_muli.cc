@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 void scalar_i16complex_muli(int16_t * __restrict__ A, int16_t * __restrict__ B, int16_t * __restrict__ C) {
 	complex<int16_t> * __restrict Ai = (complex<int16_t> * __restrict__)A; 
 	//complex<int16_t> * __restrict Bi = (complex<int16_t> * __restrict__)B; 

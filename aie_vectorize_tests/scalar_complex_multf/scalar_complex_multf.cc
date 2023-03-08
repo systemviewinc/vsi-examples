@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void scalar_complex_multf(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 	complex<float> * __restrict Ai = (complex<float> * __restrict__)A;

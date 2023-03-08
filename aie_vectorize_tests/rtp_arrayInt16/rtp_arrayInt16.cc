@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 void rtp_arrayInt16(const int16_t (&A)[64], int16_t * __restrict__ B0,  int16_t * __restrict__ B1, int16_t * __restrict__ C,  int16_t * __restrict__ D) {
 
 #pragma clang loop vectorize(enable) interleave_count(1)

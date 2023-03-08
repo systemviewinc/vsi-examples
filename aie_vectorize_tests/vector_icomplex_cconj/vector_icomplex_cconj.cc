@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void vector_icomplex_cconj(int32_t * __restrict__ A, int32_t * __restrict__ C) {
 

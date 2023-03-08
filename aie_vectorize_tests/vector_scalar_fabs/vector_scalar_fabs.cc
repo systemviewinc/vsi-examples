@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "math.h"
+using namespace std;
 
 void vector_scalar_fabs(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 

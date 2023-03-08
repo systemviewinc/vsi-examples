@@ -1,5 +1,5 @@
   #include <stdint.h>
-
+  using namespace std;
 	#define NUM_DATA_IN_EACH_CHANNEL 63
 
 	void memcpy_window_scalarLoad(

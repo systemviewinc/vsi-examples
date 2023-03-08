@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 void vector_i16complex_cconj(int16_t * __restrict__ A, int16_t * __restrict__ C) {
 	complex<int16_t> * __restrict Ai = (complex<int16_t> * __restrict__)A; 
 	complex<int16_t> * __restrict Co = (complex<int16_t> * __restrict__)C;

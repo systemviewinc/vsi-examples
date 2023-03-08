@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void stream_int32(int32_t * __restrict__ A, int32_t * __restrict__ B,  int32_t * __restrict__ C0, int32_t * __restrict__ C1) {
 

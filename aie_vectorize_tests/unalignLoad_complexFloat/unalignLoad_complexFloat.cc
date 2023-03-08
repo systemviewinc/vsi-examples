@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void unalignLoad_complexFloat(complex<float> * __restrict__ A, complex<float> * __restrict__ B, complex<float> * __restrict__ C) {
 

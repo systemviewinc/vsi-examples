@@ -1,4 +1,5 @@
 #include <stdint.h>
+using namespace std;
 void gui_test(int32_t * __restrict__ A , int32_t * __restrict__ B , int32_t * __restrict__ C) {
 	  #pragma clang loop vectorize(enable)
    	for (int i = 0; i < 8; ++i) {

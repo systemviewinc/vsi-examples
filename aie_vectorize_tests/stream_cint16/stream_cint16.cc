@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void stream_cint16(int16_t * __restrict__ A, int16_t * __restrict__ B,  int16_t * __restrict__ C0, int16_t * __restrict__ C1) {
     complex<int16_t> * __restrict Ai = (complex<int16_t> * __restrict__)A;

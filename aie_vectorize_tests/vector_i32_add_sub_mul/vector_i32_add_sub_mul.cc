@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 void vector_i32_add_sub_mul(int32_t * __restrict__ A, int32_t * __restrict__ B, int32_t * __restrict__ C) {
 int32_t tmp_0;
 int32_t tmp_1;

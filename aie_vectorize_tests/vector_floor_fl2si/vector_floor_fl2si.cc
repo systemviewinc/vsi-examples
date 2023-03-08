@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "math.h"
-
+using namespace std;
 void vector_floor_fl2si(float * __restrict__ A, int32_t * __restrict__ C) {
 
 	#pragma clang loop vectorize(enable) 

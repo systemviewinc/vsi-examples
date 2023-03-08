@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 void localMemAlign_v2(int32_t * __restrict__ A, int32_t * __restrict__ B,  int32_t * __restrict__ C0, int32_t * __restrict__ C1) {
 
        int32_t localMem [64];

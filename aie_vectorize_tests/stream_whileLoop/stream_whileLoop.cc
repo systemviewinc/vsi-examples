@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 static int32_t coeff_0[8] =  {1,2,3,4,5,6,7,8};
 static float coeff_1[8]   =  {2.0f,3.0f,4.0f,5.0f,6.0f,7.0f,8.0f,9.0f};

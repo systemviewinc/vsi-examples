@@ -1,4 +1,5 @@
 #include <stdint.h>
+using namespace std;
 int32_t K = 50;
 void test_func (int32_t * __restrict__ A __attribute__((aligned(16))),
 	   int32_t * __restrict__ B __attribute__((aligned(16))),

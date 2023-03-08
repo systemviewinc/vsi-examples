@@ -1,4 +1,5 @@
 #include <stdint.h>
+using namespace std;
 
 void vector_offset_load(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 	int countA=0;

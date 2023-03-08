@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void vector_icomplex_cnorm(int32_t * __restrict__ A, int32_t * __restrict__ C) {
 

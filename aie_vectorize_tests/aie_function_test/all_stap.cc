@@ -15,6 +15,8 @@
 #include <assert.h>
 #include "complex.h"
 
+using namespace std;
+
 #define N_CHAN (4)
 #define N_RANGE (512)
 #define TRAINING_BLOCK_SIZE (32)

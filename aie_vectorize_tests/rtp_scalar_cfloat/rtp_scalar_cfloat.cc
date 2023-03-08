@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 void rtp_scalar_cfloat(const complex<float> &A, complex<float> * __restrict__ B0,  complex<float> * __restrict__ B1, complex<float> * __restrict__ C,  complex<float> * __restrict__ D) {
 
 #pragma clang loop vectorize(enable)

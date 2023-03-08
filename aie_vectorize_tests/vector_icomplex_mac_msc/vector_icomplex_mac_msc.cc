@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void vector_icomplex_mac_msc(int32_t * __restrict__ A, int32_t * __restrict__ B, int32_t * __restrict__ D, int32_t * __restrict__ C0, int32_t * __restrict__ C1) {
 	complex<int32_t> * __restrict Ai = (complex<int32_t> * __restrict__)A;

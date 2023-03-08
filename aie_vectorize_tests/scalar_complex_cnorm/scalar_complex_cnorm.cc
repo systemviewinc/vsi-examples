@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void scalar_complex_cnorm(float * __restrict__ A, float * __restrict__ C) {
 

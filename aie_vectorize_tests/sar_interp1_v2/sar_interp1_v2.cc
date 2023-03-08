@@ -3,6 +3,7 @@
 #include <math.h>
 #include <assert.h>
 // #include "complex.h"
+using namespace std;
 
 #define N_RANGE 128
 #define N_PULSES 128

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-
+using namespace std;
 
 #define N_RANGE 128
 #define N_PULSES 128

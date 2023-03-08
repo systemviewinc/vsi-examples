@@ -1,3 +1,4 @@
+using namespace std;
 
 #define N_RANGE 128
 #define N_PULSES 128

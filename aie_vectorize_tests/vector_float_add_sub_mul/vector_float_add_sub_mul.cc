@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 void vector_float_add_sub_mul(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 float tmp_0;
 float tmp_1;

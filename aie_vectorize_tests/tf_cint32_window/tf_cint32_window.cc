@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void tf_cint32_window(complex<int32_t> * __restrict__ A, complex<int32_t> * __restrict__ B, complex<int32_t> * __restrict__ C0, complex<int32_t> * __restrict__ C1) {
 

@@ -1,7 +1,7 @@
 #include <adf.h>
 #include <aie_api/aie.hpp>
 #include <aie_api/aie_adf.hpp>
-
+using namespace std;
 void passthrough(
     input_window_float * in1, 
     output_window_float * outp) 

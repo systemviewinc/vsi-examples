@@ -1,5 +1,5 @@
 #include "complex.h"
-
+using namespace std;
 
 void tf_cfloat_window(complex<float> * __restrict__ A, complex<float> * __restrict__ B, complex<float> * __restrict__ C0, complex<float> * __restrict__ C1) {
 

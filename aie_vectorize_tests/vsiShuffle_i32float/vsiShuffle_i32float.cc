@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 
 void vsiShuffle_i32float(float * __restrict__ A, int32_t * __restrict__ B, float * __restrict__ C0, int32_t * __restrict__ C1) {
 

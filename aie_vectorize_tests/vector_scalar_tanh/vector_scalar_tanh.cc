@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "math.h"
-
+using namespace std;
 void vector_scalar_tanh(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 
     float tmp = B[9];//tanhf(B[9]);

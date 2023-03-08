@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "math.h"
-
+using namespace std;
 void vector_scalar_sqrt(float * __restrict__ A, float * __restrict__ B, float * __restrict__ C) {
 
 	float tmp = sqrtf(B[9]);

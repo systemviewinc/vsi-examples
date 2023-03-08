@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+using namespace std;
 
 void stream_interleave2(int32_t * __restrict__ A, float * __restrict__ B,  int32_t * __restrict__ C0, float * __restrict__ C1) {
 
