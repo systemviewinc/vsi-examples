@@ -9,7 +9,7 @@ void complexReduction(float * __restrict__ A, float * __restrict__ C) {
     accum.real() = 0.0f;
     accum.imag() = 0.0f;
     #pragma clang loop vectorize(enable)            
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 64; ++i)
     {
         accum.real() += Ai[i].real();
         accum.imag() += Ai[i].imag();
