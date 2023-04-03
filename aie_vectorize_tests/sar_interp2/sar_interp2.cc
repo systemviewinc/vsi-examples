@@ -61,7 +61,6 @@ static inline float sinc(float x)
     }
 }
 
-// volatile float g_resampled_re, g_resampled_im;
 /**************************************************************************************************/
 /************************************ START OF KERNEL ***************************************/
 /**************************************************************************************************/
@@ -84,18 +83,14 @@ void sar_interp2(
     // for (r = 0; r < NUMBER_RANGES_FOR_EACH_AIE; ++r)
     for (r = 0; r < 8; ++r)
     {
-        int new_r = r % NUMBER_RANGES_FOR_EACH_AIE;
-        // for image size 256x256, and pulsxrange of 128x128
-        // each input_coords_ has data for 16 ranges
-        input_coords_index = (new_r * N_PULSES);
+        input_coords_index = (r * N_PULSES);
         input_spacing_avg = 0.0f;
         #pragma clang loop vectorize(enable)
-        // for (p = 0; p < 8; ++p)
-        for (p = 0; p < N_PULSES-1; ++p)
+        for (p = 0; p < NUMBER_PULSES_FOR_EACH_AIE-1; ++p)
         {
             input_spacing_avg += fabs(input_coord[input_coords_index + p + 1] - input_coord[input_coords_index + p]);
         }
-        input_spacing_avg /= (N_PULSES-1);
+        input_spacing_avg /= (NUMBER_PULSES_FOR_EACH_AIE-1);
         input_spacing_avg_inv = 1.0f / input_spacing_avg;
         scale_factor = fabs(output_coords[1] - output_coords[0]) * input_spacing_avg_inv;
         // for (p = 0; p < PFA_NOUT_AZIMUTH; ++p)
@@ -111,9 +106,6 @@ void sar_interp2(
             if (nearest < 0)
             {
                 write_zero = true;
-                // resampled[p][r].re = 0.0f;
-                // resampled[p][r].im = 0.0f;
-                //g_resampled_re = 0.0f;
                 g_result[r*8 + p].re = 0.0f;
 		        g_result[r*8 + p].im = 0.0f;
                  continue;
@@ -160,8 +152,6 @@ void sar_interp2(
                 win_val = (float)window[window_offset+(k-pmin)];
                 sinc_arg = (out_coord - input_coord[input_coords_index + k]) * input_spacing_avg_inv;
                 sinc_val = sinc(sinc_arg);
-                // accum.re += sinc_val * win_val * data[(k * N_RANGE) + r].re;
-                // accum.im += sinc_val * win_val * data[(k * N_RANGE) + r].im;
                  complex new_accum;
                  float one_time_mul;
                  one_time_mul = sinc_val * win_val;
@@ -182,7 +172,6 @@ void sar_interp2(
                 result.re = 0.0f;
                 result.im = 0.0f;
             }
-            //g_resampled_re = result.re;
             g_result[r*8 + p].re = result.re;
 		    g_result[r*8 + p].im = result.im;
         }
@@ -240,7 +229,7 @@ static inline int find_nearest_azimuth_coord(
 void sar_interp2_top(float * __restrict__ in_data_0,
 		            float * __restrict__ out_data) {
 	Interp2DataIn * __restrict__ interp2datain = (Interp2DataIn * __restrict__)in_data_0;
-    complex * __restrict out_datacomplex = (complex * __restrict__)out_data;
+    complex * __restrict out_data_complex = (complex * __restrict__)out_data;
 	// Interp2DataOut * __restrict__ interp2dataout = (Interp2DataOut * __restrict__)out_data;
     sar_interp2 (
 			// interp2dataout->resampled,
@@ -248,6 +237,6 @@ void sar_interp2_top(float * __restrict__ in_data_0,
 			interp2datain->window,
 			interp2datain->input_coord,
 			interp2datain->output_coords,
-            out_datacomplex);
+            out_data_complex);
 
 }

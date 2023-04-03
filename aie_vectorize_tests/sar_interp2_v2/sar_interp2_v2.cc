@@ -4,6 +4,7 @@
 #include "complex.h"
 using namespace std;
 
+
 #define N_RANGE 128
 #define N_PULSES 128
 #define BP_NPIX_X 256
@@ -28,7 +29,6 @@ using namespace std;
 #define INPUT_COORDS_SIZE NUMBER_PULSES_FOR_EACH_AIE*PFA_NOUT_RANGE
 # define PI		3.14159265358979323846f
 
-// typedef struct  { float re, im; } complex;
 
 typedef struct {
 	complex<float> data_i [INPUT_DATA_I_SIZE];
@@ -62,7 +62,6 @@ static inline float sinc(float x)
     }
 }
 
-// volatile float g_resampled_re, g_resampled_im;
 /**************************************************************************************************/
 /************************************ START OF KERNEL ***************************************/
 /**************************************************************************************************/
@@ -82,21 +81,18 @@ void sar_interp2(
 
     const int PFA_N_TSINC_POINTS_PER_SIDE = (T_PFA - 1.0f)/2.0f;
 
-    // for (r = 0; r < NUMBER_RANGES_FOR_EACH_AIE; ++r)
     for (r = 0; r < 8; ++r)
     {
-        int new_r = r % NUMBER_RANGES_FOR_EACH_AIE;
-        // for image size 256x256, and pulsxrange of 128x128
-        // each input_coords_ has data for 16 ranges
-        input_coords_index = (new_r * N_PULSES);
+        input_coords_index = (r * N_PULSES);
+        const float * pointer_to_input_coords;
+        pointer_to_input_coords = &input_coord[input_coords_index];
         input_spacing_avg = 0.0f;
-        #pragma clang loop vectorize(enable)
-        // for (p = 0; p < 8; ++p)
-        for (p = 0; p < N_PULSES-1; ++p)
+        #pragma clang loop vectorize(disable)
+        for (p = 0; p < NUMBER_PULSES_FOR_EACH_AIE-1; ++p)
         {
-            input_spacing_avg += fabs(input_coord[input_coords_index + p + 1] - input_coord[input_coords_index + p]);
+            input_spacing_avg += fabs(pointer_to_input_coords[ p + 1] - pointer_to_input_coords[ p]);
         }
-        input_spacing_avg /= (N_PULSES-1);
+        input_spacing_avg /= (NUMBER_PULSES_FOR_EACH_AIE-1);
         input_spacing_avg_inv = 1.0f / input_spacing_avg;
         scale_factor = fabs(output_coords[1] - output_coords[0]) * input_spacing_avg_inv;
         // for (p = 0; p < PFA_NOUT_AZIMUTH; ++p)
@@ -112,9 +108,6 @@ void sar_interp2(
             if (nearest < 0)
             {
                 write_zero = true;
-                // resampled[p][r].re = 0.0f;
-                // resampled[p][r].im = 0.0f;
-                //g_resampled_re = 0.0f;
                  g_result[r*8 + p] = zero;
                  continue;
                 /* to not accessing wrong memory */
@@ -128,8 +121,8 @@ void sar_interp2(
              * which of the two input coordinates is closest.
              */
             int write_incr = 0;
-            if (fabs(out_coord-input_coord[input_coords_index + nearest + 1]) <
-                fabs(out_coord-input_coord[input_coords_index + nearest]))
+            if (fabs(out_coord-pointer_to_input_coords[ nearest + 1]) <
+                fabs(out_coord-pointer_to_input_coords[ nearest]))
             {
                 write_incr = 1;
             }
@@ -156,15 +149,11 @@ void sar_interp2(
                     data_index = 0;
                 }
                 win_val = (float)window[window_offset+(k-pmin)];
-                sinc_arg = (out_coord - input_coord[input_coords_index + k]) * input_spacing_avg_inv;
+                sinc_arg = (out_coord - pointer_to_input_coords[ k]) * input_spacing_avg_inv;
                 sinc_val = sinc(sinc_arg);
-                // accum.re += sinc_val * win_val * data[(k * N_RANGE) + r].re;
-                // accum.im += sinc_val * win_val * data[(k * N_RANGE) + r].im;
                  complex<float> new_accum;
                  float one_time_mul;
                  one_time_mul = sinc_val * win_val;
-                // new_accum.re = data[data_index].re * one_time_mul;
-                // new_accum.im = data[data_index].im * one_time_mul;
                 new_accum = data[data_index] * one_time_mul;
                 bool update = k<pmin || k> pmax;
                 if (update) {
@@ -174,15 +163,9 @@ void sar_interp2(
 
             }
             result = accum * scale_factor;
-            // result.re = accum.re * scale_factor;
-            // result.im = accum.im * scale_factor;
-        //    resampled[p][r].re = scale_factor * accum.re;
-        //    resampled[p][r].im = scale_factor * accum.im;
            if (write_zero) {
-                // resampled[p][r] = zerocomplex;
                result = zero;
             }
-            //g_resampled_re = result.re;
             g_result[r*8 + p] = result;
         }
 
@@ -240,7 +223,7 @@ static inline int find_nearest_azimuth_coord(
 void sar_interp2_top(float * __restrict__ in_data_0,
 		            float * __restrict__ out_data) {
 	Interp2DataIn * __restrict__ interp2datain = (Interp2DataIn * __restrict__)in_data_0;
-    complex<float> * __restrict out_datacomplex = (complex<float> * __restrict__)out_data;
+    complex<float> * __restrict out_data_complex = (complex<float> * __restrict__)out_data;
 	// Interp2DataOut * __restrict__ interp2dataout = (Interp2DataOut * __restrict__)out_data;
     sar_interp2 (
 			// interp2dataout->resampled,
@@ -248,6 +231,6 @@ void sar_interp2_top(float * __restrict__ in_data_0,
 			interp2datain->window,
 			interp2datain->input_coord,
 			interp2datain->output_coords,
-            out_datacomplex);
+            out_data_complex);
 
 }
