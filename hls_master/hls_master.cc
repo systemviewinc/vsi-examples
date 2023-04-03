@@ -53,6 +53,16 @@ void hls_master_adder(vsi::device<int> mem)
 	mem.pwrite(buff, sizeof(buff), sizeof(buff));
 }
 
+void hls_master_adder_dual(vsi::device<int> mem_in, vsi::device<int> mem_out)
+{
+	int buff[40];
+	mem_in.pread(buff, sizeof(buff), 0);
+	for (int i = 0; i < 40; i++) {
+		buff[i] += 10;
+	}
+	mem_out.pwrite(buff, sizeof(buff),0);
+}
+
 
 void hls_reader(vsi::device<int> mem)
 {
@@ -78,6 +88,26 @@ void hls_reader_writer(vsi::device<int> mem)
 	printf("[read/write]---------------------\n");
 
 	mem.pread(read_buff,sizeof(read_buff),sizeof(write_buff));
+	printf("[read/write]-----READ BUFFER-----\n");
+	for (int i = 0 ; i < 40; i++)
+		printf("[read/write]%d : %d \n", i, read_buff[i]);
+	printf("[read/write]---------------------\n");
+
+}
+
+void hls_reader_writer_dual(vsi::device<int> mem_out, vsi::device<int> mem_in)
+{
+	int write_buff[40];
+	int read_buff[40];
+	printf("[read/write]-----WRITE BUFFER-----\n");
+	for (int i = 0 ; i < 40; i++) {
+		write_buff[i] = count++;
+		printf("[read/write]%d : %d \n", i, write_buff[i]);
+	}
+	mem_out.pwrite(write_buff,sizeof(write_buff),0);
+	printf("[read/write]---------------------\n");
+
+	mem_in.pread(read_buff,sizeof(read_buff),0);
 	printf("[read/write]-----READ BUFFER-----\n");
 	for (int i = 0 ; i < 40; i++)
 		printf("[read/write]%d : %d \n", i, read_buff[i]);
@@ -177,6 +207,41 @@ void hls_reader_writer_controlled(hls::stream<int> &input, vsi::device<int> mem,
     else {
         output.write((int)0);
     }
+}
+
+void hls_reader_writer_controlled_dual(hls::stream<int> &input, vsi::device<int> mem_in, vsi::device<int> mem_out, hls::stream<int> &output)
+{
+	int num = input.read();
+	int write_buff[40];
+	int read_buff[40];
+	bool failed = false;
+
+	printf("[read/write_%i]-----WRITE BUFFER-----\n", num);
+	for (int i = 0 ; i < 40; i++) {
+		write_buff[i] = 5*count++;
+		printf("[read/write_%i]%d : %d \n", num, i, write_buff[i]);
+	}
+	mem_out.pwrite(write_buff,sizeof(write_buff),0);
+	printf("[read/write_%i]---------------------\n", num);
+	//wait some time for hls block to be able to process
+	sleep(1);
+	mem_in.pread(read_buff,sizeof(read_buff),0);
+	printf("[read/write_%i]-----READ BUFFER-----\n", num);
+	for (int i = 0 ; i < 40; i++){
+		printf("[read/write_%i]%d : %d \n", num, i, read_buff[i]);
+		if(read_buff[i] != write_buff[i]+10) {
+			failed = true;
+			printf("24[read/write_%i]\tFail! %d\n", num, write_buff[i]);
+		}
+	}
+	printf("[read/write_%i]---------------------\n", num);
+
+	if(failed) {
+		output.write((int)-1);
+	}
+	else {
+		output.write((int)0);
+	}
 }
 
 #include <hls_master.h>
