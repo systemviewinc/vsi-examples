@@ -196,27 +196,46 @@ void read_double_buffer(hls::stream<int> &dsize, ap_uint<64> buffer_storage [16]
  * @param mem
  * @param sdone
  */
-void vsi_process_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &start,
-                      hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &sdone,
-                      int *mem,
-                      int out_arr[1024]
+ void vsi_process_data(hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &start,
+                       hls::stream<ap_axis<DATA_WIDTH, 0, 0, 0> > &sdone,
+                       int *mem,
+                       int out_arr[1024]
+ ) {
+ 	printf("%s started\n",__FUNCTION__);
+ 	ap_axis<DATA_WIDTH, 0, 0, 0> s = start.read(); // wait for data
+ 	int local_arr [1024];
+ 	if (s.data != 0) {
+ 	        //memcpy(local_arr,mem,sizeof(local_arr));
+ 		// process the data
+ 		for (int i = 0 ; i < 1024; i++) {
+ 			out_arr[i] = (mem[i] += 100);
+ 		}
+ 		//memcpy(mem,local_arr,sizeof(local_arr));
+ 	}
+ 	// tell we are done
+ 	ap_axis<DATA_WIDTH, 0, 0, 0> w;
+ 	w.data = 1;
+ 	w.last = 1;
+ 	sdone.write(w);
+ 	printf("%s done\n",__FUNCTION__);
+ }
+
+void vsi_process_data_stream(hls::stream<int> &start,
+                      hls::stream<int> &sdone,
+                      vsi::device<int> mem
 ) {
 	printf("%s started\n",__FUNCTION__);
-	ap_axis<DATA_WIDTH, 0, 0, 0> s = start.read(); // wait for data
+	int s = start.read(); // wait for data
 	int local_arr [1024];
-	if (s.data != 0) {
-	        //memcpy(local_arr,mem,sizeof(local_arr));
+	mem.pread(local_arr, 4096, 0);
+	if (s != 0) {
 		// process the data
 		for (int i = 0 ; i < 1024; i++) {
-			out_arr[i] = (mem[i] += 100);
+			//local_arr[i] = local_arr[i] + 100;
+			sdone.write(local_arr[i]);
 		}
-		//memcpy(mem,local_arr,sizeof(local_arr));
 	}
 	// tell we are done
-	ap_axis<DATA_WIDTH, 0, 0, 0> w;
-	w.data = 1;
-	w.last = 1;
-	sdone.write(w);
 	printf("%s done\n",__FUNCTION__);
 }
 

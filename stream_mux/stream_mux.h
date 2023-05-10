@@ -10,8 +10,8 @@ using namespace std;
 #include <ap_utils.h>
 #include "ap_axi_sdata.h"
 #include <string.h>
-#ifndef __VSI_HLS_SYN__
 #include <vsi_device.h>
+#ifndef __VSI_HLS_SYN__
 #include <unistd.h>
 #endif
 
