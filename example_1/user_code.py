@@ -2,10 +2,34 @@
 
 import os
 import vsi_runtime
+import time
 
 COUNT = 0
 OFFSET = 0
 
+def process_stream_dev(out_mem=None, start=None, resp=None):
+    # perform operation
+    buf_in = vsi_runtime.Buffer(4096)
+    buff = vsi_runtime.Buffer(4)
+    buff.putInt(1)
+    for i in range(1024):
+        buf_in.putInt(i)
+
+    out_mem.pwrite(buf_in, 0)
+    print("pwrite done")
+
+    # tell next process something in memory
+    start.write(buff, 4)
+
+    # wait for response
+    r = vsi_runtime.Buffer(4096)
+    resp.wait_if_empty()
+    time.sleep(1)
+    for i in range(resp.size()):
+        temp = resp.read()
+        r.put(temp, r.size())
+    print("Matched:{}".format(buf_in.compare(r)))
+    exit()
 
 def process(buf_in, buf_out):
     global COUNT
