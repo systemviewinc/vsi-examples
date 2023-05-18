@@ -12,9 +12,9 @@ def process_stream_dev(out_mem=None, start=None, resp=None):
     buf_in = vsi_runtime.Buffer(4096)
     buff = vsi_runtime.Buffer(4)
     buff.putInt(1)
-    for i in range(1024):
-        buf_in.putInt(i)
-
+    #for i in range(1024):
+    #    buf_in.putInt(i)
+    buf_in.fill("123456789")
     out_mem.pwrite(buf_in, 0)
     print("pwrite done")
 
@@ -27,7 +27,7 @@ def process_stream_dev(out_mem=None, start=None, resp=None):
     time.sleep(1)
     for i in range(resp.size()):
         temp = resp.read()
-        r.put(temp, r.size())
+        r.put(temp, r.offset())
     print("Matched:{}".format(buf_in.compare(r)))
     exit()
 
