@@ -25,9 +25,11 @@ def process_stream_dev(out_mem=None, start=None, resp=None):
     r = vsi_runtime.Buffer(4096)
     resp.wait_if_empty()
     time.sleep(1)
+    offset = 0
     for i in range(resp.size()):
         temp = resp.read()
-        r.put(temp, r.offset())
+        r.put(temp, offset)
+        offset = offset + temp.size()
     print("Matched:{}".format(buf_in.compare(r)))
     exit()
 
