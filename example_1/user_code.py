@@ -12,24 +12,35 @@ def process_stream_dev(out_mem=None, start=None, resp=None):
     buf_in = vsi_runtime.Buffer(4096)
     buff = vsi_runtime.Buffer(4)
     buff.putInt(1)
-    #for i in range(1024):
-    #    buf_in.putInt(i)
-    buf_in.fill("123456789")
+    for i in range(1024):
+        buf_in.putInt(i)
+    # set offset back to 0 after adding ints and before writing
+    buf_in.rewind()
+    
+    # write buffer
     out_mem.pwrite(buf_in, 0)
     print("pwrite done")
 
     # tell next process something in memory
-    start.write(buff, 4)
+    buff.rewind()
+    start.write(buff)
 
     # wait for response
     r = vsi_runtime.Buffer(4096)
     resp.wait_if_empty()
     time.sleep(1)
+    
+    #put first buffer at offset 0
     offset = 0
+    
+    # add every buffer in response stream
     for i in range(resp.size()):
         temp = resp.read()
         r.put(temp, offset)
+        # add next buffer at currett + size of currently added buffer
         offset = offset + temp.size()
+    
+    # check if buffers are equal
     print("Matched:{}".format(buf_in.compare(r)))
     exit()
 
