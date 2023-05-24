@@ -39,4 +39,5 @@ install(DIRECTORY
 	xilinx_vlib
 	aie_emulation
 	streamdecoder
+	simulator_example
 DESTINATION ${TARGET_EXAMPLE_DIR})
