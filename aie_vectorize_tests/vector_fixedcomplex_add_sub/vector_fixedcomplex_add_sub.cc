@@ -9,11 +9,11 @@ void vector_fixedcomplex_add_sub(int32_t * __restrict__ A, int32_t * __restrict_
 
 	// complex<ap_int<1,15>> tmp = Ai[0] + Ai[1];
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
+	for (int i = 0 ; i < 512; i++)
 		C0o[i] = Ai[i] + Bi[i];
 
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
+	for (int i = 0 ; i < 512; i++)
 		C1o[i] = Ai[i] - Bi[i];
 
 }
