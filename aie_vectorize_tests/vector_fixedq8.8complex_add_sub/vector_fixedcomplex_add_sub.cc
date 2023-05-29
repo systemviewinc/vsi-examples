@@ -1,10 +1,10 @@
 #include "complex.h"
 using namespace std;
 
-void vector_fixedcomplex_add_sub(complex<ap_int<1,15>> * __restrict__ A, 
-								complex<ap_int<1,15>> * __restrict__ B, 
-								complex<ap_int<1,15>> * __restrict__ C0, 
-								complex<ap_int<1,15>> * __restrict__ C1) {
+void vector_fixedcomplex_add_sub(complex<ap_int<8,8>> * __restrict__ A, 
+								complex<ap_int<8,8>> * __restrict__ B, 
+								complex<ap_int<8,8>> * __restrict__ C0, 
+								complex<ap_int<8,8>> * __restrict__ C1) {
 
 #pragma clang loop vectorize(enable) //interleave_count(2)
 	for (int i = 0 ; i < 64; i++)
