@@ -5,13 +5,13 @@ void vector_fixedcomplex_mul(complex<ap_int<1,15>> * __restrict__ A,
 								complex<ap_int<1,15>> * __restrict__ B, 
 								complex<ap_int<1,15>> * __restrict__ C0, 
 								complex<ap_int<1,15>> * __restrict__ C1) {
-	ap_int<1,15> coeff(28000);
+	ap_int<1,15> coeff(16384);
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
+	for (int i = 0 ; i < 512; i++)
 		C0[i] = A[i] * B[i];
 
 #pragma clang loop vectorize(enable) //interleave_count(2)
-	for (int i = 0 ; i < 64; i++)
-		C0[i] = A[i] * coeff;
+	for (int i = 0 ; i < 512; i++)
+		C1[i] = A[i] * coeff;
 
 }
