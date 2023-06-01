@@ -76,6 +76,9 @@ void process_frame(hls::stream<ap_uint<DATA_WIDTH_DSP> > &frame_in)
 		in_data = frame_in.read();
 		read_buff[i] = in_data;
 		std::cout << read_buff[i] << " ";
+		if(i % 4 == 0) {
+			std::cout << std::endl;
+		}
 	}
 	std::cout << std::endl;
 
