@@ -40,4 +40,5 @@ install(DIRECTORY
 	aie_emulation
 	streamdecoder
 	simulator_example
+	rf_demo
 DESTINATION ${TARGET_EXAMPLE_DIR})
