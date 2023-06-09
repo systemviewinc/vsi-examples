@@ -41,4 +41,5 @@ install(DIRECTORY
 	streamdecoder
 	simulator_example
 	rf_demo
+	stream_and_mem_test
 DESTINATION ${TARGET_EXAMPLE_DIR})
