@@ -215,6 +215,7 @@ void read_double_buffer(hls::stream<int> &dsize, ap_uint<64> buffer_storage [16]
  	// tell we are done
  	ap_axis<DATA_WIDTH, 0, 0, 0> w;
  	w.data = 1;
+	w.keep = -1;
  	w.last = 1;
  	sdone.write(w);
  	printf("%s done\n",__FUNCTION__);
