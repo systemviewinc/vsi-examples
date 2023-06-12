@@ -127,16 +127,16 @@ void driver(hls::stream<ap_uint<DATA_BIT_WIDTH> >& instream0,
 
 // HLS process data functions
 
+// in VSI, use execution trigger on instream
 void process_stream_and_mem(hls::stream<ap_uint<DATA_BIT_WIDTH> >& instream, 
     hls::stream<ap_uint<DATA_BIT_WIDTH> >& outstream,
     ap_uint<DATA_BIT_WIDTH>* mem)
 {
     ap_uint<DATA_BIT_WIDTH> buf[N_SAMPLES];
-    ap_uint<DATA_BIT_WIDTH> mem_offset = 0;
 
     for(int i = 0; i < N_SAMPLES; i++){
         buf[i] = instream.read();
-        mem[mem_offset++] = buf[i]+1000;
+        mem[i] = buf[i]+1000;
     }
 
     for(int i = 0; i < N_SAMPLES; i++){
