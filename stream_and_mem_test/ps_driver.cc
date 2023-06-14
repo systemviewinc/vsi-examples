@@ -1,14 +1,4 @@
-#include <hls_stream.h>
-#include <ap_utils.h>
-#include "ap_axi_sdata.h"
-#ifndef __VSI_HLS_SYN__
-#include <vsi_device.h>
-#include <iostream>
-#endif
-
-#define N_SAMPLES 16
-#define DATA_BIT_WIDTH 32
-#define DATA_BYTE_WIDTH DATA_BIT_WIDTH/8
+#include "stream_and_mem_test.h"
 
 #ifndef __VSI_HLS_SYN__
 // PS only functions
@@ -103,39 +93,9 @@ void driver(hls::stream<ap_uint<DATA_BIT_WIDTH> >& instream0,
     }
     else{
         std::cout << "SUCCESS: valid data read back!" << std::endl;
-	}
-    exit(0); // Exit ps application.
+    }
+    exit(0); // Exit PS application.
 }
+
 #endif
-
-// HLS process data functions
-
-// in VSI, use execution trigger on instream
-void process_stream_and_mem(hls::stream<ap_uint<DATA_BIT_WIDTH> >& instream, 
-    hls::stream<ap_uint<DATA_BIT_WIDTH> >& outstream,
-    ap_uint<DATA_BIT_WIDTH>* mem)
-{
-    ap_uint<DATA_BIT_WIDTH> buf[N_SAMPLES];
-
-    for(int i = 0; i < N_SAMPLES; i++){
-        buf[i] = instream.read();
-        mem[i] = buf[i]+1000;
-    }
-
-    for(int i = 0; i < N_SAMPLES; i++){
-        outstream.write(buf[i]+100);
-    }
-}
-
-void process_stream_packet(hls::stream<ap_axiu<DATA_BIT_WIDTH,0,0,0> >& instream, 
-    hls::stream<ap_axiu<DATA_BIT_WIDTH,0,0,0> >& outstream)
-{
-    ap_axiu<32,0,0,0> strm_pkt;
-    for(int i = 0; i < N_SAMPLES; ++i){
-        strm_pkt = instream.read();
-        strm_pkt.data = strm_pkt.data*2;
-        strm_pkt.keep = -1;
-        outstream.write(strm_pkt);
-    }
-}
 
