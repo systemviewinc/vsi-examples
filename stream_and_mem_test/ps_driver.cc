@@ -19,7 +19,7 @@ void driver(hls::stream<ap_uint<DATA_BIT_WIDTH> >& instream0,
     hls::stream<ap_uint<DATA_BIT_WIDTH> >& outstream0,
     hls::stream<ap_axiu<DATA_BIT_WIDTH,0,0,0> >& instream1,
     hls::stream<ap_axiu<DATA_BIT_WIDTH,0,0,0> >& outstream1,
-    vsi::device<int>& mem)
+    vsi::device<ap_uint<DATA_BIT_WIDTH> >& mem)
 {
     ap_uint<DATA_BIT_WIDTH> i, dat;
     int err_count = 0;
