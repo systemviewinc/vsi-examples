@@ -13,32 +13,15 @@
 #ifndef __VSI_HLS_SYN__
 // PS only functions
 
-void printApDatBytes(ap_uint<32> dat)
+void printDat(ap_uint<DATA_BIT_WIDTH> dat)
 {
-    ap_uint<8> bytes[4];
-    for(int i = 0; i < 4; ++i){
+    ap_uint<8> bytes[DATA_BYTE_WIDTH];
+    for(int i = 0; i < DATA_BYTE_WIDTH; ++i){
         bytes[i] = (dat >> i*8) & 0xff;
     }
-    for(int i = 3; i >= 0; --i){
+    for(int i = DATA_BYTE_WIDTH-1; i >= 0; --i){
         std::cout << std::hex << bytes[i] << " ";
     }
-}
-
-void printApDatBytes(ap_uint<128> dat)
-{
-    ap_uint<8> bytes[16];
-    for(int i = 0; i < 16; ++i){
-        bytes[i] = (dat >> i*8) & 0xff;
-    }
-    for(int i = 15; i >= 0; --i){
-        std::cout << std::hex << bytes[i] << " ";
-    }
-}
-
-template <typename T>
-void printDat(T dat)
-{
-    printApDatBytes(dat);
     std::cout << ", as decimal = " << std::dec << dat;
 }
 
