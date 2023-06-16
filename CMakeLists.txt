@@ -8,6 +8,7 @@ install(DIRECTORY
 	aie_example_kernels
 	aie_vectorize_tests
 	benchmark_memory
+	benchmark_memory_simulation
 	blocking_read
 	device
 	example_1
