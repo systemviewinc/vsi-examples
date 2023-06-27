@@ -15,7 +15,10 @@
 #define ITERATIONS 6
 
 /* Master control function/block for all threads and run iterations. */
-void master(hls::stream<int> &t1en, hls::stream<int> &t1done)
+void master(hls::stream<int> &t1en, hls::stream<int> &t1done, hls::stream<int> &t2en, hls::stream<int> &t2done,
+						hls::stream<int> &t3en, hls::stream<int> &t3done, hls::stream<int> &t4en, hls::stream<int> &t4done,
+						hls::stream<int> &t5en, hls::stream<int> &t5done, hls::stream<int> &t6en, hls::stream<int> &t6done,
+						hls::stream<int> &t7en, hls::stream<int> &t7done, hls::stream<int> &t8en, hls::stream<int> &t8done)
 {
 	/* num_threads is an environment variable set by the user to control the maximum number of w/r threads
 	that will run. Write/read functions are sequentially locked, so considered one thread each. */
@@ -62,11 +65,103 @@ void master(hls::stream<int> &t1en, hls::stream<int> &t1done)
 					sleep(3);
 					t1done.read();
 					break;
+				case 2:
+					t1en.write(1);
+					t2en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					break;
+				case 3:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					break;
+				case 4:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					t4en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					t4done.read();
+					break;
+				case 5:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					t4en.write(1);
+					t5en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					t4done.read();
+					t5done.read();
+					break;
+				case 6:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					t4en.write(1);
+					t5en.write(1);
+					t6en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					t4done.read();
+					t5done.read();
+					t6done.read();
+					break;
+				case 7:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					t4en.write(1);
+					t5en.write(1);
+					t6en.write(1);
+					t7en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					t4done.read();
+					t5done.read();
+					t6done.read();
+					t7done.read();
+					break;
+				case 8:
+					t1en.write(1);
+					t2en.write(1);
+					t3en.write(1);
+					t4en.write(1);
+					t5en.write(1);
+					t6en.write(1);
+					t7en.write(1);
+					t8en.write(1);
+					sleep(3);
+					t1done.read();
+					t2done.read();
+					t3done.read();
+					t4done.read();
+					t5done.read();
+					t6done.read();
+					t7done.read();
+					t8done.read();
+					break;
 			}
 			printf("done: thread level %d, iteration %d\n", th, i+1);
 		}
 		++th;
 	}
+	printf("Passed\n");
 	exit(0); // exit benchmark executable after all iterations complete
 }
 
@@ -243,8 +338,79 @@ void bnchmrk_mem_wr_thread1(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls
 	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 1, en);
 }
 
+void bnchmrk_mem_wr_thread2(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 2, en);
+}
+
+void bnchmrk_mem_wr_thread3(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 3, en);
+}
+
+void bnchmrk_mem_wr_thread4(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 4, en);
+}
+
+void bnchmrk_mem_wr_thread5(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 5, en);
+}
+
+void bnchmrk_mem_wr_thread6(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 6, en);
+}
+
+void bnchmrk_mem_wr_thread7(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 7, en);
+}
+
+void bnchmrk_mem_wr_thread8(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &en)
+{
+	_bnchmrk_mem_wr(mem, ctl_in, ctl_out, 8, en);
+}
+
 void bnchmrk_mem_rd_thread1(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
 {
 	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 1, dn);
 }
+
+void bnchmrk_mem_rd_thread2(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 2, dn);
+}
+
+void bnchmrk_mem_rd_thread3(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 3, dn);
+}
+
+void bnchmrk_mem_rd_thread4(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 4, dn);
+}
+
+void bnchmrk_mem_rd_thread5(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 5, dn);
+}
+
+void bnchmrk_mem_rd_thread6(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 6, dn);
+}
+
+void bnchmrk_mem_rd_thread7(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 7, dn);
+}
+
+void bnchmrk_mem_rd_thread8(vsi::device<int> &mem, hls::stream<int> &ctl_in, hls::stream<int> &ctl_out, hls::stream<int> &dn)
+{
+	_bnchmrk_mem_rd(mem, ctl_in, ctl_out, 8, dn);
+}
+
 #endif
